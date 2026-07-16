@@ -38,11 +38,10 @@ class Guru extends CI_Controller {
 		// 	print_r($guru);
 		// 	echo "</pre>";
 
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('guru/guru', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Data Guru']);
+		$this->load->view('partials/navbar', ['active_nav' => 'guru']);
+        $this->load->view('guru/guru', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function tambah()
@@ -70,11 +69,10 @@ class Guru extends CI_Controller {
 			'active_nav' => 'guru'
 		);
 
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('guru/guru-tambah', $data);
-		$this->load->view('partials/footer');;
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Guru']);
+		$this->load->view('partials/navbar', ['active_nav' => 'guru']);
+        $this->load->view('guru/guru-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function edit($uuid){
@@ -123,11 +121,10 @@ class Guru extends CI_Controller {
 		// print_r($mapel_list);
 		// echo "</pre>";
 
-		$this->load->view('partials/header');
-		$this->load->view('partials/sidebar',$data);
-        $this->load->view('partials/topbar');
-        $this->load->view('guru/guru-edit', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/header_tailwind', ['title' => 'Edit Guru']);
+		$this->load->view('partials/navbar', ['active_nav' => 'guru']);
+        $this->load->view('guru/guru-edit', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function username_check($username, $uuid)
