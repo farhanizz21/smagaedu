@@ -18,7 +18,7 @@ class panduan_model extends CI_Model {
 				'rules' => 'uploaded[berkas]|max_size[berkas,5120]' // 5MB
 			],
 			[
-				'field' => 'tujuan',
+				'field' => 'tujuan[]',
 				'label' => 'Tujuan',
 				'rules' => 'required'
 			]
@@ -30,12 +30,13 @@ class panduan_model extends CI_Model {
 		$uuid = Uuid::uuid4()->toString();
         $judul = $this->input->post('judul');
         $tujuan = $this->input->post('tujuan');
+        $tujuan_json = is_array($tujuan) ? json_encode($tujuan) : $tujuan;
 
 		$data = array(
 			'uuid' => $uuid,
 			'judul' => $judul,
 			'berkas' => $berkas,
-			'tujuan' => $tujuan
+			'tujuan' => $tujuan_json
 		);
 
 		$this->db->insert('panduan', $data);
@@ -55,11 +56,48 @@ class panduan_model extends CI_Model {
 		$this->db->order_by('modified_at', 'DESC');
 		$data = $this->db->get('panduan')->result();
 
-		foreach ($data as $key) {
-			$key->tujuan = ($key->tujuan == 1) ? 'Guru' : 'Siswa';
+		return $data;
+	}
+
+	public function get_by_uuid($uuid)
+	{
+		$this->db->where('uuid', $uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		return $this->db->get('panduan')->row();
+	}
+
+	public function update($uuid)
+	{
+		$judul = $this->input->post('judul');
+		$tujuan = $this->input->post('tujuan');
+		$tujuan_json = is_array($tujuan) ? json_encode($tujuan) : $tujuan;
+
+		$data = array(
+			'judul' => $judul,
+			'tujuan' => $tujuan_json
+		);
+
+		// If new file uploaded
+		if (!empty($_FILES['berkas']['name'])) {
+			$config = array(
+				'upload_path' => "./uploads/panduan/",
+				'allowed_types' => "jpg|png|jpeg|pdf",
+				'overwrite' => TRUE,
+				'max_size' => "5120",
+				'encrypt_name' => TRUE
+			);
+			$this->load->library('upload', $config);
+			
+			if ($this->upload->do_upload('berkas')) {
+				$upload_data = $this->upload->data();
+				$data['berkas'] = $upload_data['file_name'];
+			}
 		}
 
-		return $data;
+		$this->db->where('uuid', $uuid);
+		$this->db->update('panduan', $data);
+
+		return $this->db->affected_rows() > 0;
 	}
 
 	public function delete_by_uuid($uuid)
