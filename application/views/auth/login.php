@@ -1,169 +1,167 @@
 <!DOCTYPE html>
-<html lang="en" class="h-100">
+<html lang="id">
 
 <head>
-
     <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta name="description" content="">
-    <meta name="author" content="">
+    <meta name="keywords" content="">
 
     <link rel="icon" type="image/x-icon" href="<?= base_url('assets/img/Logo_Smartedu.svg'); ?>">
-    <title>Login - Smartedu</title>
+    <title>Login - SMARTEDU</title>
 
-    <!-- Custom fonts for this template-->
-    <link href="<?= base_url('assets/vendor/fontawesome-free/css/all.min.css'); ?>" rel="stylesheet" type="text/css">
-    <link
-        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
-    <!-- Custom styles for this template-->
-    <link href="<?= base_url('assets/css/sb-admin-2.min.css'); ?>" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="<?= base_url('assets/css/style.css');?>">
-    <style type="text/css">
-    .login-container {
-        position: relative;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1;
+    <!-- Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+
+    <style>
+    body {
+        font-family: 'DM Sans', sans-serif;
     }
 
-
-    body.bg-login {
-        background-image: url('<?= base_url('assets_dashboard/img/unesa.webp'); ?>');
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
+    .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
     }
 
-    .bg-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 0;
+    .glass-card-solid {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.8);
     }
 
+    .hero-gradient {
+        background: linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 50%, #FEF3C7 100%);
+    }
 
+    .dash-shadow {
+        box-shadow: 0 25px 60px -12px rgba(37, 99, 235, 0.15);
+    }
 
-    @media (max-width: 992px) {
-        .login-form:before {
-            display: none;
-        }
+    .input-field {
+        transition: all 0.2s ease;
+    }
 
-        .logo-mobile {
-            display: block !important;
-            width: 50px;
-            margin: 0 auto 20px auto;
-        }
+    .input-field:focus {
+        border-color: #2563EB;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
     </style>
 </head>
 
-<!-- <body class="bg-gradient-primary"> -->
+<body class="w-full min-h-screen hero-gradient flex items-center justify-center p-4">
 
-<body class="bg-login">
-    <div class="bg-overlay">
+    <div class="w-full max-w-md">
 
-
-        <div class="container login-container">
-
-            <!-- Outer Row -->
-            <div class="row justify-content-center">
-
-                <div class="col-xl-10 col-lg-12 col-md-9">
-
-                    <div class="card o-hidden border-0 shadow-lg my-5 p-3">
-                        <div class="card-body p-0">
-                            <!-- Nested Row within Card Body -->
-                            <div class="row">
-                                <div class="col-lg-6 login-form">
-                                    <div class="text-center d-none d-lg-block">
-                                        <img src="<?= base_url('assets/img/Logo_Smartedu.svg');?>" class="w-100">
-                                    </div>
-                                </div>
-                                <div class="col-lg-6 login-form ">
-                                    <div class="p-5">
-                                        <div class="text-center">
-                                            <div class="logo-mobile d-none">
-                                                <img src="<?= base_url('assets/img/Logo_Smartedu.svg');?>"
-                                                    class="w-100">
-                                            </div>
-                                            <h1 class="h4 text-gray-900 mb-4">Selamat datang di Smartedu !</h1>
-                                            <?php if($this->session->flashdata('error_msg')): ?>
-                                            <div class="alert alert-danger">
-                                                <?= $this->session->flashdata('error_msg') ?>
-                                            </div>
-                                            <br>
-                                            <?php endif ?>
-                                        </div>
-                                        <form class="user" action="" method="post">
-                                            <div class="form-group">
-                                                <input type="text" name="username"
-                                                    class="form-control form-control-user <?= form_error('username') ? 'invalid' : '' ?>"
-                                                    value="<?= set_value('username'); ?>"
-                                                    placeholder="Masukkan Username">
-                                                <div
-                                                    class="invalid-feedback <?= !empty(form_error('username')) ? 'd-block':'';?>">
-                                                    <?= form_error('username') ?>
-                                                </div>
-                                            </div>
-                                            <div class="form-group">
-                                                <input type="password" name="password"
-                                                    class="form-control form-control-user <?= form_error('password') ? 'invalid' : '' ?>"
-                                                    value="<?= set_value('password'); ?>"
-                                                    placeholder="Masukkan Password">
-                                                <div
-                                                    class="invalid-feedback <?= !empty(form_error('password')) ? 'd-block':'';?>">
-                                                    <?= form_error('password') ?>
-                                                </div>
-                                            </div>
-                                            <br>
-                                            <button type="submit" class="btn btn-primary btn-user btn-block">
-                                                Login
-                                            </button>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
+        <!-- Login Card -->
+        <div class="glass-card-solid rounded-3xl dash-shadow p-8">
+            <!-- Logo & Title -->
+            <div class="text-center mb-8">
+                <img src="<?= base_url('assets/img/Logo_Smartedu.svg') ?>" alt="Smartedu"
+                    class="h-14 w-14 mx-auto mb-4">
+                <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">SMARTEDU</h1>
+                <p class="text-sm text-gray-500 mt-1">Masuk ke akun Anda</p>
             </div>
 
+            <!-- Error Alert -->
+            <?php if($this->session->flashdata('error_msg')): ?>
+            <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3">
+                <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 mt-0.5 shrink-0"></i>
+                <p class="text-sm font-medium text-red-700"><?= $this->session->flashdata('error_msg') ?></p>
+            </div>
+            <?php endif ?>
+
+            <!-- Validation Errors -->
+            <?php if($this->session->flashdata('validation_errors')): ?>
+            <div class="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-3">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-500 mt-0.5 shrink-0"></i>
+                <div class="text-sm font-medium text-red-700">
+                    <?= $this->session->flashdata('validation_errors') ?>
+                </div>
+            </div>
+            <?php endif ?>
+
+            <!-- Login Form -->
+            <form action="" method="post" class="space-y-5">
+                <!-- Username -->
+                <div>
+                    <label for="username" class="block text-sm font-semibold text-gray-700 mb-1.5">Username</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i data-lucide="user" class="w-5 h-5 text-gray-400"></i>
+                        </div>
+                        <input type="text" name="username" id="username"
+                            class="input-field w-full pl-11 pr-4 py-3 rounded-2xl border-2 border-gray-200 bg-white/80 text-sm font-medium text-gray-900 placeholder:text-gray-400 outline-none <?= form_error('username') ? 'border-red-300 bg-red-50' : '' ?>"
+                            value="<?= set_value('username'); ?>" placeholder="Masukkan username">
+                    </div>
+                    <?php if(form_error('username')): ?>
+                    <p class="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1">
+                        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                        <?= form_error('username') ?>
+                    </p>
+                    <?php endif ?>
+                </div>
+
+                <!-- Password -->
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-1.5">Password</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i data-lucide="lock" class="w-5 h-5 text-gray-400"></i>
+                        </div>
+                        <input type="password" name="password" id="password"
+                            class="input-field w-full pl-11 pr-4 py-3 rounded-2xl border-2 border-gray-200 bg-white/80 text-sm font-medium text-gray-900 placeholder:text-gray-400 outline-none <?= form_error('password') ? 'border-red-300 bg-red-50' : '' ?>"
+                            value="<?= set_value('password'); ?>" placeholder="Masukkan password">
+                    </div>
+                    <?php if(form_error('password')): ?>
+                    <p class="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1">
+                        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+                        <?= form_error('password') ?>
+                    </p>
+                    <?php endif ?>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit"
+                    class="w-full py-3.5 rounded-2xl font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-lg shadow-blue-200 hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2">
+                    <i data-lucide="log-in" class="w-5 h-5"></i>
+                    Masuk
+                </button>
+            </form>
         </div>
 
-        <!-- Bootstrap core JavaScript-->
-        <script src="<?= base_url('assets/vendor/jquery/jquery.min.js'); ?>"></script>
-        <script src="<?= base_url('assets/vendor/bootstrap/js/bootstrap.bundle.min.js'); ?>"></script>
-
-        <!-- Core plugin JavaScript-->
-        <script src="<?= base_url('assets/vendor/jquery-easing/jquery.easing.min.js'); ?>"></script>
-
-        <!-- Custom scripts for all pages-->
-        <script src="<?= base_url('assets/js/sb-admin-2.min.js'); ?>"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
-
-        <script>
-        VANTA.NET({
-            el: "#bg-animate",
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.00,
-            minWidth: 200.00,
-            scale: 1.00,
-            scaleMobile: 1.00
-        })
-        </script>
+        <!-- Footer -->
+        <p class="text-center text-sm text-gray-400 mt-8">© <?= date('Y'); ?> SMARTEDU. All rights reserved.</p>
 
     </div>
+
+    <!-- Vanta Background Effect (optional, retained for compatibility) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script>
+    VANTA.NET({
+        el: "body",
+        mouseControls: true,
+        touchControls: true,
+        gyroControls: false,
+        minHeight: 200.00,
+        minWidth: 200.00,
+        scale: 1.00,
+        scaleMobile: 1.00,
+        color: 0x3b82f6,
+        backgroundColor: 0xeff6ff
+    })
+
+    lucide.createIcons();
+    </script>
+
 </body>
 
 </html>

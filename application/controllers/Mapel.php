@@ -22,15 +22,10 @@ class Mapel extends CI_Controller {
 			'active_nav' => 'mapel'
 		);
 		
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
-
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('mapel/mapel', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/header_tailwind', ['title' => 'Data Mata Pelajaran']);
+		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
+        $this->load->view('mapel/mapel', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
     
     public function tambah()
@@ -42,10 +37,8 @@ class Mapel extends CI_Controller {
 			$insert = $this->mapel_model->insert();
 			if ($insert) {
 				$this->session->set_flashdata('success_msg', 'Data mata pelajaran berhasil di simpan');
-				// redirect('mapel');
 			}else {
 				$this->session->set_flashdata('error_msg', 'Data mata pelajaran gagal di simpan');
-				
 			}
 			redirect('mapel');
 		}
@@ -54,11 +47,10 @@ class Mapel extends CI_Controller {
 			'active_nav' => 'mapel'
 		);
         
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('mapel/mapel-tambah',$data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/header_tailwind', ['title' => 'Tambah Mata Pelajaran']);
+		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
+        $this->load->view('mapel/mapel-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function edit($uuid){
@@ -87,11 +79,10 @@ class Mapel extends CI_Controller {
 			'active_nav' => 'mapel'
 		);
 
-		$this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('mapel/mapel-edit', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/header_tailwind', ['title' => 'Edit Mata Pelajaran']);
+		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
+        $this->load->view('mapel/mapel-edit', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function hapus($uuid){
