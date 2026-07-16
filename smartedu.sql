@@ -125,6 +125,42 @@ CREATE TABLE `materi` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `bab`
+--
+
+CREATE TABLE `bab` (
+  `id` int(50) NOT NULL,
+  `uuid` varchar(100) NOT NULL,
+  `materi_uuid` varchar(100) DEFAULT NULL,
+  `judul` varchar(200) NOT NULL,
+  `deskripsi` text DEFAULT NULL,
+  `dokumentasi` varchar(200) DEFAULT NULL,
+  `dokumentasi_link` varchar(500) DEFAULT NULL,
+  `created_by` varchar(100) DEFAULT NULL,
+  `modified_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `sub_materi`
+--
+
+CREATE TABLE `sub_materi` (
+  `id` int(50) NOT NULL,
+  `uuid` varchar(100) NOT NULL,
+  `bab_uuid` varchar(100) DEFAULT NULL,
+  `judul` varchar(200) NOT NULL,
+  `berkas` varchar(200) DEFAULT NULL,
+  `created_by` varchar(100) DEFAULT NULL,
+  `modified_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `panduan`
 --
 
@@ -380,6 +416,12 @@ ALTER TABLE `ujian_soal`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indexes for table `bab`
+--
+ALTER TABLE `bab`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- AUTO_INCREMENT for dumped tables
 --
 
@@ -414,6 +456,12 @@ ALTER TABLE `mapel`
   MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `bab`
+--
+ALTER TABLE `bab`
+  MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `materi`
 --
 ALTER TABLE `materi`
@@ -423,6 +471,12 @@ ALTER TABLE `materi`
 -- AUTO_INCREMENT for table `panduan`
 --
 ALTER TABLE `panduan`
+  MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `sub_materi`
+--
+ALTER TABLE `sub_materi`
   MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
 
 --

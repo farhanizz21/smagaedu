@@ -17,18 +17,10 @@ class materi_model extends CI_Model {
 				'label' => 'Mata Pelajaran',
 				'rules' => 'required'
 			],
-			// [
-			// 	'field' => 'berkas',
-			// 	'label' => 'File materi'
-			// ],
-			// [
-			// 	'field' => 'thumbnail',
-			// 	'label' => 'File thumbnail'
-			// ]
         ];
 	}
 
-	public function insert($thumbnail, $berkas) {
+	public function insert($thumbnail) {
 		$uuid = Uuid::uuid4()->toString();
 		$judul = $this->input->post('judul');
 		$mapel_uuid = $this->input->post('namaMapel');
@@ -38,7 +30,6 @@ class materi_model extends CI_Model {
 			'mapel_uuid'=> $mapel_uuid,
 			'judul'     => $judul,
 			'thumbnail' => $thumbnail,
-			'berkas'    => $berkas,
 			'created_by' => $this->session->userdata('uuid')
 		);
 		$this->db->insert('materi', $data);
@@ -67,6 +58,26 @@ class materi_model extends CI_Model {
 
 		return $data;
 	} 
+
+	public function get_by_uuid($uuid)
+	{
+		$this->db->select('m.*, g.nama, m.uuid AS materi_uuid, m.created_by AS materi_created_by');
+		$this->db->join('guru g', 'm.created_by = g.uuid', 'left');
+		$this->db->where('m.uuid', $uuid);
+		$this->db->where('m.deleted_at', NULL, FALSE);
+		return $this->db->get('materi m')->row();
+	}
+
+	public function update($uuid, $thumbnail)
+	{
+		$data = array(
+			'judul'      => $this->input->post('judul'),
+			'thumbnail'  => $thumbnail,
+			'modified_at'=> date("Y-m-d H:i:s")
+		);
+		$this->db->update('materi', $data, array('uuid' => $uuid));
+		return ($this->db->affected_rows() > 0);
+	}
 
 	public function delete_by_uuid($uuid)
 	{
