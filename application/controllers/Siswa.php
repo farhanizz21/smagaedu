@@ -21,18 +21,12 @@ class Siswa extends CI_Controller {
 
 		$data = array(
 			'siswa' => $siswa,
-			'active_nav' => 'siswa'
 		);
 		
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
-
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar' , $data);
-        $this->load->view('partials/topbar');
+        $this->load->view('partials/header_tailwind', ['title' => 'Data Siswa']);
+		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
         $this->load->view('siswa/siswa', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/footer_tailwind');
 	}
 
     public function tambah()
@@ -51,15 +45,10 @@ class Siswa extends CI_Controller {
 			}
 		}
 
-		$data = array(
-			'active_nav' => 'siswa'
-		);
-
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar' , $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('siswa/siswa-tambah', $data);
-		$this->load->view('partials/footer');;
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Siswa']);
+		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
+        $this->load->view('siswa/siswa-tambah');
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function edit($uuid){
@@ -101,17 +90,12 @@ class Siswa extends CI_Controller {
 
 		$data = array(
 			'siswa' => $this->siswa_model->get_by_uuid($uuid),
-			'active_nav' => 'siswa'
 		);
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
-		$this->load->view('partials/header');
-		$this->load->view('partials/sidebar' , $data);
-        $this->load->view('partials/topbar');
+		$this->load->view('partials/header_tailwind', ['title' => 'Edit Siswa']);
+		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
         $this->load->view('siswa/siswa-edit', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function username_check($username, $uuid)

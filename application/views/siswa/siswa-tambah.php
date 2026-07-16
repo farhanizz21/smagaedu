@@ -1,102 +1,101 @@
-<div class="container-fluid">
-
-    <!-- Page Heading -->
-    <h1 class="h3 mb-2 text-gray-800">Tambah Data Siswa</h1>
-
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="<?= base_url('siswa')?>">
-                    <i class="fas fa-arrow-left">
-                    </i> Daftar Siswa</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Tambah</li>
-        </ol>
-    </nav>
-
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <form class="user" method="post" action="<?= base_url('siswa/tambah');?>">
-                <div class="form-group row">
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">NIS (Nomor Induk Siswa) <span
-                                class="text-danger">*</span></label>
-                        <input type="text" name="nis" id="nis" class="form-control" placeholder="Masukkan Nama Lengkap"
-                            value="<?= set_value('nis'); ?>">
-                        <div class="invalid-feedback <?= !empty(form_error('nis')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('nis') ?>
-                        </div>
-                        <small>Kolom Nomor Induk Siswa hanya menerima dengan 10 angka</small>
-                    </div>
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Nama Lengkap<span
-                                class="text-danger">*</span></label>
-                        <input type="text" name="namaLengkap" id="namaLengkap" class="form-control"
-                            placeholder="Masukkan Nama Lengkap" value="<?= set_value('namaLengkap'); ?>">
-                        <div class="invalid-feedback <?= !empty(form_error('namaLengkap')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('namaLengkap') ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Username<span class="text-danger">*</span></label>
-                        <input type="text" name="username" id="username" class="form-control"
-                            placeholder="Masukkan Username" value="<?= set_value('username'); ?>">
-                        <div class="invalid-feedback <?= !empty(form_error('username')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('username') ?>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Tanggal Lahir <span
-                                class="text-danger">*</span></label>
-                        <input type="date" name="tanggal_lahir" id="tanggal_lahir" class="form-control"
-                            placeholder="Masukkan tanggal lahir" value="<?= set_value('tanggal_lahir'); ?>">
-                        <div class="invalid-feedback <?= !empty(form_error('tanggal_lahir')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('tanggal_lahir') ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Jenis Kelamin<span
-                                class="text-danger">*</span></label>
-                        <select class="form-control" name="jenisKelamin">
-                            <option disabled selected>Pilih Jenis Kelamin</option>
-                            <option value="1" <?= set_select('jenisKelamin', 1); ?>>Laki-Laki</option>
-                            <option value="2" <?= set_select('jenisKelamin', 2); ?>>Perempuan</option>
-                        </select>
-                        <div class="invalid-feedback <?= !empty(form_error('jenisKelamin')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('jenisKelamin') ?>
-                        </div>
-                    </div>
-                    <!-- <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Kelas <span class="text-danger">*</span></label>
-                        <input type="number" name="kelas" id="kelas" class="form-control" placeholder="Masukkan kelas"
-                            value="<?= set_value('kelas'); ?>">
-                        <div class="invalid-feedback <?= !empty(form_error('kelas')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('kelas') ?>
-                        </div>
-                        </select>
-                        <div class="invalid-feedback <?= !empty(form_error('namaMapel')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('namaMapel') ?>
-                        </div>
-                    </div> -->
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <button type="submit" class="btn btn-md btn-success mr-2">
-                            <i class="fa fa-save"></i> Simpan
-                        </button>
-                        <a href="<?= base_url('siswa')?>" class="btn btn-md btn-danger">
-                            <i class="fa fa-times"></i> Batal
-                        </a>
-                    </div>
-                </div>
-            </form>
+<div class="max-w-4xl mx-auto px-6 py-8">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <a href="<?= base_url('siswa')?>" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Tambah Data Siswa</h1>
+            </div>
+            <p class="text-gray-500 text-sm ml-8">Lengkapi formulir di bawah untuk menambahkan siswa baru</p>
         </div>
     </div>
-</div>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
+        <form method="post" action="<?= base_url('siswa/tambah');?>">
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- NIS -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">NIS (Nomor Induk Siswa) <span
+                            class="text-red-500">*</span></label>
+                    <input type="text" name="nis" id="nis"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                        placeholder="Masukkan NIS (10 digit angka)" value="<?= set_value('nis'); ?>">
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('nis')) ? '' : 'hidden' ?>">
+                        <?= form_error('nis') ?>
+                    </div>
+                    <small class="text-gray-400 text-xs mt-1 block">Kolom NIS hanya menerima 10 digit angka</small>
+                </div>
+
+                <!-- Nama Lengkap -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Lengkap <span
+                            class="text-red-500">*</span></label>
+                    <input type="text" name="namaLengkap" id="namaLengkap"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                        placeholder="Masukkan Nama Lengkap" value="<?= set_value('namaLengkap'); ?>">
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('namaLengkap')) ? '' : 'hidden' ?>">
+                        <?= form_error('namaLengkap') ?>
+                    </div>
+                </div>
+
+                <!-- Username -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Username <span
+                            class="text-red-500">*</span></label>
+                    <input type="text" name="username" id="username"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                        placeholder="Masukkan Username" value="<?= set_value('username'); ?>">
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('username')) ? '' : 'hidden' ?>">
+                        <?= form_error('username') ?>
+                    </div>
+                </div>
+
+                <!-- Tanggal Lahir -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Lahir <span
+                            class="text-red-500">*</span></label>
+                    <input type="date" name="tanggal_lahir" id="tanggal_lahir"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                        placeholder="Masukkan tanggal lahir" value="<?= set_value('tanggal_lahir'); ?>">
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('tanggal_lahir')) ? '' : 'hidden' ?>">
+                        <?= form_error('tanggal_lahir') ?>
+                    </div>
+                </div>
+
+                <!-- Jenis Kelamin -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jenis Kelamin <span
+                            class="text-red-500">*</span></label>
+                    <select name="jenisKelamin"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                        <option disabled selected>Pilih Jenis Kelamin</option>
+                        <option value="1" <?= set_select('jenisKelamin', 1); ?>>Laki-Laki</option>
+                        <option value="2" <?= set_select('jenisKelamin', 2); ?>>Perempuan</option>
+                    </select>
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('jenisKelamin')) ? '' : 'hidden' ?>">
+                        <?= form_error('jenisKelamin') ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center gap-3 mt-8 pt-6 border-t border-gray-100">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    Simpan
+                </button>
+                <a href="<?= base_url('siswa')?>"
+                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    Batal
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
