@@ -26,28 +26,6 @@ class Ujian extends CI_Controller {
 		
 		$user_login = $this->session->userdata('uuid'); 
 		$peserta = []; 
-		// foreach ($ujian as $u) {
-		// 	$pengerjaan = false;
-		// 	$pengumpulan = false;
-		// 	$peserta[$u->uuid] = $this->siswa_model->get_by_ujian($u->uuid);
-			
-		// 	foreach ($peserta as $p){
-		// 		foreach($p as $q){
-		// 			if ($q->ujian_uuid == $u->uuid && $q->siswa_uuid == $user_login) {
-		// 				$pengerjaan = true;
-		// 				break;
-		// 			} 
-		// 			if ($this->ujian_model->get_pengumpulan_siswa($q->ujian_uuid, $user_login) != NULL) {
-		// 				$pengumpulan = true;
-		// 				break;
-						
-		// 			}
-		// 		}
-		// 	}
-		// 	$u->pengumpulan = $pengumpulan;
-		// 	$u->pengerjaan = $pengerjaan;
-		// }
-
 		foreach ($ujian as $u) {
 			$pengerjaan = false;
 			$pengumpulan = false;
@@ -75,15 +53,11 @@ class Ujian extends CI_Controller {
 			'peserta' => $peserta,
 			'active_nav' => 'ujian'
 		);
-		// echo"<pre>";
-		// print_r($ujian);
-		// echo"</pre>";
 		
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('ujian/ujian', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Daftar Ujian']);
+		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+        $this->load->view('ujian/ujian', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function tambah()
@@ -120,11 +94,10 @@ class Ujian extends CI_Controller {
 			'active_nav' => 'ujian'
 		);
 
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('ujian/ujian-tambah', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Ujian']);
+		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+        $this->load->view('ujian/ujian-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function tambah_soal($ujian_uuid)
@@ -154,15 +127,10 @@ class Ujian extends CI_Controller {
 			'active_nav' => 'ujian'
 		);
 
-		// echo"<pre>";
-		// print_r($data);
-		// echo"</pre>";
-		
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('ujian/ujian-soal', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Soal Ujian']);
+		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+        $this->load->view('ujian/ujian-soal', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function tambah_siswa($ujian_uuid)
@@ -192,9 +160,6 @@ class Ujian extends CI_Controller {
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
 		}
-		// echo"<pre>";
-		// print_r($peserta);
-		// echo"</pre>";
 		
 		$data = array(
 			'ujian' => $ujian,
@@ -203,15 +168,10 @@ class Ujian extends CI_Controller {
 			'active_nav' => 'ujian'
 		);
 
-		
-		// echo '<pre>';
-		// print_r($data);
-		// echo '</pre>';
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('ujian/ujian-siswa', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Peserta Ujian']);
+		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+        $this->load->view('ujian/ujian-siswa', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 	
 	public function tambah_nilai($ujian_uuid, $siswa_uuid)
@@ -261,15 +221,10 @@ class Ujian extends CI_Controller {
 			'active_nav' => 'ujian'
 		);
 
-		// echo"<pre>";
-		// print_r($data);
-		// echo"</pre>";
-		
-		$this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('ujian/ujian-nilai', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/header_tailwind', ['title' => 'Nilai Ujian']);
+		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+        $this->load->view('ujian/ujian-nilai', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function pengerjaan($ujian_uuid)
@@ -286,38 +241,36 @@ class Ujian extends CI_Controller {
 	
 		$data = array(
 			'ujian' => $this->ujian_model->get_by_uuid($ujian_uuid),
-			'soal' => $this->soal_model->get_by_ujian_uuid($ujian_uuid)
+			'soal' => $this->soal_model->get_by_ujian_uuid($ujian_uuid),
+			'active_nav' => 'ujian'
 		);
 
-		// echo"<pre>";
-		// print_r($data);
-		// echo"</pre>";
-		
-        $this->load->view('ujian/ujian-pengerjaan', $data);
+        $this->load->view('partials/header_tailwind', ['title' => 'Pengerjaan Ujian']);
+		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+        $this->load->view('ujian/ujian-pengerjaan', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
-	public function hapus_siswa($relasi_uuid){
-		{
-			$result = $this->siswa_model->delete_siswa_ujian_and_ujian_jawaban_by_uuid($relasi_uuid);
-			if ($result) {
-				$this->session->set_flashdata('success_msg', 'Data siswa ujian berhasil dihapus');
-			} else {
-				$this->session->set_flashdata('error_msg', 'Gagal menghapus data siswa ujian');
-			}
-			redirect($_SERVER['HTTP_REFERER']);
+	public function hapus_siswa($relasi_uuid)
+	{
+		$result = $this->siswa_model->delete_siswa_ujian_and_ujian_jawaban_by_uuid($relasi_uuid);
+		if ($result) {
+			$this->session->set_flashdata('success_msg', 'Data siswa ujian berhasil dihapus');
+		} else {
+			$this->session->set_flashdata('error_msg', 'Gagal menghapus data siswa ujian');
 		}
+		redirect($_SERVER['HTTP_REFERER']);
 	}
 
-	public function hapus_soal($soal_uuid){
-		{
-			$result = $this->soal_model->delete_by_uuid($soal_uuid);
-			if ($result) {
-				$this->session->set_flashdata('success_msg', 'Data soal ujian berhasil dihapus');
-			} else {
-				$this->session->set_flashdata('error_msg', 'Gagal menghapus data soal ujian');
-			}
-			redirect($_SERVER['HTTP_REFERER']);
+	public function hapus_soal($soal_uuid)
+	{
+		$result = $this->soal_model->delete_by_uuid($soal_uuid);
+		if ($result) {
+			$this->session->set_flashdata('success_msg', 'Data soal ujian berhasil dihapus');
+		} else {
+			$this->session->set_flashdata('error_msg', 'Gagal menghapus data soal ujian');
 		}
+		redirect($_SERVER['HTTP_REFERER']);
 	}
 
 	public function edit_soal($soal_uuid){

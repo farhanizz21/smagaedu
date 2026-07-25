@@ -1,156 +1,166 @@
-<div class="container-fluid">
-    <?php if ($this->session->flashdata('error_msg'))  : ?>
-    <div class="alert alert-danger">
-        <?= $this->session->flashdata('error_msg'); ?>
-    </div>
-    <?php endif; ?>
-    <?php if ($this->session->flashdata('success_msg'))  : ?>
-    <div class="alert alert-success">
-        <?= $this->session->flashdata('success_msg'); ?>
-    </div>
-    <?php endif; ?>
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Tambah Soal Ujian']); ?>
+<?php $this->load->view('partials/navbar', ['active_nav' => 'ujian']); ?>
+<?php endif; ?>
 
-    <!-- Page Heading -->
-    <h1 class="h3 mb-2 text-gray-800">Tambah Soal ujian</h1>
-
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="<?= base_url('ujian')?>">
-                    <i class="fas fa-arrow-left">
-                    </i> Daftar Ujian</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Tambah Soal Ujian</li>
-        </ol>
-    </nav>
-
-    <div class="card shadow mb-4 ">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Detail Ujian</h5>
-        </div>
-        <div class="card-body">
-            <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                <colgroup>
-                    <col style="width: 30%;"> <!-- Kolom kiri (label) -->
-                    <col style="width: 70%;"> <!-- Kolom kanan (isi) -->
-                </colgroup>
-                <tbody>
-                    <tr>
-                        <td class="table-primary font-weight-bold">Nama Ujian</td>
-                        <td><?= $ujian->nama; ?></td>
-                    </tr>
-                    <tr>
-                        <td class="table-primary font-weight-bold">Mata Pelajaran</td>
-                        <td><?= $ujian->mapel_nama; ?></td>
-                    </tr>
-                    <tr>
-                        <td class="table-primary font-weight-bold">Dibuat Oleh</td>
-                        <td><?= $ujian->guru_nama; ?></td>
-                    </tr>
-                    <tr>
-                        <td class="table-primary font-weight-bold">Tanggal Dibuat</td>
-                        <td><?= date('H:i, d M Y', strtotime($ujian->modified_at)); ?></td>
-                    </tr>
-                </tbody>
-            </table>
+<div class="max-w-4xl mx-auto px-6 py-8">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <div class="flex items-center gap-3 mb-1">
+                <a href="<?= base_url('ujian/tambah_soal/' . $ujian->uuid)?>"
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                </a>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Tambah Soal Ujian</h1>
+            </div>
+            <p class="text-gray-500 text-sm ml-8">Ujian: <span
+                    class="text-blue-600 font-semibold"><?= $ujian->nama; ?></span></p>
         </div>
     </div>
 
+    <?php if ($this->session->userdata('success_msg')): ?>
+    <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-500 flex-shrink-0"></i>
+        <?= $this->session->userdata('success_msg'); ?>
+        <?php $this->session->unset_userdata('success_msg'); ?>
+    </div>
+    <?php endif; ?>
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <!-- Form untuk menambahkan soal -->
-            <form method="post" action="<?= base_url('ujian/tambah_soal/'.$ujian->uuid); ?>">
-                <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid ?>">
+    <?php if ($this->session->userdata('error_msg')): ?>
+    <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
+        <?= $this->session->userdata('error_msg'); ?>
+        <?php $this->session->unset_userdata('error_msg'); ?>
+    </div>
+    <?php endif; ?>
 
-                <div class="input-group mb-3">
-                    <input type="text" name="soal" id="soal" class="form-control" placeholder="Masukkan Soal"
-                        value="<?= set_value('soal'); ?>">
-                    <div class="input-group-append">
-                        <button type="submit" class="btn btn-success" data-toggle="tooltip" data-placement="top"
-                            title="Simpan Soal">
-                            <i class="fa fa-save"></i>
-                        </button>
+    <!-- Form Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
+        <form method="post" action="<?= base_url('ujian/edit_soal'); ?>">
+            <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid ?>">
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Soal <span
+                            class="text-red-500">*</span></label>
+                    <textarea name="soal" rows="4"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                        placeholder="Masukkan soal ujian..."><?= set_value('soal'); ?></textarea>
+                    <div class="text-red-500 text-xs mt-1"><?= form_error('soal') ?></div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban A <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" name="jawaban_a"
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                            placeholder="Jawaban A" value="<?= set_value('jawaban_a'); ?>">
+                        <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_a') ?></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban B <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" name="jawaban_b"
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                            placeholder="Jawaban B" value="<?= set_value('jawaban_b'); ?>">
+                        <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_b') ?></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban C <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" name="jawaban_c"
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                            placeholder="Jawaban C" value="<?= set_value('jawaban_c'); ?>">
+                        <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_c') ?></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban D <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" name="jawaban_d"
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                            placeholder="Jawaban D" value="<?= set_value('jawaban_d'); ?>">
+                        <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_d') ?></div>
                     </div>
                 </div>
 
-                <div class="invalid-feedback <?= !empty(form_error('soal')) ? 'd-block' : ''; ?>">
-                    <?= form_error('soal') ?>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban Benar <span
+                                class="text-red-500">*</span></label>
+                        <select name="jawaban_benar"
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                            <option disabled selected>Pilih Jawaban Benar</option>
+                            <option value="A" <?= set_select('jawaban_benar', 'A'); ?>>A</option>
+                            <option value="B" <?= set_select('jawaban_benar', 'B'); ?>>B</option>
+                            <option value="C" <?= set_select('jawaban_benar', 'C'); ?>>C</option>
+                            <option value="D" <?= set_select('jawaban_benar', 'D'); ?>>D</option>
+                        </select>
+                        <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_benar') ?></div>
+                    </div>
                 </div>
-            </form>
 
-            <!-- Tabel daftar soal -->
-            <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th width="50px" class="text-center">No.</th>
-                            <th>Soal</th>
-                            <th width="100px" class="text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php $no = 1; foreach ($soal as $s): ?>
-                        <tr>
-                            <td class="text-center"><?= $no++; ?></td>
-                            <td><?= $s->soal; ?></td>
-                            <td class="text-center">
-                                <a href="<?= base_url('ujian/hapus_soal/'.$s->uuid) ?>" class="btn btn-sm btn-danger"
-                                    data-toggle="tooltip" data-placement="top" title="Hapus Data"
-                                    onclick="return confirm('Apakah Anda yakin ingin menghapus soal ini?')">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-
-                                <button class="btn btn-sm btn-warning" data-toggle="modal"
-                                    data-target="#modalEditSoal<?= $s->uuid ?>"> <i class="fas fa-edit"></i></button>
-
-                                <!-- Modal Tambah Siswa -->
-                                <div class="modal fade" id="modalEditSoal<?= $s->uuid ?>" tabindex="-1" role="dialog"
-                                    aria-labelledby="modalEditSoal<?= $s->uuid ?>" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg" role="document">
-                                        <form action="<?= base_url('ujian/edit_soal/'.$s->uuid) ?>" method="POST">
-                                            <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid ?>">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="editModalLabel<?= $s->uuid ?>">Edit Soal
-                                                    </h5>
-                                                    <button type="button" class="close" data-dismiss="modal">
-                                                        <span>&times;</span>
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="form-group">
-                                                        <label class="form-label font-weight-bold">Soal<span
-                                                                class="text-danger">*</span></label>
-                                                        <input type="text" name="soal" id="soal" class="form-control"
-                                                            placeholder="Masukkan Soal" value="<?= $s->soal; ?>">
-                                                        <div
-                                                            class="invalid-feedback <?= !empty(form_error('soal')) ? 'd-block' : '' ; ?> ">
-                                                            <?= form_error('soal') ?>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="submit" class="btn btn-primary">Simpan</button>
-                                                    <button type="button" class="btn btn-secondary"
-                                                        data-dismiss="modal">Batal</button>
-                                                </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+                <div class="flex items-center gap-3 pt-6 border-t border-gray-100">
+                    <button type="submit"
+                        class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        Simpan Soal
+                    </button>
+                    <a href="<?= base_url('ujian/tambah_soal/' . $ujian->uuid)?>"
+                        class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                        Batal
+                    </a>
+                </div>
             </div>
-            <a href="<?= base_url('ujian')?>" class="btn btn-md btn-danger">
-                <i class="fa fa-arrow-left"></i> Kembali
-            </a>
+        </form>
+
+        <!-- List Soal -->
+        <div class="mt-10 pt-8 border-t border-gray-200">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Daftar Soal</h3>
+            <div class="space-y-3">
+                <?php if(!empty($soal)): ?>
+                <?php foreach($soal as $s): ?>
+                <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-900 mb-1"><?= $s->soal ?></p>
+                            <p class="text-xs text-gray-500">Jawaban benar: <span
+                                    class="font-semibold text-blue-600"><?= $s->jawaban_benar ?></span></p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+                                onclick="editSoal('<?= $s->uuid ?>')">
+                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Edit
+                            </button>
+                            <a href="<?= base_url('ujian/hapus_soal/'.$s->uuid.'?ujian_uuid='.$ujian->uuid) ?>"
+                                class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+                                onclick="return confirm('Apakah Anda yakin ingin menghapus soal ini?')">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <?php else: ?>
+                <div class="text-center py-8 text-gray-400">
+                    <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                    <p class="text-sm">Belum ada soal</p>
+                </div>
+                <?php endif; ?>
+            </div>
         </div>
-
     </div>
-
-
-
 </div>
+
+<script>
+function editSoal(uuid) {
+    // Implementasi edit soal (bisa menggunakan modal atau redirect)
+    alert('Fitur edit soal akan segera tersedia');
+}
+</script>
+
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/footer_tailwind'); ?>
+<?php endif; ?>

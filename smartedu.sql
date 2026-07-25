@@ -306,6 +306,36 @@ CREATE TABLE `ujian_siswa` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
+--
+-- Table structure for table `ujian_kelompok`
+--
+
+CREATE TABLE `ujian_kelompok` (
+  `id` int(50) NOT NULL,
+  `uuid` varchar(100) NOT NULL,
+  `ujian_uuid` varchar(100) NOT NULL,
+  `kelompok` varchar(100) NOT NULL,
+  `created_by` varchar(100) NOT NULL,
+  `modified_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+--
+-- Table structure for table `ujian_kelompok_siswa`
+--
+
+CREATE TABLE `ujian_kelompok_siswa` (
+  `id` int(50) NOT NULL,
+  `uuid` varchar(100) NOT NULL,
+  `kelompok_uuid` varchar(100) NOT NULL,
+  `siswa_uuid` varchar(100) NOT NULL,
+  `created_by` varchar(100) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `deleted_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `ujian_soal`
@@ -322,14 +352,40 @@ CREATE TABLE `ujian_soal` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Indexes for dumped tables
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- Indexes for table `admin`
+-- AUTO_INCREMENT for table `admin`
 --
 ALTER TABLE `admin`
   ADD PRIMARY KEY (`id`);
+
+--
+-- AUTO_INCREMENT for table `ujian_kelompok`
+--
+ALTER TABLE `ujian_kelompok`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uuid` (`uuid`);
+
+--
+-- AUTO_INCREMENT for table `ujian_kelompok_siswa`
+--
+ALTER TABLE `ujian_kelompok_siswa`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uuid` (`uuid`);
+
+--
+-- AUTO_INCREMENT for table `ujian_kelompok`
+--
+ALTER TABLE `ujian_kelompok`
+  MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `ujian_kelompok_siswa`
+--
+ALTER TABLE `ujian_kelompok_siswa`
+  MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
 
 --
 -- Indexes for table `guru`
@@ -525,6 +581,18 @@ ALTER TABLE `ujian_siswa`
 -- AUTO_INCREMENT for table `ujian_soal`
 --
 ALTER TABLE `ujian_soal`
+  MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `ujian_kelompok`
+--
+ALTER TABLE `ujian_kelompok`
+  MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `ujian_kelompok_siswa`
+--
+ALTER TABLE `ujian_kelompok_siswa`
   MODIFY `id` int(50) NOT NULL AUTO_INCREMENT;
 COMMIT;
 

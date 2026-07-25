@@ -50,11 +50,10 @@ class Proyek extends CI_Controller {
 		// print_r($data);
 		// echo"</pre>";
 		
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar',$data);
-        $this->load->view('partials/topbar');
-        $this->load->view('proyek/proyek', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Daftar Proyek']);
+		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
+        $this->load->view('proyek/proyek', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
     
     public function tambah()
@@ -109,11 +108,10 @@ class Proyek extends CI_Controller {
 		// print_r($data);
 		// echo"</pre>";
         
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar',$data);
-        $this->load->view('partials/topbar');
-        $this->load->view('proyek/proyek-tambah',$data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Proyek']);
+		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
+        $this->load->view('proyek/proyek-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function hapus($uuid){
@@ -134,6 +132,12 @@ class Proyek extends CI_Controller {
 		$kelompok = $this->kelompok_model->get_by_proyek_uuid($proyek_uuid);
 		$user_login = $this->session->userdata('uuid');
 		$komentar = $this->komentar_model->get_by_proyek_uuid($proyek_uuid);
+		
+		// Ambil nama mata pelajaran
+		if($proyek->mapel_uuid != NULL){
+			$mapel = $this->mapel_model->get_by_uuid($proyek->mapel_uuid);
+			$proyek->mapel = $mapel->nama;
+		}
 		
 		$pengerjaan = false;
 		$kelompok_nama = null;
@@ -185,11 +189,10 @@ class Proyek extends CI_Controller {
 		// print_r($data['jawaban']);
 		// echo "</pre>";
 		
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar',$data);
-        $this->load->view('partials/topbar');
-        $this->load->view('proyek/proyek-detail', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Detail Proyek']);
+		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
+        $this->load->view('proyek/proyek-detail', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function pilih_siswa($proyek_uuid)
@@ -207,11 +210,10 @@ class Proyek extends CI_Controller {
 		// print_r($data);
 		// echo "</pre>";
 		
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar',$data);
-        $this->load->view('partials/topbar');
-        $this->load->view('proyek/proyek-pilih-siswa', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Pilih Siswa']);
+		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
+        $this->load->view('proyek/proyek-pilih-siswa', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function kumpulkan($proyek_uuid)

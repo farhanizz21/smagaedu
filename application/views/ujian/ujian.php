@@ -1,123 +1,130 @@
-<!-- Begin Page Content -->
-<div class="container-fluid">
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Daftar Ujian']); ?>
+<?php $this->load->view('partials/navbar', ['active_nav' => 'ujian']); ?>
+<?php endif; ?>
+
+<div class="max-w-7xl mx-auto px-6 py-8">
+    <!-- Page Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Daftar Ujian</h1>
+            <p class="text-gray-500 mt-1 text-sm">Kelola dan ikuti ujian di SMARTEDU</p>
+        </div>
+        <?php if($this->session->userdata('role') == 2 ){?>
+        <a href="<?= base_url('ujian/tambah')?>"
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            Tambah Data
+        </a>
+        <?php } ?>
+    </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>
-    <div class="alert alert-success">
+    <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-500 flex-shrink-0"></i>
         <?= $this->session->userdata('success_msg'); ?>
         <?php $this->session->unset_userdata('success_msg'); ?>
-        <!-- Hapus setelah ditampilkan -->
     </div>
     <?php endif; ?>
 
     <?php if ($this->session->userdata('error_msg')): ?>
-    <div class="alert alert-danger">
+    <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
         <?= $this->session->userdata('error_msg'); ?>
         <?php $this->session->unset_userdata('error_msg'); ?>
-        <!-- Hapus setelah ditampilkan -->
     </div>
     <?php endif; ?>
 
-
-    <br>
-    <!-- Page Heading -->
-    <h1 class="h3 mb-2 text-gray-800"></h1>
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <!-- Page Heading -->
-        <h1 class="h3 mb-2 text-gray-800">Daftar ujian</h1>
-        <?php if($this->session->userdata('role') == 2 ){?>
-        <a href="<?= base_url('ujian/tambah')?>" class="btn btn-md btn-primary shadow-sm"><i
-                class="fas fa-plus fa-sm text-white-50"></i> Tambah Data</a>
-        <?php } ?>
-    </div>
-
-    <!-- DataTales Example -->
-    <div class="card shadow mb-4">
-        <!-- <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">DataTables Example</h6>
-        </div> -->
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th width="1px">No.</th>
-                            <th>Nama Ujian</th>
-                            <th>Mata Pelajaran</th>
-                            <th>Jadwal</th>
-                            <th>Guru</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php 
-                            $no = 1;
-                            foreach($ujian as $val) {
-                                ?>
-                        <tr>
-                            <td align="center"><?= $no ; ?></td>
-                            <td><?= $val->nama; ?></td>
-                            <td><?= $val->mapel_nama; ?></td>
-                            <td><?= $val->tgl_mulai_formatted; ?> - <?= $val->tgl_selesai_formatted; ?></td>
-                            <td><?= $val->guru_nama; ?></td>
-                            <td>
+    <!-- Table Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-200">
+                        <th
+                            class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-12">
+                            No.</th>
+                        <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
+                            Nama Ujian</th>
+                        <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
+                            Mata Pelajaran</th>
+                        <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
+                            Jadwal</th>
+                        <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
+                            Guru</th>
+                        <th
+                            class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-40">
+                            Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <?php 
+                        $no = 1;
+                        foreach($ujian as $val) {
+                    ?>
+                    <tr class="table-row-hover transition-colors">
+                        <td class="px-6 py-4 text-gray-500 text-center"><?= $no ; ?></td>
+                        <td class="px-6 py-4 font-medium text-gray-900"><?= $val->nama; ?></td>
+                        <td class="px-6 py-4 text-gray-600"><?= $val->mapel_nama; ?></td>
+                        <td class="px-6 py-4 text-gray-600"><?= $val->tgl_mulai_formatted; ?> -
+                            <?= $val->tgl_selesai_formatted; ?></td>
+                        <td class="px-6 py-4 text-gray-600"><?= $val->guru_nama; ?></td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-1.5 flex-wrap">
                                 <?php if($this->session->userdata('role') != 2 ){?>
                                 <?php if($val->pengerjaan == 1 && $val->pengumpulan == 1) { ?>
-                                <span class="text-muted small d-block text-center">
-                                    Anda sudah mengerjakan ujian ini.
-                                </span>
+                                <span class="text-xs text-gray-500 text-center">Sudah dikerjakan</span>
                                 <?php } else if($val->pengerjaan == 1 && $val->pengumpulan == NULL) { ?>
-                                <a class="btn btn-sm btn-primary btn-pengerjaan" data-uuid="<?= $val->uuid ?>"><i
-                                        class="fas fa-play text-white"></i>
-                                    Mulai Mengerjakan</a>
+                                <a class="btn-pengerjaan inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                    data-uuid="<?= $val->uuid ?>">
+                                    <i data-lucide="play" class="w-3.5 h-3.5"></i> Mulai
+                                </a>
                                 <?php } else if($val->pengerjaan == NULL && $val->pengumpulan == NULL ){ ?>
-                                <span class="text-danger small d-block text-center">
-                                    Anda bukan peserta ujian ini.
-                                </span>
+                                <span class="text-xs text-gray-400 text-center">Bukan peserta</span>
                                 <?php } ?>
                                 <?php } ?>
 
                                 <?php if($this->session->userdata('uuid') == $val->created_by || $this->session->userdata('role') == 1 ){?>
 
-                                <a href="<?=base_url('ujian/tambah_siswa/'.$val->uuid)?>" class="btn btn-sm btn-warning"
+                                <a href="<?=base_url('ujian/tambah_siswa/'.$val->uuid)?>"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors"
                                     data-toggle="tooltip" data-placement="top" title="Detail Peserta">
-                                    <i class="fas fa-users"></i>
+                                    <i data-lucide="users" class="w-3.5 h-3.5"></i>
                                 </a>
-                                <a href="<?=base_url('ujian/tambah_soal/'.$val->uuid)?>" class="btn btn-sm btn-info"
-                                    data-toggle="tooltip" data-placement="top" title="Detail Soal">
-                                    <i class="fas fa-plus"></i>
+                                <a href="<?=base_url('ujian/tambah_soal/'.$val->uuid)?>"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                                    data-toggle="tooltip" data-placement="top" title="Tambah Soal">
+                                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                                 </a>
-                                <a href="<?=base_url('ujian/hapus/'.$val->uuid)?>" class="btn btn-sm btn-danger"
+                                <a href="<?=base_url('ujian/hapus/'.$val->uuid)?>"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
                                     data-toggle="tooltip" data-placement="top" title="Hapus Ujian"
                                     onclick="return confirm('Apakah Anda yakin ingin menghapus ujian <?= $val->nama; ?>?')">
-                                    <i class="fas fa-trash"></i>
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                 </a>
 
                                 <?php } else if ($this->session->userdata('role') != 3) { ?>
-                                <span class="text-danger small d-block text-center">
-                                    Tidak ada akses.<br>
-                                    (bukan pembuat ujian)
-                                </span>
-
+                                <span class="text-xs text-gray-400 text-center">Tidak ada akses</span>
                                 <?php } ?>
-                            </td>
-                        </tr>
-                        <?php 
-                            $no++;
-                            
-                        }
-                        ?>
-                    </tbody>
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php 
+                        $no++;
+                    }
+                    ?>
+                </tbody>
+            </table>
         </div>
-
+        <?php if(empty($ujian)): ?>
+        <div class="text-center py-12 text-gray-400">
+            <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+            <p class="text-sm">Belum ada data ujian</p>
+        </div>
+        <?php endif; ?>
     </div>
-
 </div>
-<!-- /.container-fluid -->
 
-</div>
 <script>
 $(document).ready(function() {
     const base_url = "<?= base_url(); ?>";
@@ -138,6 +145,10 @@ $(document).ready(function() {
             }
         });
     });
-
+    lucide.createIcons();
 });
 </script>
+
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/footer_tailwind'); ?>
+<?php endif; ?>

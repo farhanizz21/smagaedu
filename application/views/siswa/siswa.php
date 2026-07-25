@@ -1,3 +1,8 @@
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Data Siswa']); ?>
+<?php $this->load->view('partials/navbar', ['active_nav' => 'siswa']); ?>
+<?php endif; ?>
+
 <div class="max-w-7xl mx-auto px-6 py-8">
     <!-- Page Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -100,3 +105,7 @@
         <?php endif; ?>
     </div>
 </div>
+
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/footer_tailwind'); ?>
+<?php endif; ?>

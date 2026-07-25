@@ -22,10 +22,10 @@ class Siswa extends CI_Controller {
 		$data = array(
 			'siswa' => $siswa,
 		);
-		
+
         $this->load->view('partials/header_tailwind', ['title' => 'Data Siswa']);
 		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
-        $this->load->view('siswa/siswa', $data);
+        $this->load->view('siswa/siswa', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 

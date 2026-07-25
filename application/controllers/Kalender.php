@@ -23,15 +23,10 @@ class Kalender extends CI_Controller {
 			// 'kalender' => $kalender,
 			'active_nav' => 'kalender'
 		);
-		
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('kalender/kalender');
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Kalender Akademik']);
+		$this->load->view('partials/navbar', ['active_nav' => 'kalender']);
+        $this->load->view('kalender/kalender', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 }
