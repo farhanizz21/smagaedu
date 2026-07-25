@@ -100,6 +100,59 @@ class Ujian extends MY_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
 
+	public function tambah_sub($sub_materi_uuid = NULL)
+	{
+		if (empty($sub_materi_uuid) || $sub_materi_uuid == 'null') {
+			redirect('ujian/tambah');
+		}
+
+		// Superadmin, admin, atau guru yang bisa tambah ujian
+		if (!is_admin_or_superadmin() && !has_permission('manage_ujian')) {
+			show_error('Anda tidak memiliki akses untuk menambah ujian.', 403);
+		}
+
+		$this->load->model('sub_materi_model');
+		$this->load->model('bab_model');
+		$sub = $this->sub_materi_model->get_by_uuid($sub_materi_uuid);
+		if (empty($sub)) {
+			show_404();
+		}
+		$bab = $this->bab_model->get_by_uuid($sub->bab_uuid);
+		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+
+		$rules_ujian = $this->ujian_model->rules();
+		$this->form_validation->set_rules($rules_ujian);
+
+		if ($this->form_validation->run() == TRUE) {
+			$insert = $this->ujian_model->insert_sub($sub_materi_uuid);
+			if ($insert) {
+				$this->session->set_flashdata('success_msg', 'Ujian berhasil disimpan untuk sub bab');
+				
+				$action = $this->input->post('action');
+				if ($action == 'simpan') {
+					redirect('bab/index/'.$materi->uuid);
+				} elseif ($action == 'simpan_detail') {
+					redirect('ujian/tambah_soal/'.$insert);	
+				}
+			} else {
+				$this->session->set_flashdata('error_msg', 'Gagal menyimpan data ujian');
+				redirect('ujian/tambah_sub/'.$sub_materi_uuid);
+			}
+		}
+
+		$data = array(
+			'sub' => $sub,
+			'bab' => $bab,
+			'materi' => $materi,
+			'active_nav' => 'ujian'
+		);
+
+		$this->load->view('partials/header_tailwind', ['title' => 'Tambah Ujian Sub Bab']);
+		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+		$this->load->view('ujian/ujian-tambah-sub', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
+	}
+
 	public function tambah_soal($ujian_uuid)
 	{
 		// Superadmin, admin, atau guru yang bisa tambah soal

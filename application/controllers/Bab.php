@@ -3,61 +3,75 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Bab extends MY_Controller {
 
-    public function __construct()
-	{
-		parent::__construct();
-
-		$this->load->model('bab_model');
-		$this->load->model('materi_model');
-		$this->load->model('komentar_model');
-		$this->load->model('guru_model');
-		$this->load->model('siswa_model');
-	}
+ 	public function __construct()
+ 	{
+ 		parent::__construct();
+ 
+ 		$this->load->model('bab_model');
+ 		$this->load->model('materi_model');
+ 		$this->load->model('komentar_model');
+ 		$this->load->model('guru_model');
+ 		$this->load->model('siswa_model');
+ 		$this->load->model('sub_materi_model');
+ 		$this->load->model('ujian_model');
+ 	}
 
 	// Daftar bab untuk satu materi
-	public function index($materi_uuid)
-	{
-		$materi = $this->materi_model->get_by_uuid($materi_uuid);
-		if (empty($materi)) {
-			show_404();
-		}
-
-		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
-		$can_manage = is_admin_or_superadmin() || $materi->created_by == $this->session->userdata('uuid');
-
-		// Get comments for each bab
-		$komentar_data = [];
-		foreach ($bab as $b) {
-			$komentar = $this->komentar_model->get_by_bab_uuid($b->uuid);
-			// Find commenter names
-			foreach ($komentar as $kom) {
-				$guru = $this->guru_model->get_by_uuid($kom->created_by);
-				if ($guru) {
-					$kom->pengomen = $guru->nama;
-					$kom->role = 'Guru';
-				} else {
-					$siswa = $this->siswa_model->get_by_uuid($kom->created_by);
-					$kom->pengomen = $siswa ? $siswa->nama : 'Unknown';
-					$kom->role = 'Siswa';
-				}
-			}
-			$komentar_data[$b->uuid] = $komentar;
-		}
-
-		$data = array(
-			'materi' => $materi,
-			'bab' => $bab,
-			'komentar_data' => $komentar_data,
-			'is_admin' => is_admin_or_superadmin(),
-			'can_manage' => $can_manage,
-			'active_nav' => 'materi'
-		);
-
-		$this->load->view('partials/header_tailwind', ['title' => 'Bab']);
-		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-        $this->load->view('materi/bab', array_merge($data, ['from_controller' => true]));
-		$this->load->view('partials/footer_tailwind');
-	}
+ 	public function index($materi_uuid)
+ 	{
+ 		$materi = $this->materi_model->get_by_uuid($materi_uuid);
+ 		if (empty($materi)) {
+ 			show_404();
+ 		}
+ 
+ 		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
+ 		$can_manage = is_admin_or_superadmin() || $materi->created_by == $this->session->userdata('uuid');
+ 
+ 		// Get comments for each bab
+ 		$komentar_data = [];
+ 		$sub_materi_per_bab = [];
+ 		$ujian_per_sub = [];
+ 		foreach ($bab as $b) {
+ 			$komentar = $this->komentar_model->get_by_bab_uuid($b->uuid);
+ 			foreach ($komentar as $kom) {
+ 				$guru = $this->guru_model->get_by_uuid($kom->created_by);
+ 				if ($guru) {
+ 					$kom->pengomen = $guru->nama;
+ 					$kom->role = 'Guru';
+ 				} else {
+ 					$siswa = $this->siswa_model->get_by_uuid($kom->created_by);
+ 					$kom->pengomen = $siswa ? $siswa->nama : 'Unknown';
+ 					$kom->role = 'Siswa';
+ 				}
+ 			}
+ 			$komentar_data[$b->uuid] = $komentar;
+ 
+ 			// Load sub materi for each bab
+ 			$sub_materi = $this->sub_materi_model->get_by_bab_uuid($b->uuid);
+ 			$sub_materi_per_bab[$b->uuid] = $sub_materi;
+ 
+ 			// Load ujian for each sub materi
+ 			foreach ($sub_materi as $sm) {
+ 				$ujian_per_sub[$sm->uuid] = $this->ujian_model->get_by_sub_materi($sm->uuid);
+ 			}
+ 		}
+ 
+ 		$data = array(
+ 			'materi' => $materi,
+ 			'bab' => $bab,
+ 			'komentar_data' => $komentar_data,
+ 			'sub_materi_per_bab' => $sub_materi_per_bab,
+ 			'ujian_per_sub' => $ujian_per_sub,
+ 			'is_admin' => is_admin_or_superadmin(),
+ 			'can_manage' => $can_manage,
+ 			'active_nav' => 'materi'
+ 		);
+ 
+ 		$this->load->view('partials/header_tailwind', ['title' => 'Bab']);
+ 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
+         $this->load->view('materi/bab', array_merge($data, ['from_controller' => true]));
+ 		$this->load->view('partials/footer_tailwind');
+ 	}
 
 	public function tambah($materi_uuid)
 	{

@@ -262,6 +262,7 @@ CREATE TABLE `ujian` (
   `id` int(50) NOT NULL,
   `uuid` varchar(100) NOT NULL,
   `mapel_uuid` varchar(100) NOT NULL,
+  `sub_materi_uuid` varchar(100) DEFAULT NULL,
   `nama` varchar(100) NOT NULL,
   `tgl_mulai` datetime NOT NULL,
   `tgl_selesai` datetime NOT NULL,

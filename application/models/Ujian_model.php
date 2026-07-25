@@ -25,6 +25,19 @@ class ujian_model extends CI_Model {
 		];
 	}
 
+	public function get_by_sub_materi($sub_materi_uuid)
+	{
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
+		$this->db->from('ujian u');
+		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
+		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
+		$this->db->where('u.sub_materi_uuid', $sub_materi_uuid);
+		$this->db->where('u.deleted_at', NULL, FALSE);
+		$this->db->order_by('u.modified_at', 'DESC');
+		
+		return $this->db->get()->result();
+	}
+
 	public function get_all()
 	{
 		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
@@ -64,6 +77,33 @@ class ujian_model extends CI_Model {
 		}
 	}
 
+	public function insert_sub($sub_materi_uuid)
+	{
+		$uuid = Uuid::uuid4()->toString();
+		$mapel_uuid = $this->input->post('namaMapel');
+		$namaUjian = $this->input->post('namaUjian');
+		$tgl_mulai = $this->input->post('tgl_mulai');
+		$tgl_selesai = $this->input->post('tgl_selesai');
+		$user = $this->session->userdata('uuid');
+
+		$data = array(
+			'uuid' => $uuid,
+			'mapel_uuid' => $mapel_uuid,
+			'sub_materi_uuid' => $sub_materi_uuid,
+			'nama' => $namaUjian,
+			'tgl_mulai' => $tgl_mulai,
+			'tgl_selesai' => $tgl_selesai,
+			'created_by' => $user
+		);
+
+		$this->db->insert('ujian', $data);
+		if ($this->db->affected_rows() > 0) {
+			return $data['uuid'];
+		} else {
+			return false;
+		}
+	}
+
 	public function delete_by_uuid($uuid)
 	{
 		$data = array(
@@ -88,6 +128,13 @@ class ujian_model extends CI_Model {
 		return $this->db->get()->row();
 		
 		// return $data;
+	}
+
+	public function get_ujian_count_by_sub_materi($sub_materi_uuid)
+	{
+		$this->db->where('sub_materi_uuid', $sub_materi_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		return $this->db->count_all_results('ujian');
 	}
 
 	public function get_jawaban_siswa_by_ujian_siswa_uuid($ujian_uuid , $siswa_uuid)

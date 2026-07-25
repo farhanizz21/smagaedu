@@ -26,7 +26,7 @@
                 <?php if(in_array(user_role(), ['superadmin', 'admin'])) { ?>
                 <div class="nav-dropdown relative">
                     <span
-                        class="px-3 py-2 rounded-lg <?= in_array($active_nav, ['guru','siswa','mapel','kelas']) ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?> cursor-pointer flex items-center gap-1 select-none">Master
+                        class="px-3 py-2 rounded-lg <?= in_array($active_nav, ['guru','siswa','mapel','kelas','settings']) ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?> cursor-pointer flex items-center gap-1 select-none">Master
                         Data ▾</span>
                     <div
                         class="nav-dropdown-menu hidden absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-2 min-w-[160px]">
@@ -42,6 +42,13 @@
                         <a href="<?= base_url('mapel') ?>"
                             class="block px-4 py-2 text-sm <?= $active_nav == 'mapel' ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-600 hover:bg-gray-50' ?>">Data
                             Mata Pelajaran</a>
+                        <?php if(is_superadmin()): ?>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <a href="<?= base_url('admin/manage_roles') ?>"
+                            class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Kelola Role</a>
+                        <a href="<?= base_url('admin/manage_permissions') ?>"
+                            class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Kelola Permission</a>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php } ?>
