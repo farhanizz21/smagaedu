@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Kelompok extends CI_Controller {
+class Kelompok extends MY_Controller {
 
     public function __construct()
 	{
@@ -9,10 +9,6 @@ class Kelompok extends CI_Controller {
 
 		$this->load->model('kelompok_model');
 		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
 	}
 	
 	public function tambah()
@@ -77,4 +73,3 @@ class Kelompok extends CI_Controller {
 		redirect('proyek/pilih_siswa/'.$proyek_uuid);
 	}
 }
-    

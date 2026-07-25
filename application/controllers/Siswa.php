@@ -1,18 +1,14 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Siswa extends CI_Controller {
+class Siswa extends MY_Controller {
 
 	public function __construct()
 	{
 		parent::__construct();
-
 		$this->load->model('siswa_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
+		$this->load->model('kelas_model');
+		$this->require_admin_or_superadmin(); // Superadmin dan admin bisa akses
 	}
 
 	public function index()
@@ -45,9 +41,14 @@ class Siswa extends CI_Controller {
 			}
 		}
 
+		$data = array(
+			'daftar_kelas' => $this->kelas_model->get_all(),
+			'active_nav' => 'siswa'
+		);
+
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Siswa']);
 		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
-        $this->load->view('siswa/siswa-tambah');
+        $this->load->view('siswa/siswa-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -90,6 +91,7 @@ class Siswa extends CI_Controller {
 
 		$data = array(
 			'siswa' => $this->siswa_model->get_by_uuid($uuid),
+			'daftar_kelas' => $this->kelas_model->get_all(),
 		);
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Siswa']);

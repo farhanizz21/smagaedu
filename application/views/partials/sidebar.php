@@ -55,17 +55,18 @@
             <i class="fas fa-fw fa-book"> </i>
             <span>Panduan</span></a>
     </li> -->
-    <?php if($this->session->userdata('role') == 1){?>
+    <?php if(has_role(['superadmin', 'admin'])){?>
     <hr class="sidebar-divider">
     <!-- Nav Item - Pages Collapse Menu -->
-    <li class="nav-item <?= $active_nav == 'guru' | $active_nav == 'siswa' | $active_nav == 'mapel' ?'active':'';?>">
+    <li
+        class="nav-item <?= $active_nav == 'guru' | $active_nav == 'siswa' | $active_nav == 'mapel' | $active_nav == 'kelas' ?'active':'';?>">
         <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true"
             aria-controls="collapseTwo">
             <i class="fas fa-fw fa-database"></i>
             <span>Master Data</span>
         </a>
         <div id="collapseTwo"
-            class="collapse <?= $active_nav == 'guru' | $active_nav == 'siswa' | $active_nav == 'mapel' ?'show':'';?>"
+            class="collapse <?= $active_nav == 'guru' | $active_nav == 'siswa' | $active_nav == 'mapel' | $active_nav == 'kelas' ?'show':'';?>"
             aria-labelledby="headingTwo" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
                 <!-- <h6 class="collapse-header">Custom Components:</h6> -->
@@ -73,6 +74,8 @@
                     Guru</a>
                 <a class="collapse-item <?= $active_nav == 'siswa' ? 'active':'';?>" href="<?= base_url('siswa')?>">Data
                     Siswa</a>
+                <a class="collapse-item <?= $active_nav == 'kelas' ? 'active':'';?>" href="<?= base_url('kelas')?>">Data
+                    Kelas</a>
                 <a class="collapse-item <?= $active_nav == 'mapel' ? 'active':'';?>" href="<?= base_url('mapel')?>">Data
                     Mata Pelajaran</a>
             </div>
@@ -87,8 +90,23 @@
     </li>
     <li class="nav-item <?= $active_nav == 'materi' ? 'active':'';?>">
         <a class="nav-link" href="<?= base_url('materi')?>">
-            <i class="fas fa-fw fa-file-alt"> </i>
-            <span>Materi</span></a>
+            <i class="fas fa-fw fa-book"> </i>
+            <span>Mata Pelajaran</span></a>
+    </li>
+    <li class="nav-item <?= $active_nav == 'perangkat' ? 'active':'';?>">
+        <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsePerangkat"
+            aria-expanded="true" aria-controls="collapsePerangkat">
+            <i class="fas fa-fw fa-folder"></i>
+            <span>Perangkat</span>
+        </a>
+        <div id="collapsePerangkat" class="collapse <?= $active_nav == 'perangkat' ? 'show':'';?>"
+            aria-labelledby="headingPerangkat" data-parent="#accordionSidebar">
+            <div class="bg-white py-2 collapse-inner rounded">
+                <a class="collapse-item <?= $active_nav == 'perangkat' ? 'active':'';?>"
+                    href="<?= base_url('perangkat')?>">Mata
+                    Pelajaran</a>
+            </div>
+        </div>
     </li>
     <li class="nav-item <?= $active_nav == 'proyek' ? 'active':'';?>">
         <a class="nav-link" href="<?= base_url('proyek')?>">

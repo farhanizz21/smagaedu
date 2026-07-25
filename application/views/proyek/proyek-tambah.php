@@ -66,7 +66,7 @@
                 <input type="file" name="berkas" id="berkas"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
                     placeholder="Masukkan materi Materi" value="<?= set_value('berkas'); ?>">
-                <p class="text-xs text-gray-500 mt-1">File dapat berupa dokumen, foto, atau video. Maksimal 50 Mb</p>
+                <p class="text-xs text-gray-500 mt-1">File dapat berupa dokumen, foto. Maksimal 50 Mb</p>
                 <div class="text-red-500 text-xs mt-1"><?= form_error('berkas') ?></div>
             </div>
 

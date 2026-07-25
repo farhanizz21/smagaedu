@@ -1,18 +1,13 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Mapel extends CI_Controller {
+class Mapel extends MY_Controller {
 
     public function __construct()
 	{
 		parent::__construct();
-
 		$this->load->model('mapel_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
+		$this->require_admin_or_superadmin(); // Superadmin dan admin bisa akses
 	}
 
 	public function index()
@@ -22,7 +17,7 @@ class Mapel extends CI_Controller {
 			'active_nav' => 'mapel'
 		);
 		
-		$this->load->view('partials/header_tailwind', ['title' => 'Data Mata Pelajaran']);
+        $this->load->view('partials/header_tailwind', ['title' => 'Data Mata Pelajaran']);
 		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
         $this->load->view('mapel/mapel', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
@@ -47,7 +42,7 @@ class Mapel extends CI_Controller {
 			'active_nav' => 'mapel'
 		);
         
-		$this->load->view('partials/header_tailwind', ['title' => 'Tambah Mata Pelajaran']);
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Mata Pelajaran']);
 		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
         $this->load->view('mapel/mapel-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');

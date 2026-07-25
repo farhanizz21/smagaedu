@@ -61,15 +61,17 @@
                         class="px-3 py-2 rounded-lg bg-blue-50 text-blue-600 font-semibold">Home</a>
                     <a href="<?= base_url('panduan') ?>"
                         class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">Panduan</a>
-                    <a href="<?= base_url('materi') ?>"
-                        class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">Materi</a>
+                    <a href="<?= base_url('materi') ?>" class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">Mata
+                        Pelajaran</a>
                     <a href="<?= base_url('proyek') ?>"
                         class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">Proyek</a>
                     <a href="<?= base_url('ujian') ?>"
                         class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">Ujian</a>
+                    <a href="<?= base_url('perangkat') ?>"
+                        class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">Perangkat</a>
                     <a href="<?= base_url('kalender') ?>"
                         class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50">Kalender</a>
-                    <?php if($this->session->userdata('role') == 1) { ?>
+                    <?php if(in_array(user_role(), ['superadmin', 'admin'])) { ?>
                     <div class="nav-dropdown relative">
                         <a
                             class="px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50 cursor-pointer flex items-center gap-1">Master

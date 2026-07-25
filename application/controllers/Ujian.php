@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Ujian extends CI_Controller {
+class Ujian extends MY_Controller {
 
 	public function __construct()
 	{
@@ -13,11 +13,6 @@ class Ujian extends CI_Controller {
 		$this->load->model('ujian_model');
 		$this->load->model('jawaban_model');
 		$this->load->model('soal_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
 	}
 
 	public function index()
@@ -31,7 +26,7 @@ class Ujian extends CI_Controller {
 			$pengumpulan = false;
 		
 			$peserta[$u->uuid] = $this->siswa_model->get_by_ujian($u->uuid);
-		
+			
 			foreach ($peserta[$u->uuid] as $q) {
 				if ($q->ujian_uuid == $u->uuid && $q->siswa_uuid == $user_login) {
 					$pengerjaan = true;
@@ -46,14 +41,14 @@ class Ujian extends CI_Controller {
 			$u->pengerjaan = $pengerjaan;
 		}
 		
-		
+
 		$data = array(
 			'ujian' => $ujian,
 			'user' => $user_login,
 			'peserta' => $peserta,
 			'active_nav' => 'ujian'
 		);
-		
+
         $this->load->view('partials/header_tailwind', ['title' => 'Daftar Ujian']);
 		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
         $this->load->view('ujian/ujian', array_merge($data, ['from_controller' => true]));
@@ -62,6 +57,11 @@ class Ujian extends CI_Controller {
 
 	public function tambah()
 	{
+		// Superadmin, admin, atau guru yang bisa tambah ujian
+		if (!is_admin_or_superadmin() && !has_permission('manage_ujian')) {
+			show_error('Anda tidak memiliki akses untuk menambah ujian.', 403);
+		}
+		
 		$rules_ujian = $this->ujian_model->rules();
 		$rules_mapel = $this->mapel_model->rules();
 		$rules = array_merge($rules_ujian, $rules_mapel);
@@ -88,7 +88,7 @@ class Ujian extends CI_Controller {
 		$guru = $this->guru_model->get_by_uuid($guru_uuid);
 		$mapel_list = json_decode($guru->mapel_uuid);
 		$mapel = $this->mapel_model->get_many_mapel_by_uuid($mapel_list);
-		
+
 		$data = array(
 			'mapel' => $mapel,
 			'active_nav' => 'ujian'
@@ -102,6 +102,11 @@ class Ujian extends CI_Controller {
 
 	public function tambah_soal($ujian_uuid)
 	{
+		// Superadmin, admin, atau guru yang bisa tambah soal
+		if (!is_admin_or_superadmin() && !has_permission('manage_ujian')) {
+			show_error('Anda tidak memiliki akses untuk menambah soal ujian.', 403);
+		}
+		
 		$rules = [
 			[
 				'field' => 'soal',
@@ -135,6 +140,11 @@ class Ujian extends CI_Controller {
 
 	public function tambah_siswa($ujian_uuid)
 	{
+		// Superadmin, admin, atau guru yang bisa kelola peserta
+		if (!is_admin_or_superadmin() && !has_permission('manage_ujian')) {
+			show_error('Anda tidak memiliki akses untuk mengelola peserta ujian.', 403);
+		}
+		
 		$rules = [
 			[
 				'field' => 'siswa',

@@ -1,19 +1,14 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Guru extends CI_Controller {
+class Guru extends MY_Controller {
 
 	public function __construct()
 	{
 		parent::__construct();
-
 		$this->load->model('guru_model');
 		$this->load->model('mapel_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
+		$this->require_admin_or_superadmin(); // Superadmin dan admin bisa akses
 	}
 
 	public function index()
@@ -117,7 +112,7 @@ class Guru extends CI_Controller {
 			'mapel' => $this->mapel_model->get_all(),
 			'active_nav' => 'guru'
 		);
-		// 		echo "<pre>";
+		//		echo "<pre>";
 		// print_r($mapel_list);
 		// echo "</pre>";
 
@@ -133,7 +128,8 @@ class Guru extends CI_Controller {
 		$this->db->where('username', $username);
 		$this->db->where('deleted_at', NULL, FALSE);
 		$this->db->where('uuid !=', $uuid);
-		$query = $this->db->get('guru');
+		$this->db->where('role_id', 3);
+		$query = $this->db->get('users');
 
 		if ($query->num_rows() > 0) {
 			$this->form_validation->set_message('username_check', 'Username sudah digunakan oleh pengguna lain.');

@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Panduan extends CI_Controller {
+class Panduan extends MY_Controller {
 
 	public function __construct()
 	{
@@ -9,10 +9,6 @@ class Panduan extends CI_Controller {
 
 		$this->load->model('panduan_model');
 		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
 	}
 
 	public function index()
@@ -24,9 +20,6 @@ class Panduan extends CI_Controller {
 			'active_nav' => 'panduan'
 		);
 		
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
         $this->load->view('partials/header_tailwind', ['title' => 'Panduan']);
 		$this->load->view('partials/navbar', $data);
@@ -59,7 +52,6 @@ class Panduan extends CI_Controller {
 				$insert = $this->panduan_model->insert($berkas);
 				if ($insert) {
 					$this->session->set_flashdata('success_msg', 'Data panduan berhasil disimpan');
-					// redirect('panduan');
 				} else {
 					$this->session->set_flashdata('error_msg', 'Data panduan gagal disimpan');
 				}
@@ -70,10 +62,6 @@ class Panduan extends CI_Controller {
 		$data = array(
 			'active_nav' => 'panduan'
 		);
-		
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Panduan']);
 		$this->load->view('partials/navbar', $data);
@@ -111,9 +99,6 @@ class Panduan extends CI_Controller {
 			'panduan' => $this->panduan_model->get_by_uuid($uuid),
 			'active_nav' => 'panduan'
 		);
-		// 		echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Panduan']);
 		$this->load->view('partials/navbar', $data);
@@ -123,7 +108,6 @@ class Panduan extends CI_Controller {
 
 	public function hapus($uuid)
 	{
-		$this->load->model('panduan_model');
 		$result = $this->panduan_model->delete_by_uuid($uuid);
 		if ($result) {
 			$this->session->set_flashdata('success_msg', 'Data Panduan berhasil dihapus');
@@ -132,5 +116,5 @@ class Panduan extends CI_Controller {
 		}
 		redirect($_SERVER['HTTP_REFERER']);
 	}
-    
+     
 }

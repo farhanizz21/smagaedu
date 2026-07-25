@@ -10,7 +10,7 @@
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Daftar Proyek</h1>
             <p class="text-gray-500 mt-1 text-sm">Kelola proyek pembelajaran di SMARTEDU</p>
         </div>
-        <?php if($this->session->userdata('role') == 2 ){?>
+        <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
         <a href="<?=base_url('proyek/tambah')?>"
             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -40,7 +40,7 @@
         <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <?php if(!empty($proyek)) : ?>
             <?php foreach($proyek as $val) : ?>
-            <?php if($this->session->userdata('role') == 1 || $this->session->userdata('role') == 2 || $val->pengerjaan == 1 ){?>
+            <?php if(has_role(['superadmin', 'admin', 'guru']) || $val->pengerjaan == 1 ){?>
             <div
                 class="bg-white rounded-2xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all flex flex-col">
                 <div class="p-5 flex flex-col flex-1">
@@ -76,7 +76,7 @@
                             <i data-lucide="eye" class="w-4 h-4"></i>
                             Detail
                         </a>
-                        <?php if($this->session->userdata('role') == 1 || $this->session->userdata('uuid') == $val->created_by ){?>
+                        <?php if(has_role(['superadmin', 'admin']) || $this->session->userdata('uuid') == $val->created_by ){?>
                         <a href="<?= base_url('proyek/hapus/'. $val->uuid) ?>"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
                             onclick="return confirm('Apakah Anda yakin ingin menghapus proyek <?= $val->judul; ?>?')">

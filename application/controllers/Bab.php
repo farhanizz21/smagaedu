@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Bab extends CI_Controller {
+class Bab extends MY_Controller {
 
     public function __construct()
 	{
@@ -9,11 +9,9 @@ class Bab extends CI_Controller {
 
 		$this->load->model('bab_model');
 		$this->load->model('materi_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
+		$this->load->model('komentar_model');
+		$this->load->model('guru_model');
+		$this->load->model('siswa_model');
 	}
 
 	// Daftar bab untuk satu materi
@@ -25,13 +23,32 @@ class Bab extends CI_Controller {
 		}
 
 		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
-		$is_admin = $this->session->userdata('role') == 1;
-		$can_manage = $is_admin || $materi->created_by == $this->session->userdata('uuid');
+		$can_manage = is_admin_or_superadmin() || $materi->created_by == $this->session->userdata('uuid');
+
+		// Get comments for each bab
+		$komentar_data = [];
+		foreach ($bab as $b) {
+			$komentar = $this->komentar_model->get_by_bab_uuid($b->uuid);
+			// Find commenter names
+			foreach ($komentar as $kom) {
+				$guru = $this->guru_model->get_by_uuid($kom->created_by);
+				if ($guru) {
+					$kom->pengomen = $guru->nama;
+					$kom->role = 'Guru';
+				} else {
+					$siswa = $this->siswa_model->get_by_uuid($kom->created_by);
+					$kom->pengomen = $siswa ? $siswa->nama : 'Unknown';
+					$kom->role = 'Siswa';
+				}
+			}
+			$komentar_data[$b->uuid] = $komentar;
+		}
 
 		$data = array(
 			'materi' => $materi,
 			'bab' => $bab,
-			'is_admin' => $is_admin,
+			'komentar_data' => $komentar_data,
+			'is_admin' => is_admin_or_superadmin(),
 			'can_manage' => $can_manage,
 			'active_nav' => 'materi'
 		);
@@ -49,8 +66,8 @@ class Bab extends CI_Controller {
 			show_404();
 		}
 
-		$is_admin = $this->session->userdata('role') == 1;
-		if (!$is_admin && $materi->created_by != $this->session->userdata('uuid')) {
+		// Superadmin, admin, atau pengampu mata pelajaran yang boleh tambah bab
+		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
 			show_error('Anda tidak memiliki akses untuk menambah bab ini.', 403);
 		}
 
@@ -108,8 +125,8 @@ class Bab extends CI_Controller {
 		}
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
 
-		$is_admin = $this->session->userdata('role') == 1;
-		if (!$is_admin && $materi->created_by != $this->session->userdata('uuid')) {
+		// Superadmin, admin, atau pengampu mata pelajaran yang boleh edit
+		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
 			show_error('Anda tidak memiliki akses untuk mengubah bab ini.', 403);
 		}
 
@@ -160,6 +177,33 @@ class Bab extends CI_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
 
+	public function komentar_tambah($bab_uuid)
+	{
+        $rules = $this->komentar_model->rules();
+		$this->form_validation->set_rules($rules);
+
+		if ($this->form_validation->run() == TRUE) {
+			$insert = $this->komentar_model->insert_bab_komentar($bab_uuid);
+			if ($insert) {
+				$this->session->set_flashdata('success_msg', 'Komentar berhasil ditambahkan');
+			} else {
+				$this->session->set_flashdata('error_msg', 'Komentar gagal ditambahkan');
+			}
+		}
+		redirect($_SERVER['HTTP_REFERER']);
+	}
+
+	public function komentar_hapus($uuid)
+	{
+		$result = $this->komentar_model->delete_bab_komentar_by_uuid($uuid);
+		if ($result) {
+			$this->session->set_flashdata('success_msg', 'Komentar berhasil dihapus');
+		} else {
+			$this->session->set_flashdata('error_msg', 'Gagal menghapus komentar');
+		}
+		redirect($_SERVER['HTTP_REFERER']);
+	}
+
 	public function hapus($uuid)
 	{
 		$bab = $this->bab_model->get_by_uuid($uuid);
@@ -168,8 +212,8 @@ class Bab extends CI_Controller {
 		}
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
 
-		$is_admin = $this->session->userdata('role') == 1;
-		if (!$is_admin && $materi->created_by != $this->session->userdata('uuid')) {
+		// Superadmin, admin, atau pengampu mata pelajaran yang boleh hapus
+		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
 			show_error('Anda tidak memiliki akses untuk menghapus bab ini.', 403);
 		}
 

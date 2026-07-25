@@ -17,7 +17,7 @@
                     class="text-blue-600 font-semibold"><?= $proyek->mapel ?></span></p>
         </div>
         <div class="flex items-center gap-2">
-            <?php if($this->session->userdata('role') == 1 || $this->session->userdata('uuid') == $proyek->created_by ){?>
+            <?php if(has_role(['superadmin', 'admin']) || $this->session->userdata('uuid') == $proyek->created_by ){?>
             <a href="<?= base_url('proyek/pilih_siswa/'.$proyek->uuid)?>"
                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-purple-600 shadow-lg shadow-purple-200 hover:bg-purple-700 hover:shadow-xl transition-all text-sm">
                 <i data-lucide="users" class="w-4 h-4"></i>
@@ -115,7 +115,7 @@
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Upload File Jawaban</label>
                     <input type="file" name="jawaban_file"
                         class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
-                    <p class="text-xs text-gray-500 mt-1">Format: dokumen, foto, atau video. Maksimal 50 Mb</p>
+                    <p class="text-xs text-gray-500 mt-1">Format: dokumen, foto Maksimal 50 Mb</p>
                 </div>
                 <?php if($pengumpulan): ?>
                 <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800">
@@ -163,7 +163,7 @@
                         <?php endif; ?>
                     </div>
                     <div class="flex items-center gap-2">
-                        <?php if($this->session->userdata('role') == 1 || $this->session->userdata('uuid') == $proyek->created_by): ?>
+                        <?php if(has_role(['superadmin', 'admin']) || $this->session->userdata('uuid') == $proyek->created_by): ?>
                         <button
                             class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors btn-beri-nilai"
                             data-uuid="<?= $j->uuid ?>">

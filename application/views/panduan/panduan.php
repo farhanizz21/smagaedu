@@ -10,7 +10,7 @@
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">List Panduan</h1>
             <p class="text-gray-500 mt-1 text-sm">Kelola dokumen panduan di SMARTEDU</p>
         </div>
-        <?php if($this->session->userdata('role') == 1 || $this->session->userdata('role') == 2 ){?>
+        <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
         <a href="<?= base_url('panduan/tambah')?>"
             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -50,7 +50,7 @@
                             Berkas</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Tujuan</th>
-                        <?php if($this->session->userdata('role') == 1 || $this->session->userdata('role') == 2 ){?>
+                        <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
                         <th
                             class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-28">
                             Aksi</th>
@@ -94,7 +94,7 @@
                                 <?php endif; ?>
                             </div>
                         </td>
-                        <?php if($this->session->userdata('role') == 1 || $this->session->userdata('role') == 2 ){?>
+                        <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-2">
                                 <a href="<?=base_url('panduan/edit/'.$val->uuid)?>"

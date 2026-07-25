@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Materi extends CI_Controller {
+class Materi extends MY_Controller {
 
     public function __construct()
 	{
@@ -10,11 +10,6 @@ class Materi extends CI_Controller {
 		$this->load->model('materi_model');
 		$this->load->model('mapel_model');
 		$this->load->model('guru_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
 	}
 
 	public function index()
@@ -32,7 +27,7 @@ class Materi extends CI_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
     
-	public function detail($mapel_uuid)
+    public function detail($mapel_uuid)
 	{
 		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid);
 		$mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
@@ -54,7 +49,7 @@ class Materi extends CI_Controller {
 			'materi' => $materi,
 			'mapel' => $mapel,
 			'pengampu' => $pengampu,
-			'is_admin' => $this->session->userdata('role') == 1,
+			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
 
@@ -66,6 +61,9 @@ class Materi extends CI_Controller {
 
     public function tambah($mapel_uuid)
 	{
+		// Superadmin and admin have full access, guru needs permission
+		$this->require_permission('manage_materi');
+		
 		$rules = $this->materi_model->rules();
 		$this->form_validation->set_rules($rules);
 		
@@ -106,7 +104,7 @@ class Materi extends CI_Controller {
 		$data = array(
 			'guru' => $guru,
 			'mapel_uuid' => $mapel_uuid,
-			'is_admin' => $this->session->userdata('role') == 1,
+			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
 
@@ -122,9 +120,9 @@ class Materi extends CI_Controller {
 			show_404();
 		}
 
-		$is_admin = $this->session->userdata('role') == 1;
-		// Admin bebas edit; guru hanya untuk materi miliknya
-		if (!$is_admin && $materi->created_by != $this->session->userdata('uuid')) {
+		$is_admin = is_admin_or_superadmin();
+		// Admin bebas edit; guru hanya untuk materi miliknya; superadmin bisa semua
+		if (!$is_admin && !is_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
 			show_error('Anda tidak memiliki akses untuk mengubah materi ini.', 403);
 		}
 
@@ -170,7 +168,7 @@ class Materi extends CI_Controller {
 		$data = array(
 			'materi' => $materi,
 			'mapel_uuid' => $materi->mapel_uuid,
-			'is_admin' => $is_admin,
+			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
 
@@ -185,8 +183,8 @@ class Materi extends CI_Controller {
 		if (empty($materi)) {
 			show_404();
 		}
-		// Hanya admin atau pembuat materi yang boleh hapus
-		if ($this->session->userdata('role') != 1 && $materi->created_by != $this->session->userdata('uuid')) {
+		// Superadmin, admin, atau pembuat materi yang boleh hapus
+		if (!is_admin_or_superadmin() && !is_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
 			show_error('Anda tidak memiliki akses untuk menghapus materi ini.', 403);
 		}
 

@@ -10,7 +10,7 @@
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Daftar Ujian</h1>
             <p class="text-gray-500 mt-1 text-sm">Kelola dan ikuti ujian di SMARTEDU</p>
         </div>
-        <?php if($this->session->userdata('role') == 2 ){?>
+        <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
         <a href="<?= base_url('ujian/tambah')?>"
             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
             <i data-lucide="plus" class="w-4 h-4"></i>
@@ -71,7 +71,7 @@
                         <td class="px-6 py-4 text-gray-600"><?= $val->guru_nama; ?></td>
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-1.5 flex-wrap">
-                                <?php if($this->session->userdata('role') != 2 ){?>
+                                <?php if(!has_role(['guru'])){?>
                                 <?php if($val->pengerjaan == 1 && $val->pengumpulan == 1) { ?>
                                 <span class="text-xs text-gray-500 text-center">Sudah dikerjakan</span>
                                 <?php } else if($val->pengerjaan == 1 && $val->pengumpulan == NULL) { ?>
@@ -84,7 +84,7 @@
                                 <?php } ?>
                                 <?php } ?>
 
-                                <?php if($this->session->userdata('uuid') == $val->created_by || $this->session->userdata('role') == 1 ){?>
+                                <?php if(has_role(['superadmin', 'admin']) || $this->session->userdata('uuid') == $val->created_by ){?>
 
                                 <a href="<?=base_url('ujian/tambah_siswa/'.$val->uuid)?>"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors"
@@ -103,7 +103,7 @@
                                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                                 </a>
 
-                                <?php } else if ($this->session->userdata('role') != 3) { ?>
+                                <?php } else if (!has_role(['siswa'])) { ?>
                                 <span class="text-xs text-gray-400 text-center">Tidak ada akses</span>
                                 <?php } ?>
                             </div>

@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Proyek extends CI_Controller {
+class Proyek extends MY_Controller {
 
     public function __construct()
 	{
@@ -13,11 +13,6 @@ class Proyek extends CI_Controller {
 		$this->load->model('kelompok_model');
 		$this->load->model('jawaban_model');
 		$this->load->model('siswa_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
 	}
 
 	public function index()
@@ -42,13 +37,8 @@ class Proyek extends CI_Controller {
 		
 		$data = array(
 			'proyek' => $proyek,
-			// 'guru' =>$guru,
 			'active_nav' => 'proyek'
 		);
-		
-		// echo"<pre>";
-		// print_r($data);
-		// echo"</pre>";
 		
         $this->load->view('partials/header_tailwind', ['title' => 'Daftar Proyek']);
 		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
@@ -58,17 +48,20 @@ class Proyek extends CI_Controller {
     
     public function tambah()
 	{
+		// Superadmin, admin, atau guru yang bisa tambah proyek
+		$this->require_permission('manage_proyek');
+		
 		$rules = $this->proyek_model->rules();
 		$this->form_validation->set_rules($rules);
 		if ($this->form_validation->run() == TRUE) {
 			$this->load->library('upload');
 
-			$config = array(
-				'upload_path' => "./uploads/proyek/",
-				'allowed_types' => "jpg|png|jpeg|pdf|docx|pptx|mp4|avi|mov|mkv",
-				'max_size'      => 50000, 
-				'encrypt_name'  => TRUE 
-			);
+		$config = array(
+			'upload_path' => "./uploads/proyek/",
+			'allowed_types' => "jpg|png|jpeg|pdf|docx|pptx",
+			'max_size'      => 50000, 
+			'encrypt_name'  => TRUE 
+		);
 			
 			$this->upload->initialize($config);
 			if (!$this->upload->do_upload('berkas')) {
@@ -104,10 +97,6 @@ class Proyek extends CI_Controller {
 			'active_nav' => 'proyek'
 		);
 
-		// echo"<pre>";
-		// print_r($data);
-		// echo"</pre>";
-        
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Proyek']);
 		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
         $this->load->view('proyek/proyek-tambah', array_merge($data, ['from_controller' => true]));
@@ -185,10 +174,6 @@ class Proyek extends CI_Controller {
 			'active_nav' => 'proyek'
 		);
 
-		// echo "<pre>";
-		// print_r($data['jawaban']);
-		// echo "</pre>";
-		
         $this->load->view('partials/header_tailwind', ['title' => 'Detail Proyek']);
 		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
         $this->load->view('proyek/proyek-detail', array_merge($data, ['from_controller' => true]));
@@ -197,6 +182,11 @@ class Proyek extends CI_Controller {
 
 	public function pilih_siswa($proyek_uuid)
 	{
+		// Superadmin, admin, atau guru yang bisa pilih siswa
+		if (!is_admin_or_superadmin() && !has_permission('manage_proyek')) {
+			show_error('Anda tidak memiliki akses untuk mengelola peserta proyek.', 403);
+		}
+		
 		$proyek = $this->proyek_model->get_by_uuid($proyek_uuid);
 		$kelompok = $this->kelompok_model->get_by_proyek_uuid($proyek_uuid);
 		$siswa = $this->siswa_model->get_all();
@@ -206,10 +196,7 @@ class Proyek extends CI_Controller {
 			'siswa' => $siswa,
 			'active_nav' => 'proyek'
 		);
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
-		
+
         $this->load->view('partials/header_tailwind', ['title' => 'Pilih Siswa']);
 		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
         $this->load->view('proyek/proyek-pilih-siswa', array_merge($data, ['from_controller' => true]));
@@ -225,12 +212,10 @@ class Proyek extends CI_Controller {
 		if (!empty($_FILES['jawaban_file']['name'])) {
 			// Konfigurasi upload
 			$config['upload_path']   = './uploads/jawaban/'; 
-			$config['allowed_types'] = 'jpg|png|jpeg|pdf|docx|pptx|mp4|avi|mov|mkv';  
+			$config['allowed_types'] = 'jpg|png|jpeg|pdf|docx|pptx';  
 			$config['max_size']      = 50000;
 			$config['file_name']     = uniqid(); 
 		
-		$this->upload->initialize($config);
-
 			$this->upload->initialize($config);
 
 			if ($this->upload->do_upload('jawaban_file')) {
@@ -301,6 +286,5 @@ class Proyek extends CI_Controller {
 		}
 		redirect('proyek/detail/'.$proyek_uuid);
 	}
-
+     
 }
-    

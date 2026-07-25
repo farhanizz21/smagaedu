@@ -70,8 +70,10 @@
                     <select name="jenisKelamin"
                         class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
                         <option disabled selected>Pilih Jenis Kelamin</option>
-                        <option value="1" <?= $guru->jenis_kelamin==1?'selected':'';?>>Laki-Laki</option>
-                        <option value="2" <?= $guru->jenis_kelamin==2?'selected':'';?>>Perempuan</option>
+                        <option value="1" <?= ($guru->jenis_kelamin=='L'||$guru->jenis_kelamin==1)?'selected':'';?>>
+                            Laki-Laki</option>
+                        <option value="2" <?= ($guru->jenis_kelamin=='P'||$guru->jenis_kelamin==2)?'selected':'';?>>
+                            Perempuan</option>
                     </select>
                     <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('jenisKelamin')) ? '' : 'hidden' ?>">
                         <?= form_error('jenisKelamin') ?>

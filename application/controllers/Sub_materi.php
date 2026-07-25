@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Sub_materi extends CI_Controller {
+class Sub_materi extends MY_Controller {
 
     public function __construct()
 	{
@@ -9,11 +9,6 @@ class Sub_materi extends CI_Controller {
 
 		$this->load->model('sub_materi_model');
 		$this->load->model('materi_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
 	}
 
 	// Tampilkan daftar sub bab untuk satu bab
@@ -27,14 +22,13 @@ class Sub_materi extends CI_Controller {
 
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
 		$sub = $this->sub_materi_model->get_by_bab_uuid($bab_uuid);
-		$is_admin = $this->session->userdata('role') == 1;
-		$can_manage = $is_admin || $materi->created_by == $this->session->userdata('uuid');
+		$can_manage = is_admin_or_superadmin() || $materi->created_by == $this->session->userdata('uuid');
 
 		$data = array(
 			'materi' => $materi,
 			'bab' => $bab,
 			'sub' => $sub,
-			'is_admin' => $is_admin,
+			'is_admin' => is_admin_or_superadmin(),
 			'can_manage' => $can_manage,
 			'active_nav' => 'materi'
 		);
@@ -54,8 +48,8 @@ class Sub_materi extends CI_Controller {
 		}
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
 
-		$is_admin = $this->session->userdata('role') == 1;
-		if (!$is_admin && $materi->created_by != $this->session->userdata('uuid')) {
+		// Superadmin, admin, atau pengampu mata pelajaran yang boleh tambah
+		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
 			show_error('Anda tidak memiliki akses untuk menambah sub bab ini.', 403);
 		}
 
@@ -71,7 +65,7 @@ class Sub_materi extends CI_Controller {
 
 			$config = array(
 				'upload_path'   => "./uploads/sub_materi/",
-				'allowed_types' => "jpg|png|jpeg|pdf|docx|pptx|mp4|avi|mov|mkv",
+				'allowed_types' => "jpg|png|jpeg|pdf|docx|pptx",
 				'max_size'      => 50000,
 				'encrypt_name'  => TRUE
 			);
@@ -119,8 +113,8 @@ class Sub_materi extends CI_Controller {
 		$bab = $this->bab_model->get_by_uuid($sub->bab_uuid);
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
 
-		$is_admin = $this->session->userdata('role') == 1;
-		if (!$is_admin && $materi->created_by != $this->session->userdata('uuid')) {
+		// Superadmin, admin, atau pengampu mata pelajaran yang boleh edit
+		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
 			show_error('Anda tidak memiliki akses untuk mengubah sub bab ini.', 403);
 		}
 
@@ -133,7 +127,7 @@ class Sub_materi extends CI_Controller {
 			$berkas = $sub->berkas;
 			$config = array(
 				'upload_path'   => "./uploads/sub_materi/",
-				'allowed_types' => "jpg|png|jpeg|pdf|docx|pptx|mp4|avi|mov|mkv",
+				'allowed_types' => "jpg|png|jpeg|pdf|docx|pptx",
 				'max_size'      => 50000,
 				'encrypt_name'  => TRUE
 			);
@@ -180,8 +174,8 @@ class Sub_materi extends CI_Controller {
 		$bab = $this->bab_model->get_by_uuid($sub->bab_uuid);
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
 
-		$is_admin = $this->session->userdata('role') == 1;
-		if (!$is_admin && $materi->created_by != $this->session->userdata('uuid')) {
+		// Superadmin, admin, atau pengampu mata pelajaran yang boleh hapus
+		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
 			show_error('Anda tidak memiliki akses untuk menghapus sub bab ini.', 403);
 		}
 

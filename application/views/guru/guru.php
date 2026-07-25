@@ -111,4 +111,3 @@
 <?php if(!isset($from_controller)): ?>
 <?php $this->load->view('partials/footer_tailwind'); ?>
 <?php endif; ?>
-</write_to_file>

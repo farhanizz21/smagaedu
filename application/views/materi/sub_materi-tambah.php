@@ -43,7 +43,7 @@
                         class="text-red-500">*</span></label>
                 <input type="file" name="berkas" id="berkas"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
-                <small class="text-gray-400 text-xs">format file : PDF, DOCX, PPTX, Video, Gambar. Maximal 50Mb</small>
+                <small class="text-gray-400 text-xs">format file : PDF, DOCX, PPTX, Gambar. Maximal 50Mb</small>
                 <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('berkas')) ? '' : 'hidden' ?>">
                     <?= form_error('berkas') ?>
                 </div>
