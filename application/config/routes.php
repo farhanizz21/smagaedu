@@ -55,6 +55,8 @@ $route['translate_uri_dashes'] = FALSE;
 
 $route['login'] = 'auth/login';
 $route['logout'] = 'auth/logout';
+$route['ganti_password'] = 'auth/ganti_password';
+$route['reset_password/(:any)'] = 'auth/reset_password/$1';
 
 // Exam routes
 $route['ujian/tambah_sub/(:any)'] = 'ujian/tambah_sub/$1';

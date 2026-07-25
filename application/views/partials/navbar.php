@@ -66,7 +66,10 @@
                 <span class="text-sm font-medium text-gray-700 hidden sm:block cursor-pointer select-none">Hai,
                     <?= $this->session->userdata('nama'); ?> (<?= user_role(); ?>)</span>
                 <div
-                    class="nav-dropdown-menu hidden absolute top-full right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-2 min-w-[140px]">
+                    class="nav-dropdown-menu hidden absolute top-full right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-2 min-w-[160px]">
+                    <a href="<?= base_url('ganti_password') ?>"
+                        class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Ganti Password</a>
+                    <div class="border-t border-gray-100 my-1"></div>
                     <a href="<?= base_url('logout') ?>"
                         class="block px-4 py-2 text-sm text-red-500 hover:bg-gray-50">Logout</a>
                 </div>

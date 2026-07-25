@@ -191,4 +191,69 @@ class auth_model extends CI_Model
 		$this->db->where('uuid', $uuid);
 		return $this->db->update($this->_table_users, $data);
 	}
+
+	/**
+	 * Change password for current user
+	 */
+	public function change_password($uuid, $new_password)
+	{
+		$this->db->where('uuid', $uuid);
+		return $this->db->update($this->_table_users, [
+			'password' => password_hash($new_password, PASSWORD_DEFAULT),
+			'modified_at' => date("Y-m-d H:i:s")
+		]);
+	}
+
+	/**
+	 * Reset password for specific user (admin/master data only)
+	 */
+	public function reset_password($uuid, $new_password)
+	{
+		$this->db->where('uuid', $uuid);
+		return $this->db->update($this->_table_users, [
+			'password' => password_hash($new_password, PASSWORD_DEFAULT),
+			'modified_at' => date("Y-m-d H:i:s")
+		]);
+	}
+
+	/**
+	 * Verify current password
+	 */
+	public function verify_password($uuid, $password)
+	{
+		$this->db->select('password');
+		$this->db->where('uuid', $uuid);
+		$user = $this->db->get($this->_table_users)->row();
+
+		if ($user && password_verify($password, $user->password)) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Get user by UUID
+	 */
+	public function get_user_by_uuid($uuid)
+	{
+		$this->db->select('users.*, roles.nama as role_nama');
+		$this->db->from($this->_table_users);
+		$this->db->join($this->_table_roles, 'users.role_id = roles.id');
+		$this->db->where('users.uuid', $uuid);
+		$user = $this->db->get()->row();
+
+		if ($user) {
+			// Tambahkan data profile jika ada
+			$this->db->where('user_id', $user->id);
+			$profile = $this->db->get($this->_table_user_profiles)->row();
+			if ($profile) {
+				$user->nip = $profile->nip;
+				$user->nis = $profile->nis;
+				$user->tgl_lahir = $profile->tgl_lahir;
+				$user->jenis_kelamin = $profile->jenis_kelamin;
+			}
+		}
+
+		return $user;
+	}
 }

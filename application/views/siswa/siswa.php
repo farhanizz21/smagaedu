@@ -86,6 +86,12 @@
                                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                                     Edit
                                 </a>
+                                <a href="<?=base_url('auth/reset_password/'.$val->uuid)?>"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors"
+                                    onclick="return confirm('Reset password untuk <?= $val->nama; ?>? Password baru akan menjadi: edu12345')">
+                                    <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
+                                    Reset Password
+                                </a>
                                 <a href="<?=base_url('siswa/hapus/'.$val->uuid)?>"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
                                     onclick="return confirm('Apakah Anda yakin ingin menghapus data <?= $val->nama; ?>?')">
