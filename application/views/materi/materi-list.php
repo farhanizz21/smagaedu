@@ -14,7 +14,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-3 mb-2">
-                        <a href="<?= base_url('materi') ?>"
+                        <a href="<?= base_url('mata_pelajaran') ?>"
                             class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
                             <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                         </a>
@@ -29,7 +29,7 @@
                     </p>
                 </div>
                 <?php if($pengampu == true || $is_admin): ?>
-                <a href="<?= base_url('materi/tambah/' . $mapel->uuid) ?>"
+                <a href="<?= base_url('bab/tambah/' . $mapel->uuid) ?>"
                     class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-emerald-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     Tambah Bab
@@ -81,7 +81,7 @@
             <!-- Colorful top accent bar -->
             <div class="h-2 w-full bg-gradient-to-r <?= $palette['from'] ?> <?= $palette['to'] ?>"></div>
 
-            <a href="<?= base_url('bab/index/' . $val->uuid) ?>" class="block group flex-1">
+            <a href="<?= base_url('sub_bab/index/' . $val->uuid) ?>" class="block group flex-1">
                 <?php if (!empty($val->thumbnail)): ?>
                 <div class="relative overflow-hidden">
                     <img src="<?= base_url('uploads/thumbnail/' . $val->thumbnail) ?>"
@@ -106,7 +106,7 @@
 
             <!-- Action Buttons -->
             <div class="px-5 pb-4 flex items-center gap-2">
-                <a href="<?= base_url('bab/index/' . $val->uuid) ?>"
+                <a href="<?= base_url('sub_bab/index/' . $val->uuid) ?>"
                     class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r <?= $palette['btn'] ?> shadow-md hover:shadow-lg hover:scale-[1.02] transition-all">
                     <i data-lucide="layers" class="w-3.5 h-3.5"></i> Sub Bab
                 </a>
@@ -115,11 +115,11 @@
                     $can_manage = $is_admin || $val->created_by == $current_uuid;
                 ?>
                 <?php if($can_manage): ?>
-                <a href="<?= base_url('materi/edit/' . $val->uuid) ?>"
+                <a href="<?= base_url('bab/edit/' . $val->uuid) ?>"
                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors">
                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                 </a>
-                <a href="<?= base_url('materi/hapus/' . $val->uuid) ?>"
+                <a href="<?= base_url('mata_pelajaran/hapus/' . $val->uuid) ?>"
                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
                     onclick="return confirm('Apakah Anda yakin ingin menghapus bab <?= $val->judul; ?>?')">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>

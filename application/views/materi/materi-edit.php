@@ -8,13 +8,13 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <div class="flex items-center gap-3 mb-1">
-                <a href="<?= base_url('materi/detail/' . $materi->mapel_uuid) ?>"
+                <a href="<?= base_url('mata_pelajaran/detail/' . $materi->mapel_uuid) ?>"
                     class="text-gray-400 hover:text-gray-600 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
-                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Edit Data Materi</h1>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Edit Data Bab</h1>
             </div>
-            <p class="text-gray-500 text-sm ml-8">Perbarui informasi materi</p>
+            <p class="text-gray-500 text-sm ml-8">Perbarui informasi Bab</p>
         </div>
     </div>
 
@@ -27,7 +27,7 @@
 
     <!-- Form Card -->
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
-        <?= form_open_multipart('materi/edit/' . $materi->uuid); ?>
+        <?= form_open_multipart('bab/edit/' . $materi->uuid); ?>
         <div class="space-y-6">
             <!-- Judul -->
             <div>
@@ -67,7 +67,7 @@
                 <i data-lucide="save" class="w-4 h-4"></i>
                 Simpan
             </button>
-            <a href="<?= base_url('materi/detail/' . $materi->mapel_uuid) ?>"
+            <a href="<?= base_url('mata_pelajaran/detail/' . $materi->mapel_uuid) ?>"
                 class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
                 <i data-lucide="x" class="w-4 h-4"></i>
                 Batal

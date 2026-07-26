@@ -14,6 +14,7 @@ class Bab extends MY_Controller {
  		$this->load->model('siswa_model');
  		$this->load->model('sub_materi_model');
  		$this->load->model('ujian_model');
+ 		$this->load->model('mapel_model');
  	}
 
 	// Daftar bab untuk satu materi
@@ -24,6 +25,7 @@ class Bab extends MY_Controller {
  			show_404();
  		}
  
+ 		$mapel = $this->mapel_model->get_by_uuid($materi->mapel_uuid);
  		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
  		$can_manage = is_admin_or_superadmin() || $materi->created_by == $this->session->userdata('uuid');
  
@@ -58,6 +60,7 @@ class Bab extends MY_Controller {
  
  		$data = array(
  			'materi' => $materi,
+ 			'mapel' => $mapel,
  			'bab' => $bab,
  			'komentar_data' => $komentar_data,
  			'sub_materi_per_bab' => $sub_materi_per_bab,
@@ -108,7 +111,7 @@ class Bab extends MY_Controller {
 					$dokumentasi = $this->upload->data('file_name');
 				} else {
 					$this->session->set_flashdata('error_msg', 'Gagal mengunggah dokumentasi: ' . $this->upload->display_errors());
-					redirect('bab/tambah/' . $materi_uuid);
+					redirect('sub_bab/tambah/' . $materi_uuid);
 				}
 			}
 
@@ -117,7 +120,7 @@ class Bab extends MY_Controller {
 			} else {
 				$this->session->set_flashdata('error_msg', 'Bab gagal disimpan');
 			}
-			redirect('bab/index/' . $materi_uuid);
+			redirect('sub_bab/index/' . $materi_uuid);
 		}
 
 		$data = array(
@@ -176,7 +179,7 @@ class Bab extends MY_Controller {
 			} else {
 				$this->session->set_flashdata('error_msg', 'Bab gagal di Update');
 			}
-			redirect('bab/index/' . $bab->materi_uuid);
+			redirect('sub_bab/index/' . $bab->materi_uuid);
 		}
 
 		$data = array(
@@ -237,6 +240,6 @@ class Bab extends MY_Controller {
 		} else {
 			$this->session->set_flashdata('error_msg', 'Gagal menghapus Bab');
 		}
-		redirect('bab/index/' . $bab->materi_uuid);
+		redirect('sub_bab/index/' . $bab->materi_uuid);
 	}
 }

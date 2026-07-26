@@ -14,7 +14,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-3 mb-2">
-                        <a href="<?= base_url('materi') ?>"
+                        <a href="<?= base_url('mata_pelajaran') ?>"
                             class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
                             <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                         </a>
@@ -22,16 +22,24 @@
                             class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                             <i data-lucide="book-open" class="w-6 h-6 text-white"></i>
                         </div>
-                        <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Daftar Bab</h1>
+                        <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Daftar Sub Bab</h1>
                     </div>
-                    <p class="text-purple-100 text-sm md:text-base ml-[104px]">Mata Pelajaran: <span
-                            class="text-white font-semibold"><?= $mapel->nama ?? $materi->judul ?></span></p>
+                    <div class="ml-[104px] mt-2 space-y-1">
+                        <p class="text-purple-100 text-sm md:text-base">
+                            <span class="font-medium">Mata Pelajaran:</span>
+                            <span class="text-white font-semibold"><?= $mapel->nama ?? $materi->judul ?></span>
+                        </p>
+                        <p class="text-purple-100 text-sm md:text-base">
+                            <span class="font-medium">Bab:</span>
+                            <span class="text-white font-semibold"><?= $materi->judul ?></span>
+                        </p>
+                    </div>
                 </div>
                 <?php if($can_manage): ?>
-                <a href="<?= base_url('bab/tambah/' . $materi->uuid) ?>"
+                <a href="<?= base_url('sub_bab/tambah/' . $materi->uuid) ?>"
                     class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-purple-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
                     <i data-lucide="plus" class="w-4 h-4"></i>
-                    Tambah Bab
+                    Tambah Sub Bab
                 </a>
                 <?php endif; ?>
             </div>
@@ -100,14 +108,14 @@
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2 flex-shrink-0">
                     <?php if($can_manage): ?>
-                    <a href="<?= base_url('bab/edit/' . $val->uuid) ?>"
+                    <a href="<?= base_url('sub_bab/edit/' . $val->uuid) ?>"
                         class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-all">
                         <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                         Edit
                     </a>
-                    <a href="<?= base_url('bab/hapus/' . $val->uuid) ?>"
+                    <a href="<?= base_url('sub_bab/hapus/' . $val->uuid) ?>"
                         class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all"
-                        onclick="return confirm('Apakah Anda yakin ingin menghapus bab ini?')">
+                        onclick="return confirm('Apakah Anda yakin ingin menghapus sub bab ini?')">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     </a>
                     <?php endif; ?>
@@ -132,64 +140,6 @@
                     </a>
                     <?php endif; ?>
                 </div>
-
-                <!-- Sub Bab & Ujian Section -->
-                <?php if(isset($sub_materi_per_bab[$val->uuid]) && !empty($sub_materi_per_bab[$val->uuid])): ?>
-                <div class="mt-4 pt-4 border-t border-gray-100">
-                    <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Sub Bab</h4>
-                    <div class="space-y-3">
-                        <?php foreach($sub_materi_per_bab[$val->uuid] as $sm): ?>
-                        <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="flex-1 min-w-0">
-                                    <h5 class="text-sm font-semibold text-gray-900 mb-1"><?= $sm->judul ?></h5>
-                                    <?php if(!empty($sm->berkas)): ?>
-                                    <a href="<?= base_url('uploads/sub_materi/' . $sm->berkas) ?>" target="_blank"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors">
-                                        <i data-lucide="eye" class="w-3.5 h-3.5"></i> Lihat File
-                                    </a>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="flex items-center gap-2 flex-shrink-0">
-                                    <?php if($can_manage): ?>
-                                    <a href="<?= base_url('ujian/tambah_sub/' . $sm->uuid) ?>"
-                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white hover:bg-purple-700 transition-colors shadow-sm">
-                                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-                                        Tambah Ujian
-                                    </a>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-
-                            <!-- Ujian List for this sub bab -->
-                            <?php if(isset($ujian_per_sub[$sm->uuid]) && !empty($ujian_per_sub[$sm->uuid])): ?>
-                            <div class="mt-3 pl-4 border-l-2 border-purple-200">
-                                <p class="text-xs font-semibold text-gray-600 mb-2">Daftar Ujian:</p>
-                                <div class="space-y-2">
-                                    <?php foreach($ujian_per_sub[$sm->uuid] as $u): ?>
-                                    <div
-                                        class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
-                                        <div>
-                                            <p class="text-sm font-medium text-gray-900"><?= $u->nama ?></p>
-                                            <p class="text-xs text-gray-500"><?= $u->mapel_nama ?> •
-                                                <?= $u->tgl_mulai_formatted ?></p>
-                                        </div>
-                                        <div class="flex items-center gap-2">
-                                            <a href="<?= base_url('ujian/tambah_soal/' . $u->uuid) ?>"
-                                                class="text-xs text-blue-600 hover:text-blue-800">Soal</a>
-                                            <a href="<?= base_url('ujian/tambah_siswa/' . $u->uuid) ?>"
-                                                class="text-xs text-emerald-600 hover:text-emerald-800">Peserta</a>
-                                        </div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-                <?php endif; ?>
 
                 <!-- Comment Section -->
                 <div class="mt-4 pt-4 border-t border-gray-100">

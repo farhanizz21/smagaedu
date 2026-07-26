@@ -10,7 +10,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <div class="flex items-center gap-3 mb-1">
-                <a href="<?= base_url('bab/index/' . $materi->uuid) ?>"
+                <a href="<?= base_url('sub_bab/index/' . $materi->uuid) ?>"
                     class="text-gray-400 hover:text-gray-600 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
@@ -29,7 +29,7 @@
     <?php endif; ?>
 
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
-        <?= form_open_multipart('bab/tambah/' . $materi->uuid); ?>
+        <?= form_open_multipart('sub_bab/tambah/' . $materi->uuid); ?>
         <div class="space-y-6">
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Judul Sub Bab <span
@@ -73,7 +73,7 @@
                 class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
                 <i data-lucide="save" class="w-4 h-4"></i> Simpan
             </button>
-            <a href="<?= base_url('bab/index/' . $materi->uuid) ?>"
+            <a href="<?= base_url('sub_bab/index/' . $materi->uuid) ?>"
                 class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
                 <i data-lucide="x" class="w-4 h-4"></i> Batal
             </a>

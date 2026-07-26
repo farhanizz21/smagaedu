@@ -93,9 +93,9 @@
                         </div>
 
                         <!-- Action Button with gradient -->
-                        <a href="<?= base_url('materi/detail/' . $val->uuid) ?>"
+                        <a href="<?= base_url('mata_pelajaran/detail/' . $val->uuid) ?>"
                             class="inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl font-semibold text-white bg-gradient-to-r <?= $palette['from'] ?> <?= $palette['to'] ?> shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm group/btn">
-                            <span>Lihat Materi</span>
+                            <span>Lihat Bab</span>
                             <i data-lucide="arrow-right"
                                 class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform"></i>
                         </a>

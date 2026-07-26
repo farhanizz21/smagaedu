@@ -89,7 +89,7 @@
             <span>Panduan</span></a>
     </li>
     <li class="nav-item <?= $active_nav == 'materi' ? 'active':'';?>">
-        <a class="nav-link" href="<?= base_url('materi')?>">
+        <a class="nav-link" href="<?= base_url('mata_pelajaran')?>">
             <i class="fas fa-fw fa-book"> </i>
             <span>Mata Pelajaran</span></a>
     </li>

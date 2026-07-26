@@ -12,7 +12,7 @@
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'home' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Home</a>
                 <a href="<?= base_url('panduan') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'panduan' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Panduan</a>
-                <a href="<?= base_url('materi') ?>"
+                <a href="<?= base_url('mata_pelajaran') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'materi' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Mata
                     Pelajaran</a>
                 <a href="<?= base_url('perangkat') ?>"

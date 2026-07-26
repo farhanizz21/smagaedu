@@ -60,3 +60,23 @@ $route['reset_password/(:any)'] = 'auth/reset_password/$1';
 
 // Exam routes
 $route['ujian/tambah_sub/(:any)'] = 'ujian/tambah_sub/$1';
+$route['ujian/tambah_soal/(:any)'] = 'ujian/tambah_soal/$1';
+$route['ujian/tambah_siswa/(:any)'] = 'ujian/tambah_siswa/$1';
+
+// Materi routes
+$route['mata_pelajaran'] = 'materi';
+$route['mata_pelajaran/detail/(:any)'] = 'materi/detail/$1';
+$route['mata_pelajaran/hapus/(:any)'] = 'materi/hapus/$1';
+
+// Bab routes
+$route['bab/tambah/(:any)'] = 'materi/tambah/$1';
+$route['bab/edit/(:any)'] = 'materi/edit/$1';
+
+// Bab routes
+$route['bab/tambah/(:any)'] = 'materi/tambah/$1';
+
+// Bab/Sub Bab routes
+$route['sub_bab/index/(:any)'] = 'bab/index/$1';
+$route['sub_bab/tambah/(:any)'] = 'bab/tambah/$1';
+$route['sub_bab/edit/(:any)'] = 'bab/edit/$1';
+$route['sub_bab/hapus/(:any)'] = 'bab/hapus/$1';

@@ -85,7 +85,7 @@ class Materi extends MY_Controller {
 					$thumbnail = $this->upload->data('file_name');
 				} else {
 					$this->session->set_flashdata('error_msg', 'Gagal mengunggah thumbnail: ' . $this->upload->display_errors());
-					redirect('materi/tambah/'.$mapel_uuid);
+					redirect('bab/tambah/'.$mapel_uuid);
 				}
 			}
 
@@ -95,7 +95,7 @@ class Materi extends MY_Controller {
 			} else {
 				$this->session->set_flashdata('error_msg', 'Data Materi gagal disimpan');
 			}
-			redirect('materi/detail/'.$mapel_uuid);	
+			redirect('mata_pelajaran/detail/'.$mapel_uuid);
 		}
 		
 		$guru_uuid = $this->session->userdata('uuid');
@@ -152,7 +152,7 @@ class Materi extends MY_Controller {
 					$thumbnail = $this->upload->data('file_name');
 				} else {
 					$this->session->set_flashdata('error_msg', 'Gagal mengunggah thumbnail: ' . $this->upload->display_errors());
-					redirect('materi/edit/' . $uuid);
+					redirect('bab/edit/' . $uuid);
 				}
 			}
 
@@ -162,7 +162,7 @@ class Materi extends MY_Controller {
 			} else {
 				$this->session->set_flashdata('error_msg', 'Data Materi gagal di Update');
 			}
-			redirect('materi/detail/' . $materi->mapel_uuid);
+			redirect('mata_pelajaran/detail/' . $materi->mapel_uuid);
 		}
 
 		$data = array(

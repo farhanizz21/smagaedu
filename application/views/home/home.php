@@ -13,7 +13,7 @@
                 kolaboratif, dan terstruktur.
             </p>
             <div class="flex flex-wrap gap-3 pt-2">
-                <a href="<?= base_url('materi') ?>"
+                <a href="<?= base_url('mata_pelajaran') ?>"
                     class="px-6 py-3 rounded-2xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:shadow-xl transition-all">Mulai
                     Belajar</a>
                 <a href="<?= base_url('panduan') ?>"

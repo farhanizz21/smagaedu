@@ -130,7 +130,7 @@ class Ujian extends MY_Controller {
 				
 				$action = $this->input->post('action');
 				if ($action == 'simpan') {
-					redirect('bab/index/'.$materi->uuid);
+					redirect('sub_bab/index/'.$materi->uuid);
 				} elseif ($action == 'simpan_detail') {
 					redirect('ujian/tambah_soal/'.$insert);	
 				}
