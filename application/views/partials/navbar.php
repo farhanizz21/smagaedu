@@ -23,7 +23,16 @@
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'ujian' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Ujian</a>
                 <a href="<?= base_url('kalender') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'kalender' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Kalender</a>
-                <?php if(in_array(user_role(), ['superadmin', 'admin'])) { ?>
+                <?php if(has_role(['guru', 'superadmin'])): ?>
+                <a href="<?= base_url('guru/jadwal') ?>"
+                    class="px-3 py-2 rounded-lg <?= $active_nav == 'jadwal' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Jadwal</a>
+                <?php endif; ?>
+                <?php if(has_role(['kepala_sekolah', 'admin', 'superadmin'])): ?>
+                <a href="<?= base_url('kepala_sekolah') ?>"
+                    class="px-3 py-2 rounded-lg <?= $active_nav == 'kepala_sekolah' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Data
+                    Guru</a>
+                <?php endif; ?>
+                <?php if(has_role(['admin', 'superadmin'])): ?>
                 <div class="nav-dropdown relative">
                     <span
                         class="px-3 py-2 rounded-lg <?= in_array($active_nav, ['guru','siswa','mapel','kelas','settings']) ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?> cursor-pointer flex items-center gap-1 select-none">Master
@@ -44,6 +53,18 @@
                             Mata Pelajaran</a>
                         <?php if(is_superadmin()): ?>
                         <div class="border-t border-gray-100 my-1"></div>
+                        <a href="<?= base_url('admin/kepala_sekolah') ?>"
+                            class="block px-4 py-2 text-sm <?= $active_nav == 'kepala_sekolah_admin' ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-600 hover:bg-gray-50' ?>">Data
+                            Kepala Sekolah</a>
+                        <?php endif; ?>
+                        <?php if(in_array(user_role(), ['superadmin', 'admin'])): ?>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <a href="<?= base_url('admin/admins') ?>"
+                            class="block px-4 py-2 text-sm <?= $active_nav == 'admins' ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-600 hover:bg-gray-50' ?>">Data
+                            Admin</a>
+                        <?php endif; ?>
+                        <?php if(is_superadmin()): ?>
+                        <div class="border-t border-gray-100 my-1"></div>
                         <a href="<?= base_url('admin/manage_roles') ?>"
                             class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Kelola Role</a>
                         <a href="<?= base_url('admin/manage_permissions') ?>"
@@ -51,11 +72,11 @@
                         <?php endif; ?>
                     </div>
                 </div>
-                <?php } ?>
-                <?php if(is_superadmin()) { ?>
+                <?php endif; ?>
+                <?php if(is_superadmin()): ?>
                 <a href="<?= base_url('admin/settings') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'settings' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Settings</a>
-                <?php } ?>
+                <?php endif; ?>
             </div>
         </div>
         <div class="flex items-center gap-3">

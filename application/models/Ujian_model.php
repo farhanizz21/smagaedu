@@ -13,6 +13,11 @@ class ujian_model extends CI_Model {
 				'rules' => 'required'
 			],
 			[
+				'field' => 'jenis_penilaian',
+				'label' => 'Jenis Penilaian',
+				'rules' => 'required'
+			],
+			[
 				'field' => 'tgl_mulai',
 				'label' => 'Tanggal Mulai',
 				'rules' => 'required'
@@ -59,10 +64,13 @@ class ujian_model extends CI_Model {
 		$tgl_selesai = $this->input->post('tgl_selesai');
 		$user = $this->session->userdata('uuid');
 
+		$jenis_penilaian = $this->input->post('jenis_penilaian');
+		
 		$data = array(
 			'uuid' => $uuid,
 			'mapel_uuid' => $mapel_uuid,
 			'nama' => $namaUjian,
+			'jenis_penilaian' => $jenis_penilaian,
 			'tgl_mulai' => $tgl_mulai,
 			'tgl_selesai' => $tgl_selesai,
 			'created_by' => $user
@@ -86,11 +94,14 @@ class ujian_model extends CI_Model {
 		$tgl_selesai = $this->input->post('tgl_selesai');
 		$user = $this->session->userdata('uuid');
 
+		$jenis_penilaian = $this->input->post('jenis_penilaian');
+		
 		$data = array(
 			'uuid' => $uuid,
 			'mapel_uuid' => $mapel_uuid,
 			'sub_materi_uuid' => $sub_materi_uuid,
 			'nama' => $namaUjian,
+			'jenis_penilaian' => $jenis_penilaian,
 			'tgl_mulai' => $tgl_mulai,
 			'tgl_selesai' => $tgl_selesai,
 			'created_by' => $user

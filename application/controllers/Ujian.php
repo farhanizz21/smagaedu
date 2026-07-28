@@ -10,6 +10,7 @@ class Ujian extends MY_Controller {
 		$this->load->model('mapel_model');
 		$this->load->model('guru_model');
 		$this->load->model('siswa_model');
+		$this->load->model('kelas_model');
 		$this->load->model('ujian_model');
 		$this->load->model('jawaban_model');
 		$this->load->model('soal_model');
@@ -155,8 +156,8 @@ class Ujian extends MY_Controller {
 
 	public function tambah_soal($ujian_uuid)
 	{
-		// Superadmin, admin, atau guru yang bisa tambah soal
-		if (!is_admin_or_superadmin() && !has_permission('manage_ujian')) {
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
 			show_error('Anda tidak memiliki akses untuk menambah soal ujian.', 403);
 		}
 		
@@ -180,10 +181,16 @@ class Ujian extends MY_Controller {
 		}
 		
 		$data = array(
-			'ujian' => $this->ujian_model->get_by_uuid($ujian_uuid),
+			'ujian' => $ujian,
 			'soal' => $this->soal_model->get_by_ujian_uuid($ujian_uuid),
 			'active_nav' => 'ujian'
 		);
+
+		foreach ($data['soal'] as $s) {
+			if ($s->jenis_soal === 'menjodohkan') {
+				$s->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($s->uuid);
+			}
+		}
 
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Soal Ujian']);
 		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
@@ -191,30 +198,31 @@ class Ujian extends MY_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
 
-	public function tambah_siswa($ujian_uuid)
+	public function tambah_kelas($ujian_uuid)
 	{
-		// Superadmin, admin, atau guru yang bisa kelola peserta
-		if (!is_admin_or_superadmin() && !has_permission('manage_ujian')) {
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
 			show_error('Anda tidak memiliki akses untuk mengelola peserta ujian.', 403);
 		}
 		
 		$rules = [
 			[
-				'field' => 'siswa',
-				'label' => 'siswa',
+				'field' => 'kelas',
+				'label' => 'Kelas',
 				'rules' => 'required'
 			]
 		];
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
-			$insert = $this->siswa_model->insert_on_ujian();
+			$kelas_uuid = $this->input->post('kelas');
+			$insert = $this->siswa_model->insert_by_kelas($ujian_uuid, $kelas_uuid);
 			if ($insert) {
-				$this->session->set_flashdata('success_msg', 'Data siswa berhasil di simpan');
+				$this->session->set_flashdata('success_msg', 'Data peserta berhasil di simpan');
 			}else {
-				$this->session->set_flashdata('error_msg', 'Data siswa gagal di simpan');
+				$this->session->set_flashdata('error_msg', 'Data peserta gagal di simpan atau tidak ada siswa di kelas tersebut');
 			}
-			redirect('ujian/tambah_siswa/'.$ujian_uuid);
+			redirect('ujian/tambah_kelas/'.$ujian_uuid);
 		}
 
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
@@ -222,12 +230,25 @@ class Ujian extends MY_Controller {
 		foreach($peserta as $p){
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
+			
+			// Ambil nilai siswa jika sudah dinilai
+			$p->nilai_ujian = !empty($p->ujian_nilai) ? $p->ujian_nilai : null;
 		}
+		
+		// Ambil daftar kelas yang terdaftar sebagai peserta untuk filter
+		$kelas_filter = [];
+		foreach($peserta as $p){
+			if(!empty($p->kelas_nama) && !in_array($p->kelas_nama, $kelas_filter)){
+				$kelas_filter[] = $p->kelas_nama;
+			}
+		}
+		sort($kelas_filter);
 		
 		$data = array(
 			'ujian' => $ujian,
 			'peserta' => $peserta,
-			'siswa' => $this->siswa_model->get_all(),
+			'kelas' => $this->kelas_model->get_all(),
+			'kelas_filter' => $kelas_filter,
 			'active_nav' => 'ujian'
 		);
 
@@ -246,32 +267,113 @@ class Ujian extends MY_Controller {
             } else {
 				$this->session->set_flashdata('error_msg', 'Nilai gagal disimpan');
             }
-            redirect('ujian/tambah_siswa/'.$ujian_uuid	);
+            redirect('ujian/tambah_kelas/'.$ujian_uuid	);
         }
 		
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
 		$guru = $this->guru_model->get_by_uuid($ujian->created_by);
 		$mapel = $this->mapel_model->get_by_uuid($ujian->mapel_uuid);
-		$soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
-		$siswa = $this->siswa_model->get_by_uuid($siswa_uuid);
-		//ambil jawaban tiap soal
-		$jawaban =[];
-		foreach ($soal as $d) {
-			$jawaban[$d->uuid] = $this->jawaban_model->get_by_soal_uuid($d->uuid, $siswa_uuid);
-		}
-		if($jawaban != NULL){
-			//ambil nilai total 
-			$total_nilai = 0;
-			$jumlah_soal = count($soal); // Menghitung jumlah soal
-	
-			foreach ($jawaban as $uuid => $data) {
-				if (!empty($data[0]->nilai)) {
-					$total_nilai += $data[0]->nilai;
-				}
-			}
-			$rata_rata = ($jumlah_soal > 0) ? ($total_nilai / $jumlah_soal) : 0;
-			$nilai_ujian = number_format($rata_rata, 2);
-		}
+        $soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
+        $siswa = $this->siswa_model->get_by_uuid($siswa_uuid);
+        foreach ($soal as $s) {
+            if ($s->jenis_soal === 'menjodohkan') {
+                $s->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($s->uuid);
+            }
+        }
+        //ambil jawaban tiap soal
+        $jawaban =[];
+        foreach ($soal as $d) {
+            $jawaban[$d->uuid] = $this->jawaban_model->get_by_soal_uuid($d->uuid, $siswa_uuid);
+        }
+        if($jawaban != NULL){
+            //ambil nilai total 
+            $total_nilai = 0;
+            $jumlah_soal = count($soal); // Menghitung jumlah soal
+    
+            foreach ($jawaban as $uuid => $data) {
+                if (!empty($data[0]->nilai)) {
+                    $total_nilai += $data[0]->nilai;
+                }
+            }
+            $rata_rata = ($jumlah_soal > 0) ? ($total_nilai / $jumlah_soal) : 0;
+            $nilai_ujian = number_format($rata_rata, 2);
+        }
+
+        foreach ($jawaban as $soal_uuid => $data) {
+            if (empty($data[0]->jawaban_siswa)) {
+                continue;
+            }
+            $jawaban_siswa = $data[0]->jawaban_siswa;
+            $soal_obj = null;
+            foreach ($soal as $s) {
+                if ($s->uuid === $soal_uuid) {
+                    $soal_obj = $s;
+                    break;
+                }
+            }
+            if (!$soal_obj) continue;
+
+            $display = '';
+            $is_benar = null;
+            switch ($soal_obj->jenis_soal) {
+                case 'pilihan_ganda':
+                    $prop = 'jawaban_' . strtolower($jawaban_siswa);
+                    $text = $soal_obj->$prop ?? '';
+                    $display = '<strong class="text-blue-700">' . htmlspecialchars($jawaban_siswa) . '</strong>. ' . htmlspecialchars($text);
+                    $is_benar = strtoupper($jawaban_siswa) === strtoupper($soal_obj->jawaban_benar);
+                    break;
+                case 'pilihan_ganda_kompleks':
+                    $arr = json_decode($jawaban_siswa, true);
+                    if ($arr && is_array($arr)) {
+                        sort($arr);
+                        $parts = [];
+                        foreach ($arr as $letter) {
+                            $prop = 'jawaban_' . strtolower($letter);
+                            $text = $soal_obj->$prop ?? '';
+                            $parts[] = '<strong class="text-blue-700">' . htmlspecialchars($letter) . '</strong>. ' . htmlspecialchars($text);
+                        }
+                        $display = implode(', ', $parts);
+                        $kunci = json_decode($soal_obj->jawaban_benar, true);
+                        if ($kunci && is_array($kunci)) {
+                            sort($kunci);
+                            $is_benar = $arr === $kunci;
+                        }
+                    }
+                    break;
+                case 'menjodohkan':
+                    $arr = json_decode($jawaban_siswa, true);
+                    if ($arr && is_array($arr)) {
+                        $pairs = $soal_obj->jodohkan_pairs ?? [];
+                        $parts = [];
+                        foreach ($arr as $idx => $letter) {
+                            $pair = $pairs[(int)$idx - 1] ?? null;
+                            if ($pair) {
+                                $parts[] = htmlspecialchars($pair->kunci) . ' → <strong class="text-blue-700">' . htmlspecialchars($letter) . '</strong>. ' . htmlspecialchars($pair->jawaban);
+                            }
+                        }
+                        $display = implode('<br>', $parts);
+                    }
+                    break;
+                case 'benar_salah':
+                    $badge_class = ($jawaban_siswa === 'benar') ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200';
+                    $display = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ' . $badge_class . '">' . htmlspecialchars(ucfirst($jawaban_siswa)) . '</span>';
+                    break;
+                case 'essay':
+                    $display = nl2br(htmlspecialchars($jawaban_siswa));
+                    break;
+                default:
+                    $display = htmlspecialchars($jawaban_siswa);
+                    break;
+            }
+            if ($is_benar !== null) {
+                $badge = $is_benar
+                    ? '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border bg-green-100 text-green-700 border-green-200">Benar</span>'
+                    : '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border bg-red-100 text-red-700 border-red-200">Salah</span>';
+                $display .= ' <span class="ml-2">' . $badge . '</span>';
+            }
+            $data[0]->jawaban_teks = $display;
+            $jawaban[$soal_uuid] = $data;
+        }
 		
 		$data = array(
 			'mapel' => $mapel->nama,
@@ -308,10 +410,16 @@ class Ujian extends MY_Controller {
 			'active_nav' => 'ujian'
 		);
 
-        $this->load->view('partials/header_tailwind', ['title' => 'Pengerjaan Ujian']);
-		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+		foreach ($data['soal'] as $s) {
+			if ($s->jenis_soal === 'menjodohkan') {
+				$s->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($s->uuid);
+			}
+		}
+
+        // $this->load->view('partials/header_tailwind', ['title' => 'Pengerjaan Ujian']);
+		// $this->load->view('partials/navbar', ['active_nav' => 'ujian']);
         $this->load->view('ujian/ujian-pengerjaan', array_merge($data, ['from_controller' => true]));
-		$this->load->view('partials/footer_tailwind');
+		// $this->load->view('partials/footer_tailwind');
 	}
 
 	public function hapus_siswa($relasi_uuid)
@@ -327,6 +435,13 @@ class Ujian extends MY_Controller {
 
 	public function hapus_soal($soal_uuid)
 	{
+		$soal = $this->soal_model->get_by_uuid($soal_uuid);
+		if ($soal) {
+			$ujian = $this->ujian_model->get_by_uuid($soal->ujian_uuid);
+			if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+				show_error('Anda tidak memiliki akses untuk menghapus soal ujian.', 403);
+			}
+		}
 		$result = $this->soal_model->delete_by_uuid($soal_uuid);
 		if ($result) {
 			$this->session->set_flashdata('success_msg', 'Data soal ujian berhasil dihapus');
@@ -336,13 +451,51 @@ class Ujian extends MY_Controller {
 		redirect($_SERVER['HTTP_REFERER']);
 	}
 
-	public function edit_soal($soal_uuid){
-		
+	public function get_soal($soal_uuid)
+	{
+		$soal = $this->soal_model->get_by_uuid($soal_uuid);
+		if ($soal) {
+			$soal->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($soal_uuid);
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode(['status' => 'success', 'data' => $soal]));
+		} else {
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode(['status' => 'error', 'message' => 'Soal tidak ditemukan']));
+		}
+	}
+
+	public function get_soal_by_uuid($soal_uuid)
+	{
+		$soal = $this->soal_model->get_by_uuid($soal_uuid);
+		if ($soal) {
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode(['status' => 'success', 'data' => $soal]));
+		} else {
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode(['status' => 'error', 'message' => 'Soal tidak ditemukan']));
+		}
+	}
+
+	public function edit_soal(){
+		$soal_uuid = $this->input->post('soal_uuid');
 		$ujian_uuid = $this->input->post('ujian_uuid');
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+			show_error('Anda tidak memiliki akses untuk mengedit soal ujian.', 403);
+		}
 		$rules = [
 			[
 				'field' => 'soal',
 				'label' => 'Soal',
+				'rules' => 'required'
+			],
+			[
+				'field' => 'jenis_soal',
+				'label' => 'Jenis Soal',
 				'rules' => 'required'
 			]
 		];
@@ -362,6 +515,10 @@ class Ujian extends MY_Controller {
 
 	public function hapus($uuid)
 	{
+		$ujian = $this->ujian_model->get_by_uuid($uuid);
+		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+			show_error('Anda tidak memiliki akses untuk menghapus ujian.', 403);
+		}
 		$result = $this->ujian_model->delete_by_uuid($uuid);
 		if ($result) {
 			$this->session->set_flashdata('success_msg', 'Data ujian berhasil dihapus');
@@ -369,5 +526,37 @@ class Ujian extends MY_Controller {
 			$this->session->set_flashdata('error_msg', 'Gagal menghapus data ujian');
 		}
 		redirect('ujian');
+	}
+
+	public function bulk_hapus_soal()
+	{
+		$soal_uuids = $this->input->post('soal_uuids');
+		$ujian_uuid = $this->input->post('ujian_uuid');
+
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+			show_error('Anda tidak memiliki akses untuk menghapus soal ujian.', 403);
+		}
+
+		if (!is_array($soal_uuids) || empty($soal_uuids)) {
+			$this->session->set_flashdata('error_msg', 'Tidak ada soal yang dipilih');
+			redirect('ujian/tambah_soal/' . $ujian_uuid);
+			return;
+		}
+
+		$deleted = 0;
+		foreach ($soal_uuids as $uuid) {
+			$result = $this->soal_model->delete_by_uuid($uuid);
+			if ($result) {
+				$deleted++;
+			}
+		}
+
+		if ($deleted > 0) {
+			$this->session->set_flashdata('success_msg', $deleted . ' soal berhasil dihapus');
+		} else {
+			$this->session->set_flashdata('error_msg', 'Gagal menghapus soal');
+		}
+		redirect('ujian/tambah_soal/' . $ujian_uuid);
 	}
 }

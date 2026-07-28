@@ -213,10 +213,39 @@ class siswa_model extends CI_Model {
 		return $data->result();
 	}
 
-	public function get_by_ujian($ujian_uuid)
+    public function insert_by_kelas($ujian_uuid, $kelas_uuid)
+    {
+        $this->db->select('s.uuid');
+        $this->db->from('siswa s');
+        $this->db->where('s.kelas_uuid', $kelas_uuid);
+        $this->db->where('s.deleted_at', NULL, FALSE);
+        $this->db->join('ujian_siswa u', "u.siswa_uuid = s.uuid AND u.ujian_uuid = '{$ujian_uuid}' AND u.deleted_at IS NULL", 'left');
+        $this->db->where('u.uuid', NULL, FALSE);
+        $siswa_belum_diambil = $this->db->get()->result();
+
+        $count = 0;
+        foreach($siswa_belum_diambil as $siswa) {
+            $uuid = Uuid::uuid4()->toString();
+            $data = array(
+                'uuid' => $uuid,
+                'ujian_uuid' => $ujian_uuid,
+                'siswa_uuid' => $siswa->uuid,
+                'created_by' => $this->session->userdata('uuid')
+            );
+            $this->db->insert('ujian_siswa', $data);
+            if ($this->db->affected_rows() > 0) {
+                $count++;
+            }
+        }
+
+        return $count > 0;
+    }
+
+    public function get_by_ujian($ujian_uuid)
 	{
-		$this->db->select("s.nama, s.username, s.uuid AS siswa_uuid, u.uuid, u.ujian_uuid, u.siswa_uuid, u.ujian_nilai, u.modified_at");
+		$this->db->select("s.nama, s.username, s.uuid AS siswa_uuid, u.uuid, u.ujian_uuid, u.siswa_uuid, u.ujian_nilai, u.modified_at, k.nama as kelas_nama");
 		$this->db->join('siswa s', 's.uuid = u.siswa_uuid','left');
+		$this->db->join('kelas k', 's.kelas_uuid = k.uuid','left');
 		$this->db->where('u.deleted_at', NULL, FALSE);
 		$this->db->where('u.ujian_uuid', $ujian_uuid);
 		$data = $this->db->get('ujian_siswa u');
@@ -224,7 +253,7 @@ class siswa_model extends CI_Model {
 		return $data->result();
 	}
 
-	public function get_by_proyek($proyek_uuid)
+    public function get_by_proyek($proyek_uuid)
 	{
 		$this->db->select("k.*, s.nama, ");
 		$this->db->join('kelompok k', 'ks.kelompok_uuid = k.uuid','left');

@@ -8,7 +8,17 @@ class Guru extends MY_Controller {
 		parent::__construct();
 		$this->load->model('guru_model');
 		$this->load->model('mapel_model');
-		$this->require_admin_or_superadmin(); // Superadmin dan admin bisa akses
+		
+		// Allow guru to access jadwal methods
+		$method = $this->router->fetch_method();
+		if (in_array($method, ['jadwal', 'upload_jadwal', 'hapus_jadwal'])) {
+			// Guru can access jadwal management
+			if (!has_role(['guru', 'admin', 'superadmin'])) {
+				show_error('Anda tidak memiliki akses ke halaman ini.', 403);
+			}
+		} else {
+			$this->require_admin_or_superadmin(); // Superadmin dan admin bisa akses
+		}
 	}
 
 	public function index()
@@ -150,5 +160,103 @@ class Guru extends MY_Controller {
 			}
 			redirect($_SERVER['HTTP_REFERER']);
 		}
+	}
+
+	// ==================== JADWAL MENGAJAR (Upload Gambar) ====================
+
+	public function jadwal()
+	{
+		$guru_uuid = $this->session->userdata('uuid');
+		
+		$this->db->where('guru_uuid', $guru_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->order_by('created_at', 'DESC');
+		$jadwal = $this->db->get('jadwal_guru')->result();
+
+		$data = array(
+			'jadwal' => $jadwal,
+			'active_nav' => 'jadwal'
+		);
+
+		$this->load->view('partials/header_tailwind', ['title' => 'Jadwal Mengajar']);
+		$this->load->view('partials/navbar', ['active_nav' => 'jadwal']);
+		$this->load->view('guru/guru-jadwal', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
+	}
+
+	public function upload_jadwal()
+	{
+		$guru_uuid = $this->session->userdata('uuid');
+		
+		$this->load->library('upload');
+		
+		$config['upload_path'] = FCPATH . 'uploads/jadwal/';
+		$config['allowed_types'] = 'jpg|jpeg|png|gif|webp';
+		$config['max_size'] = 5120; // 5MB
+		$config['file_name'] = 'jadwal_' . $guru_uuid . '_' . time();
+		
+		// Create directory if not exists
+		if (!is_dir($config['upload_path'])) {
+			mkdir($config['upload_path'], 0755, true);
+		}
+		
+		$this->upload->initialize($config);
+		
+		if (!$this->upload->do_upload('file_jadwal')) {
+			$this->session->set_flashdata('error_msg', 'Gagal upload jadwal: ' . $this->upload->display_errors());
+			redirect('guru/jadwal');
+		}
+		
+		$upload_data = $this->upload->data();
+		$file_name = $upload_data['file_name'];
+		$deskripsi = $this->input->post('deskripsi');
+		
+		// Use Ramsey UUID
+		$uuid = \Ramsey\Uuid\Uuid::uuid4()->toString();
+		
+		$data = array(
+			'uuid' => $uuid,
+			'guru_uuid' => $guru_uuid,
+			'file_gambar' => $file_name,
+			'deskripsi' => $deskripsi
+		);
+		
+		$this->db->insert('jadwal_guru', $data);
+		
+		if ($this->db->affected_rows() > 0) {
+			$this->session->set_flashdata('success_msg', 'Jadwal berhasil diupload');
+		} else {
+			$this->session->set_flashdata('error_msg', 'Gagal menyimpan jadwal');
+		}
+		
+		redirect('guru/jadwal');
+	}
+
+	public function hapus_jadwal($uuid)
+	{
+		$guru_uuid = $this->session->userdata('uuid');
+		
+		// Verify ownership
+		$this->db->where('uuid', $uuid);
+		$this->db->where('guru_uuid', $guru_uuid);
+		$jadwal = $this->db->get('jadwal_guru')->row();
+		
+		if (!$jadwal) {
+			$this->session->set_flashdata('error_msg', 'Jadwal tidak ditemukan');
+			redirect('guru/jadwal');
+		}
+		
+		// Delete file
+		$file_path = FCPATH . 'uploads/jadwal/' . $jadwal->file_gambar;
+		if (file_exists($file_path)) {
+			unlink($file_path);
+		}
+		
+		// Soft delete record
+		$this->db->where('uuid', $uuid);
+		$this->db->update('jadwal_guru', ['deleted_at' => date('Y-m-d H:i:s')]);
+		
+		$this->session->set_flashdata('success_msg', 'Jadwal berhasil dihapus');
+		redirect('guru/jadwal');
 	}
 }

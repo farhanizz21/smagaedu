@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <div class="flex items-center gap-3 mb-1">
-                <a href="<?= base_url('ujian/tambah_siswa/'.$ujian->uuid)?>"
+                <a href="<?= base_url('ujian/tambah_kelas/'.$ujian->uuid)?>"
                     class="text-gray-400 hover:text-gray-600 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
@@ -87,14 +87,14 @@
                                 <p class="text-sm font-medium text-gray-900"><?= $d->soal; ?></p>
                             </div>
                             <div class="ml-9">
-                                <p class="text-sm text-gray-600">
-                                    <span class="font-semibold">Jawaban:</span>
+                                <p class="text-sm font-semibold text-gray-700 mb-1">Jawaban:</p>
+                                <div class="text-sm text-gray-800 bg-white rounded-lg p-3 border border-gray-200">
                                     <?php if (isset($jawaban[$d->uuid][0]->jawaban_siswa)): ?>
-                                    <?= $jawaban[$d->uuid][0]->jawaban_siswa; ?>
+                                        <?= $jawaban[$d->uuid][0]->jawaban_teks ?? $jawaban[$d->uuid][0]->jawaban_siswa; ?>
                                     <?php else: ?>
-                                    <span class="text-red-600">Tidak dijawab</span>
+                                        <span class="text-red-600">Tidak dijawab</span>
                                     <?php endif; ?>
-                                </p>
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -122,7 +122,7 @@
                         <i data-lucide="save" class="w-4 h-4"></i>
                         Simpan Nilai
                     </button>
-                    <a href="<?= base_url('ujian/tambah_siswa/'.$ujian->uuid)?>"
+                    <a href="<?= base_url('ujian/tambah_kelas/'.$ujian->uuid)?>"
                         class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
                         <i data-lucide="x" class="w-4 h-4"></i>
                         Batal

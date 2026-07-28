@@ -63,4 +63,14 @@ class MY_Controller extends CI_Controller {
 			show_error('Halaman ini hanya bisa diakses oleh Admin atau Superadmin.', 403);
 		}
 	}
+
+	/**
+	 * Middleware: Require kepala_sekolah or superadmin
+	 */
+	protected function require_kepala_sekolah_or_superadmin()
+	{
+		if (!has_role(['kepala_sekolah', 'superadmin'])) {
+			show_error('Halaman ini hanya bisa diakses oleh Kepala Sekolah atau Superadmin.', 403);
+		}
+	}
 }
