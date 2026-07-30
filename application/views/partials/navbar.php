@@ -73,6 +73,7 @@
                     </div>
                 </div>
                 <?php endif; ?>
+
                 <?php if(is_superadmin()): ?>
                 <a href="<?= base_url('admin/settings') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'settings' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Settings</a>

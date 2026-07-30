@@ -69,7 +69,6 @@
             class="collapse <?= $active_nav == 'guru' | $active_nav == 'siswa' | $active_nav == 'mapel' | $active_nav == 'kelas' ?'show':'';?>"
             aria-labelledby="headingTwo" data-parent="#accordionSidebar">
             <div class="bg-white py-2 collapse-inner rounded">
-                <!-- <h6 class="collapse-header">Custom Components:</h6> -->
                 <a class="collapse-item <?= $active_nav == 'guru' ? 'active':'';?>" href="<?= base_url('guru')?>">Data
                     Guru</a>
                 <a class="collapse-item <?= $active_nav == 'siswa' ? 'active':'';?>" href="<?= base_url('siswa')?>">Data
@@ -82,6 +81,15 @@
         </div>
     </li>
     <?php } ?>
+    <?php if(has_role(['guru'])): ?>
+    <hr class="sidebar-divider">
+    <li class="nav-item <?= $active_nav == 'mapel' ? 'active':'';?>">
+        <a class="nav-link" href="<?= base_url('mapel')?>">
+            <i class="fas fa-fw fa-book"></i>
+            <span>Data Mata Pelajaran</span>
+        </a>
+    </li>
+    <?php endif; ?>
     <hr class="sidebar-divider">
     <li class="nav-item <?= $active_nav == 'panduan' ? 'active':'';?>">
         <a class="nav-link" href="<?= base_url('panduan')?>">

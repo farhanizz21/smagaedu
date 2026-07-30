@@ -35,9 +35,12 @@ class proyek_model extends CI_Model {
         ];
 	}
 
-	public function get_all()
+	public function get_all($created_by = null)
 	{
 		$this->db->where('deleted_at', NULL, FALSE);
+		if ($created_by !== null) {
+			$this->db->where('created_by', $created_by);
+		}
 		$this->db->order_by('modified_at', 'DESC');
 		$data = $this->db->get('proyek')->result();
 

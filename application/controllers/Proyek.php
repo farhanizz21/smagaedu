@@ -18,7 +18,14 @@ class Proyek extends MY_Controller {
 	public function index()
 	{
 		$user_login = $this->session->userdata('uuid'); 
-		$proyek =  $this->proyek_model->get_all();
+		$user_role = $this->session->userdata('role');
+		
+		// Jika guru, hanya tampilkan proyek yang dibuat sendiri
+		if ($user_role === 'guru') {
+			$proyek = $this->proyek_model->get_all($user_login);
+		} else {
+			$proyek = $this->proyek_model->get_all();
+		}
 		foreach ($proyek as $py) {
 			$pengerjaan = 0;
 			$peserta = $this->kelompok_model->is_siswa_exist($user_login, $py->uuid);
@@ -105,6 +112,18 @@ class Proyek extends MY_Controller {
 
 	public function hapus($uuid){
 		{
+			// Cek kepemilikan data untuk guru
+			$proyek = $this->proyek_model->get_by_uuid($uuid);
+			if (!$proyek) {
+				show_error('Data proyek tidak ditemukan.', 404);
+			}
+			
+			$user_role = $this->session->userdata('role');
+			$user_uuid = $this->session->userdata('uuid');
+			if ($user_role === 'guru' && $proyek->created_by !== $user_uuid) {
+				show_error('Anda tidak memiliki akses untuk menghapus data ini.', 403);
+			}
+			
 			$result = $this->proyek_model->delete_by_uuid($uuid);
 			if ($result) {
 				$this->session->set_flashdata('success_msg', 'Data proyek berhasil dihapus');
@@ -118,6 +137,17 @@ class Proyek extends MY_Controller {
 	public function detail($proyek_uuid)
 	{
 		$proyek = $this->proyek_model->get_by_uuid($proyek_uuid);
+		if (!$proyek) {
+			show_error('Data proyek tidak ditemukan.', 404);
+		}
+		
+		// Guru hanya bisa melihat detail proyek miliknya sendiri
+		$user_role = $this->session->userdata('role');
+		$user_uuid = $this->session->userdata('uuid');
+		if ($user_role === 'guru' && $proyek->created_by !== $user_uuid) {
+			show_error('Anda tidak memiliki akses untuk melihat proyek ini.', 403);
+		}
+		
 		$kelompok = $this->kelompok_model->get_by_proyek_uuid($proyek_uuid);
 		$user_login = $this->session->userdata('uuid');
 		$komentar = $this->komentar_model->get_by_proyek_uuid($proyek_uuid);
@@ -188,6 +218,17 @@ class Proyek extends MY_Controller {
 		}
 		
 		$proyek = $this->proyek_model->get_by_uuid($proyek_uuid);
+		if (!$proyek) {
+			show_error('Data proyek tidak ditemukan.', 404);
+		}
+		
+		// Guru hanya bisa memilih siswa untuk proyek miliknya sendiri
+		$user_role = $this->session->userdata('role');
+		$user_uuid = $this->session->userdata('uuid');
+		if ($user_role === 'guru' && $proyek->created_by !== $user_uuid) {
+			show_error('Anda tidak memiliki akses untuk mengelola peserta proyek ini.', 403);
+		}
+		
 		$kelompok = $this->kelompok_model->get_by_proyek_uuid($proyek_uuid);
 		$siswa = $this->siswa_model->get_all();
 		$data = array(

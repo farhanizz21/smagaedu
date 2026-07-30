@@ -14,7 +14,20 @@ class Materi extends MY_Controller {
 
 	public function index()
 	{
-		$mapel = $this->mapel_model->get_all();
+		$user_role = $this->session->userdata('role');
+		$user_uuid = $this->session->userdata('uuid');
+		
+		// Jika guru, tampilkan mata pelajaran yang dibuat sendiri + yang diampu
+		if ($user_role === 'guru') {
+			$guru = $this->guru_model->get_by_uuid($user_uuid);
+			$assigned_uuids = [];
+			if ($guru && !empty($guru->mapel_uuid)) {
+				$assigned_uuids = json_decode($guru->mapel_uuid, true);
+			}
+			$mapel = $this->mapel_model->get_all_by_guru_relation($user_uuid, $assigned_uuids);
+		} else {
+			$mapel = $this->mapel_model->get_all();
+		}
 
 		$data = array(
 			'mapel' => $mapel,
