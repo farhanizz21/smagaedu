@@ -15,8 +15,10 @@
                 <a href="<?= base_url('mata_pelajaran') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'materi' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Mata
                     Pelajaran</a>
+                <?php if(has_role(['guru','kepala_sekolah', 'admin', 'superadmin'])): ?>
                 <a href="<?= base_url('perangkat') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'perangkat' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Perangkat</a>
+                <?php endif; ?>
                 <a href="<?= base_url('proyek') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'proyek' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Proyek</a>
                 <a href="<?= base_url('ujian') ?>"

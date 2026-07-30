@@ -45,8 +45,8 @@
             <!-- Deskripsi -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Deskripsi</label>
-                <div id="editor" style="height: 200px;"><?= set_value('deskripsi'); ?></div>
-                <input type="hidden" name="deskripsi" id="deskripsi" value="<?= set_value('deskripsi'); ?>">
+                <div id="editor" style="height: 200px;"><?= set_value('deskripsi', '', FALSE); ?></div>
+                <input type="hidden" name="deskripsi" id="deskripsi" value="<?= set_value('deskripsi', '', FALSE); ?>">
                 <small class="text-gray-400 text-xs mt-1 block">Gunakan toolbar di atas untuk formatting teks</small>
             </div>
 

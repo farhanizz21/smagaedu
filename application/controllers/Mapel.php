@@ -138,8 +138,7 @@ class Mapel extends MY_Controller {
 				if ($mapel->created_by !== $user_uuid && !in_array($mapel->uuid, $assigned_uuids)) {
 					show_error('Anda tidak memiliki akses untuk menghapus data ini.', 403);
 				}
-			}
-			
+			}			
 			$result = $this->mapel_model->delete_by_uuid($uuid);
 			if ($result) {
 				$this->session->set_flashdata('success_msg', 'Data mata pelajaran berhasil dihapus');
