@@ -22,6 +22,12 @@ class Materi extends MY_Controller {
 			$guru = $this->guru_model->get_by_uuid($user_uuid);
 			$assigned_uuids = $guru->mapel_list ?? [];
 			$mapel = $this->mapel_model->get_all_by_guru_relation($user_uuid, $assigned_uuids);
+		} elseif ($user_role === 'siswa') {
+			// Siswa hanya bisa melihat mata pelajaran sesuai kelasnya
+			$this->load->model('siswa_model');
+			$siswa = $this->siswa_model->get_by_uuid($user_uuid);
+			$kelas_uuid = $siswa->kelas_uuid ?? null;
+			$mapel = $this->mapel_model->get_all_by_kelas($kelas_uuid);
 		} else {
 			$mapel = $this->mapel_model->get_all();
 		}

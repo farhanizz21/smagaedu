@@ -54,6 +54,30 @@ class ujian_model extends CI_Model {
 		
 		return $this->db->get()->result();
 	}
+
+	/**
+	 * Get all ujian yang mapel-nya diampu untuk kumpulan mapel UUID tertentu.
+	 * Digunakan untuk memfilter ujian yang dapat dilihat siswa berdasarkan kelasnya.
+	 *
+	 * @param array $mapel_uuids Daftar UUID mapel yang diampu untuk kelas siswa
+	 * @return array Daftar ujian
+	 */
+	public function get_all_by_mapel_uuids($mapel_uuids = [])
+	{
+		if (empty($mapel_uuids)) {
+			return [];
+		}
+
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
+		$this->db->from('ujian u');
+		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
+		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
+		$this->db->where('u.deleted_at', NULL, FALSE);
+		$this->db->where_in('u.mapel_uuid', $mapel_uuids);
+		$this->db->order_by('u.modified_at', 'DESC');
+		
+		return $this->db->get()->result();
+	}
 	
     public function insert()
 	{

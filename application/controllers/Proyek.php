@@ -20,9 +20,16 @@ class Proyek extends MY_Controller {
 		$user_login = $this->session->userdata('uuid'); 
 		$user_role = $this->session->userdata('role');
 		
-		// Jika guru, hanya tampilkan proyek yang dibuat sendiri
+		// Jika guru, hanya tampilkan proyek dari mata pelajaran yang dimiliki/diampu
 		if ($user_role === 'guru') {
-			$proyek = $this->proyek_model->get_all($user_login);
+			$mapel_uuids = $this->guru_model->get_mapel_uuid_list($user_login);
+			$proyek = $this->proyek_model->get_all_by_mapel_uuids($mapel_uuids);
+		} elseif ($user_role === 'siswa') {
+			// Siswa hanya melihat proyek dari mata pelajaran sesuai kelasnya
+			$siswa = $this->siswa_model->get_by_uuid($user_login);
+			$kelas_uuid = $siswa->kelas_uuid ?? null;
+			$mapel_uuids = $this->mapel_model->get_mapel_uuids_by_kelas($kelas_uuid);
+			$proyek = $this->proyek_model->get_all_by_mapel_uuids($mapel_uuids);
 		} else {
 			$proyek = $this->proyek_model->get_all();
 		}

@@ -18,9 +18,23 @@ class Ujian extends MY_Controller {
 
 	public function index()
 	{
-		$ujian = $this->ujian_model->get_all();
-		
 		$user_login = $this->session->userdata('uuid'); 
+		$user_role = $this->session->userdata('role');
+
+		// Siswa hanya melihat ujian dari mata pelajaran sesuai kelasnya
+		if ($user_role === 'siswa') {
+			$siswa = $this->siswa_model->get_by_uuid($user_login);
+			$kelas_uuid = $siswa->kelas_uuid ?? null;
+			$mapel_uuids = $this->mapel_model->get_mapel_uuids_by_kelas($kelas_uuid);
+			$ujian = $this->ujian_model->get_all_by_mapel_uuids($mapel_uuids);
+		} elseif ($user_role === 'guru') {
+			// Guru hanya melihat ujian dari mata pelajaran yang dimiliki/diampu
+			$mapel_uuids = $this->guru_model->get_mapel_uuid_list($user_login);
+			$ujian = $this->ujian_model->get_all_by_mapel_uuids($mapel_uuids);
+		} else {
+			$ujian = $this->ujian_model->get_all();
+		}
+		
 		$peserta = []; 
 		foreach ($ujian as $u) {
 			$pengerjaan = false;
