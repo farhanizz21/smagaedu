@@ -17,7 +17,10 @@ class bab_model extends CI_Model {
             'created_by'  => $this->session->userdata('uuid')
         );
         $this->db->insert('bab', $data);
-        return ($this->db->affected_rows() > 0);
+        if ($this->db->affected_rows() > 0) {
+            return $uuid;
+        }
+        return false;
     }
 
     public function get_by_materi_uuid($materi_uuid)

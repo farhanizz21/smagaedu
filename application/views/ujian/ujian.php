@@ -64,7 +64,21 @@
                     ?>
                     <tr class="table-row-hover transition-colors">
                         <td class="px-6 py-4 text-gray-500 text-center"><?= $no ; ?></td>
-                        <td class="px-6 py-4 font-medium text-gray-900"><?= $val->nama; ?></td>
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-900"><?= $val->nama; ?></div>
+                            <?php if(!empty($val->bab_uuid)): ?>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-violet-100 text-violet-700 border border-violet-200">
+                                    <i data-lucide="layers" class="w-2.5 h-2.5"></i>
+                                    Dari Sub Bab
+                                </span>
+                                <span class="text-[11px] text-gray-500">
+                                    <?= !empty($val->bab_judul) ? htmlspecialchars($val->bab_judul) : '' ?>
+                                </span>
+                            </div>
+                            <?php endif; ?>
+                        </td>
                         <td class="px-6 py-4 text-gray-600"><?= $val->mapel_nama; ?></td>
                         <td class="px-6 py-4 text-gray-600"><?= $val->tgl_mulai_formatted; ?> -
                             <?= $val->tgl_selesai_formatted; ?></td>

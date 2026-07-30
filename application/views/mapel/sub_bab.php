@@ -82,9 +82,29 @@
             $no++;
             $icons = ['file-text', 'file-spreadsheet', 'notebook', 'notebook-text', 'scroll', 'book-audio'];
             $icon = $icons[$no % count($icons)];
+            $is_locked = isset($bab_unlocked[$val->uuid]) && !$bab_unlocked[$val->uuid];
+            $has_ujian = isset($bab_has_ujian[$val->uuid]) && $bab_has_ujian[$val->uuid];
         ?>
         <div
-            class="bg-white rounded-2xl border-2 <?= $palette['border'] ?> <?= $palette['hover'] ?> hover:shadow-lg <?= $palette['shadow'] ?> transition-all duration-200 p-5">
+            class="bg-white rounded-2xl border-2 <?= $palette['border'] ?> <?= $palette['hover'] ?> hover:shadow-lg <?= $palette['shadow'] ?> transition-all duration-200 p-5 relative <?= $is_locked ? 'opacity-60' : '' ?>">
+            <?php if($is_locked): ?>
+            <div
+                class="absolute inset-0 bg-gray-900/30 backdrop-blur-[1px] rounded-2xl flex items-center justify-center z-10">
+                <div class="text-center text-white">
+                    <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="lock" class="w-7 h-7 text-gray-400"></i>
+                    </div>
+                    <p class="text-sm font-semibold mb-1">Sub Bab Terkunci</p>
+                    <p class="text-xs opacity-80">
+                        <?php if($has_ujian): ?>
+                        Selesaikan ujian sub bab sebelumnya untuk membuka
+                        <?php else: ?>
+                        Selesaikan sub bab sebelumnya untuk membuka
+                        <?php endif; ?>
+                    </p>
+                </div>
+            </div>
+            <?php endif; ?>
             <div class="flex items-center gap-4">
                 <!-- Number badge -->
                 <div class="w-12 h-12 rounded-xl <?= $palette['bg'] ?> flex items-center justify-center flex-shrink-0">
@@ -200,6 +220,65 @@
                             <i data-lucide="send" class="w-3.5 h-3.5"></i>
                         </button>
                     </form>
+                </div>
+
+                <!-- Ujian Section -->
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="clipboard-list" class="w-4 h-4 text-gray-400"></i>
+                            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ujian</span>
+                            <span
+                                class="text-xs text-gray-400">(<?= isset($ujian_per_bab[$val->uuid]) ? count($ujian_per_bab[$val->uuid]) : 0 ?>)</span>
+                        </div>
+                        <?php if($can_manage): ?>
+                        <a href="<?= base_url('sub_bab/tambah_ujian/' . $val->uuid) ?>"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium <?= $palette['badge'] ?> border <?= $palette['border'] ?> hover:shadow-md transition-all">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                            Buat Ujian
+                        </a>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if(isset($ujian_per_bab[$val->uuid]) && !empty($ujian_per_bab[$val->uuid])): ?>
+                    <div class="space-y-1.5">
+                        <?php foreach($ujian_per_bab[$val->uuid] as $u): ?>
+                        <div
+                            class="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <i data-lucide="clipboard-list"
+                                    class="w-3.5 h-3.5 <?= $palette['icon'] ?> flex-shrink-0"></i>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-medium text-gray-700 truncate"><?= $u->nama ?></p>
+                                    <p class="text-[10px] text-gray-400"><?= $u->tgl_mulai_formatted ?></p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1 flex-shrink-0">
+                                <?php if(!has_role(['siswa'])): ?>
+                                <a href="<?= base_url('ujian/tambah_soal/' . $u->uuid) ?>"
+                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                                    data-toggle="tooltip" title="Tambah Soal">
+                                    <i data-lucide="plus" class="w-3 h-3"></i>
+                                </a>
+                                <a href="<?= base_url('ujian/tambah_kelas/' . $u->uuid) ?>"
+                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 transition-colors"
+                                    data-toggle="tooltip" title="Peserta">
+                                    <i data-lucide="users" class="w-3 h-3"></i>
+                                </a>
+                                <?php else: ?>
+                                <a href="<?= base_url('ujian/pengerjaan/' . $u->uuid) ?>"
+                                    class="btn-mulai inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                                    data-toggle="tooltip" title="Mulai Ujian" data-uuid="<?= $u->uuid ?>">
+                                    <i data-lucide="play" class="w-3 h-3"></i>
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?>
+                    <p class="text-xs text-gray-400 italic">Belum ada ujian</p>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

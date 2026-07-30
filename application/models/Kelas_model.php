@@ -24,6 +24,23 @@ class kelas_model extends CI_Model {
 		return $data;
 	}
 
+    /**
+     * Get kelas by array of UUIDs.
+     *
+     * @param array $uuids Daftar UUID kelas
+     * @return array Daftar kelas
+     */
+    public function get_by_uuids($uuids = [])
+    {
+        if (empty($uuids) || !is_array($uuids)) {
+            return [];
+        }
+        $this->db->where('deleted_at', NULL, FALSE);
+        $this->db->where_in('uuid', $uuids);
+        $this->db->order_by('modified_at', 'DESC');
+        return $this->db->get('kelas')->result();
+    }
+
     public function insert()
 	{
 		$uuid = Uuid::uuid4()->toString();

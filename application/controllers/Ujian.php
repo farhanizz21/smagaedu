@@ -128,6 +128,7 @@ class Ujian extends MY_Controller {
 
 		$this->load->model('sub_materi_model');
 		$this->load->model('bab_model');
+		$this->load->model('materi_model');
 		$sub = $this->sub_materi_model->get_by_uuid($sub_materi_uuid);
 		if (empty($sub)) {
 			show_404();
@@ -155,10 +156,21 @@ class Ujian extends MY_Controller {
 			}
 		}
 
+		// Ambil daftar mapel yang diampu guru untuk dropdown
+		// Admin/superadmin tanpa record guru melihat semua mapel
+		$guru_uuid = $this->session->userdata('uuid');
+		$guru = $this->guru_model->get_by_uuid($guru_uuid);
+		if ($guru && !empty($guru->mapel_list)) {
+			$mapel = $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list);
+		} else {
+			$mapel = $this->mapel_model->get_all();
+		}
+
 		$data = array(
 			'sub' => $sub,
 			'bab' => $bab,
 			'materi' => $materi,
+			'mapel_list' => $mapel,
 			'active_nav' => 'ujian'
 		);
 
@@ -257,11 +269,23 @@ class Ujian extends MY_Controller {
 			}
 		}
 		sort($kelas_filter);
-		
+
+		// Ambil daftar kelas sesuai mapel guru untuk dropdown
+		// Jika guru, filter kelas berdasarkan kelas_map pada mapel ujian
+		// Jika admin/superadmin, tampilkan semua kelas
+		$guru_uuid = $this->session->userdata('uuid');
+		$guru = $this->guru_model->get_by_uuid($guru_uuid);
+		if ($guru && !empty($guru->kelas_map) && isset($guru->kelas_map[$ujian->mapel_uuid])) {
+			$kelas_uuids = $guru->kelas_map[$ujian->mapel_uuid];
+			$kelas_list = $this->kelas_model->get_by_uuids($kelas_uuids);
+		} else {
+			$kelas_list = $this->kelas_model->get_all();
+		}
+
 		$data = array(
 			'ujian' => $ujian,
 			'peserta' => $peserta,
-			'kelas' => $this->kelas_model->get_all(),
+			'kelas' => $kelas_list,
 			'kelas_filter' => $kelas_filter,
 			'active_nav' => 'ujian'
 		);

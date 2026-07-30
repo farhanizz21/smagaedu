@@ -43,12 +43,13 @@ class ujian_model extends CI_Model {
 		return $this->db->get()->result();
 	}
 
-	public function get_all()
+    public function get_all()
 	{
-		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
 		$this->db->from('ujian u');
 		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
+		$this->db->join('bab b', 'b.uuid = u.bab_uuid', 'left');
 		$this->db->where('u.deleted_at', NULL, FALSE);
 		$this->db->order_by('u.modified_at', 'DESC');
 		
@@ -68,10 +69,11 @@ class ujian_model extends CI_Model {
 			return [];
 		}
 
-		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
 		$this->db->from('ujian u');
 		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
+		$this->db->join('bab b', 'b.uuid = u.bab_uuid', 'left');
 		$this->db->where('u.deleted_at', NULL, FALSE);
 		$this->db->where_in('u.mapel_uuid', $mapel_uuids);
 		$this->db->order_by('u.modified_at', 'DESC');
@@ -137,6 +139,62 @@ class ujian_model extends CI_Model {
 		} else {
 			return false;
 		}
+	}
+
+	/**
+	 * Insert ujian yang terhubung langsung dengan bab (sub bab).
+	 * Digunakan saat membuat ujian dari form Tambah Sub Bab.
+	 *
+	 * @param string $bab_uuid UUID bab (sub bab) yang dibuat
+	 * @param string $mapel_uuid UUID mata pelajaran
+	 * @return string|bool UUID ujian baru atau false jika gagal
+	 */
+	public function insert_bab($bab_uuid, $mapel_uuid)
+	{
+		$uuid = Uuid::uuid4()->toString();
+		$namaUjian = $this->input->post('namaUjian');
+		$tgl_mulai = $this->input->post('tgl_mulai');
+		$tgl_selesai = $this->input->post('tgl_selesai');
+		$user = $this->session->userdata('uuid');
+
+		$jenis_penilaian = $this->input->post('jenis_penilaian');
+		
+		$data = array(
+			'uuid' => $uuid,
+			'mapel_uuid' => $mapel_uuid,
+			'bab_uuid' => $bab_uuid,
+			'nama' => $namaUjian,
+			'jenis_penilaian' => $jenis_penilaian,
+			'tgl_mulai' => $tgl_mulai,
+			'tgl_selesai' => $tgl_selesai,
+			'created_by' => $user
+		);
+
+		$this->db->insert('ujian', $data);
+		if ($this->db->affected_rows() > 0) {
+			return $data['uuid'];
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Get ujian yang terhubung dengan bab (sub bab) tertentu.
+	 *
+	 * @param string $bab_uuid UUID bab (sub bab)
+	 * @return array Daftar ujian
+	 */
+	public function get_by_bab($bab_uuid)
+	{
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
+		$this->db->from('ujian u');
+		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
+		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
+		$this->db->where('u.bab_uuid', $bab_uuid);
+		$this->db->where('u.deleted_at', NULL, FALSE);
+		$this->db->order_by('u.modified_at', 'DESC');
+		
+		return $this->db->get()->result();
 	}
 
 	public function delete_by_uuid($uuid)
