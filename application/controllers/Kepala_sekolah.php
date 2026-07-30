@@ -22,12 +22,7 @@ class Kepala_sekolah extends MY_Controller {
 	{
 		$guru = $this->guru_model->get_all();
 		foreach ($guru as $val) {
-			$uuid_array = json_decode($val->mapel_uuid);
-			$mapel_list = $this->mapel_model->get_many_mapel_by_uuid($uuid_array);
-
-			$val->mapel_nama = array_map(function($m) {
-				return $m->nama;
-			}, $mapel_list);
+			// mapel_nama and mapel_data are already set in get_all() method
 			
 			// Get jadwal count
 			$this->db->where('guru_uuid', $val->uuid);
@@ -53,9 +48,8 @@ class Kepala_sekolah extends MY_Controller {
 			show_404();
 		}
 
-		// Get mapel list
-		$uuid_array = json_decode($guru->mapel_uuid);
-		$mapel_list = $this->mapel_model->get_many_mapel_by_uuid($uuid_array);
+		// Get mapel list (already parsed in get_by_uuid)
+		$mapel_list = $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? []);
 		$guru->mapel_list = $mapel_list;
 
 		// Get jadwal (schedule images)

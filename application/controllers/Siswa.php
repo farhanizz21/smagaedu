@@ -21,7 +21,7 @@ class Siswa extends MY_Controller {
 
         $this->load->view('partials/header_tailwind', ['title' => 'Data Siswa']);
 		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
-        $this->load->view('siswa/siswa', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/siswa/siswa', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -48,7 +48,7 @@ class Siswa extends MY_Controller {
 
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Siswa']);
 		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
-        $this->load->view('siswa/siswa-tambah', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/siswa/siswa-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -96,7 +96,7 @@ class Siswa extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Siswa']);
 		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
-        $this->load->view('siswa/siswa-edit', $data);
+        $this->load->view('master/siswa/siswa-edit', $data);
 		$this->load->view('partials/footer_tailwind');
 	}
 

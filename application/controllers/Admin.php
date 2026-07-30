@@ -19,7 +19,7 @@ class Admin extends MY_Controller {
 		
 		$this->load->view('partials/header_tailwind', $data);
 		$this->load->view('partials/navbar', $data);
-		$this->load->view('admin/dashboard', $data);
+		$this->load->view('master/admin/dashboard', $data);
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -32,7 +32,7 @@ class Admin extends MY_Controller {
 		
 		$this->load->view('partials/header_tailwind', $data);
 		$this->load->view('partials/navbar', $data);
-		$this->load->view('admin/settings', $data);
+		$this->load->view('master/admin/settings', $data);
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -49,7 +49,7 @@ class Admin extends MY_Controller {
 		
 		$this->load->view('partials/header_tailwind', $data);
 		$this->load->view('partials/navbar', $data);
-		$this->load->view('admin/roles', $data);
+		$this->load->view('master/admin/roles', $data);
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -72,7 +72,7 @@ class Admin extends MY_Controller {
 		
 		$this->load->view('partials/header_tailwind', $data);
 		$this->load->view('partials/navbar', $data);
-		$this->load->view('admin/permissions', $data);
+		$this->load->view('master/admin/permissions', $data);
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -92,7 +92,7 @@ class Admin extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Data Admin']);
 		$this->load->view('partials/navbar', ['active_nav' => 'admins']);
-        $this->load->view('admin/admins', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/admin/admins', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -124,7 +124,7 @@ class Admin extends MY_Controller {
 
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Admin']);
 		$this->load->view('partials/navbar', ['active_nav' => 'admins']);
-        $this->load->view('admin/admin-tambah', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/admin/admin-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -173,7 +173,7 @@ class Admin extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Admin']);
 		$this->load->view('partials/navbar', ['active_nav' => 'admins']);
-        $this->load->view('admin/admin-edit', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/admin/admin-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -226,7 +226,7 @@ class Admin extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Data Kepala Sekolah']);
 		$this->load->view('partials/navbar', ['active_nav' => 'kepala_sekolah_admin']);
-		$this->load->view('admin/kepala_sekolah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('master/admin/kepala_sekolah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -290,7 +290,7 @@ class Admin extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Tambah Kepala Sekolah']);
 		$this->load->view('partials/navbar', ['active_nav' => 'kepala_sekolah_admin']);
-		$this->load->view('admin/kepala_sekolah-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('master/admin/kepala_sekolah-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -353,7 +353,7 @@ class Admin extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Kepala Sekolah']);
 		$this->load->view('partials/navbar', ['active_nav' => 'kepala_sekolah_admin']);
-		$this->load->view('admin/kepala_sekolah-edit', array_merge($data, ['from_controller' => true]));
+		$this->load->view('master/admin/kepala_sekolah-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 

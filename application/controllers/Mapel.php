@@ -39,7 +39,7 @@ class Mapel extends MY_Controller {
 		
         $this->load->view('partials/header_tailwind', ['title' => 'Data Mata Pelajaran']);
 		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
-        $this->load->view('mapel/mapel', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/mapel/mapel', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
     
@@ -64,7 +64,7 @@ class Mapel extends MY_Controller {
         
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Mata Pelajaran']);
 		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
-        $this->load->view('mapel/mapel-tambah', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/mapel/mapel-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -115,7 +115,7 @@ class Mapel extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Mata Pelajaran']);
 		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
-        $this->load->view('mapel/mapel-edit', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/mapel/mapel-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 

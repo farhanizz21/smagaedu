@@ -19,7 +19,7 @@ class Kelas extends MY_Controller {
 
         $this->load->view('partials/header_tailwind', ['title' => 'Data Kelas']);
 		$this->load->view('partials/navbar', ['active_nav' => 'kelas']);
-        $this->load->view('kelas/kelas', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/kelas/kelas', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -44,7 +44,7 @@ class Kelas extends MY_Controller {
 
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Kelas']);
 		$this->load->view('partials/navbar', ['active_nav' => 'kelas']);
-        $this->load->view('kelas/kelas-tambah', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/kelas/kelas-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -76,7 +76,7 @@ class Kelas extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Kelas']);
 		$this->load->view('partials/navbar', ['active_nav' => 'kelas']);
-        $this->load->view('kelas/kelas-edit', array_merge($data, ['from_controller' => true]));
+        $this->load->view('master/kelas/kelas-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 

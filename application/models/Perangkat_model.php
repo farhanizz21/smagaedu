@@ -7,6 +7,36 @@ class Perangkat_model extends CI_Model {
     public function __construct()
     {
         parent::__construct();
+        $this->load->model('guru_model');
+    }
+
+    /**
+     * Parse mapel_uuid field - handles both old format (simple array) and new format (array of objects with kelas_list)
+     */
+    private function parse_mapel_uuids($mapel_uuid_json)
+    {
+        if (empty($mapel_uuid_json)) {
+            return [];
+        }
+
+        $data = json_decode($mapel_uuid_json, true);
+        if (!is_array($data)) {
+            return [];
+        }
+
+        // Check if old format (simple array of mapel UUIDs)
+        if (isset($data[0]) && is_string($data[0])) {
+            return $data;
+        }
+
+        // New format: [{"mapel_uuid": "uuid1", "kelas_list": [...]}]
+        $mapel_list = [];
+        foreach ($data as $item) {
+            if (isset($item['mapel_uuid'])) {
+                $mapel_list[] = $item['mapel_uuid'];
+            }
+        }
+        return $mapel_list;
     }
 
     public function get_mapel_by_guru($guru_uuid)
@@ -23,7 +53,7 @@ class Perangkat_model extends CI_Model {
             return [];
         }
         
-        $uuid_array = json_decode($guru->mapel_uuid);
+        $uuid_array = $this->parse_mapel_uuids($guru->mapel_uuid);
         if (empty($uuid_array)) {
             return [];
         }
@@ -120,20 +150,8 @@ class Perangkat_model extends CI_Model {
         
         // Guru hanya bisa akses mapel yang diampu
         $guru_uuid = $this->session->userdata('uuid');
-        $this->db->select('user_profiles.mapel_uuid');
-        $this->db->from('users');
-        $this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
-        $this->db->where('users.uuid', $guru_uuid);
-        $this->db->where('users.role_id', 3);
-        $this->db->where('users.deleted_at', NULL, FALSE);
-        $guru = $this->db->get()->row();
-        
-        if (!$guru || empty($guru->mapel_uuid)) {
-            return false;
-        }
-        
-        $uuid_array = json_decode($guru->mapel_uuid);
-        return in_array($mapel_uuid, $uuid_array);
+        $mapel_uuids = $this->guru_model->get_mapel_uuid_list($guru_uuid);
+        return in_array($mapel_uuid, $mapel_uuids);
     }
 }
 ?>

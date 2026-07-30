@@ -96,7 +96,7 @@ class Proyek extends MY_Controller {
 		
 		$guru_uuid = $this->session->userdata('uuid');
 		$guru = $this->guru_model->get_by_uuid($guru_uuid);
-		$mapel_list = json_decode($guru->mapel_uuid);
+		$mapel_list = $guru->mapel_list ?? [];
 		$mapel = $this->mapel_model->get_many_mapel_by_uuid($mapel_list);
 		
 		$data = array(

@@ -47,7 +47,7 @@
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Username</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                            Mata Pelajaran</th>
+                            Mata Pelajaran & Kelas</th>
                         <th
                             class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-28">
                             Aksi</th>
@@ -65,11 +65,23 @@
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1.5">
                                 <?php if (!empty($val->mapel_nama)) : ?>
-                                <?php foreach ($val->mapel_nama as $i => $nama_mapel) : ?>
-                                <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                                    <?= $nama_mapel ?>
-                                </span>
+                                <?php foreach ($val->mapel_data as $i => $mapel_obj) : ?>
+                                <div class="flex flex-col gap-0.5">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                        <?= $mapel_obj->nama ?>
+                                    </span>
+                                    <?php if (isset($val->kelas_per_mapel[$mapel_obj->uuid]) && !empty($val->kelas_per_mapel[$mapel_obj->uuid])): ?>
+                                    <div class="flex flex-wrap gap-0.5 ml-1">
+                                        <?php foreach ($val->kelas_per_mapel[$mapel_obj->uuid] as $kelas_obj): ?>
+                                        <span
+                                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-50 text-green-600 border border-green-100">
+                                            <?= $kelas_obj->nama ?>
+                                        </span>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <?php endif; ?>
+                                </div>
                                 <?php endforeach; ?>
                                 <?php else: ?>
                                 <span class="text-gray-400 text-xs">-</span>
