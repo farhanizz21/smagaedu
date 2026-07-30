@@ -33,7 +33,7 @@ class Materi extends MY_Controller {
 
         $this->load->view('partials/header_tailwind', ['title' => 'Daftar Mata Pelajaran']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-        $this->load->view('materi/materi', array_merge($data, ['from_controller' => true]));
+        $this->load->view('mapel/mapel', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
     
@@ -65,7 +65,7 @@ class Materi extends MY_Controller {
 
         $this->load->view('partials/header_tailwind', ['title' => 'Daftar Materi']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-        $this->load->view('materi/materi-list', array_merge($data, ['from_controller' => true]));
+        $this->load->view('mapel/bab-list', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -120,7 +120,7 @@ class Materi extends MY_Controller {
 
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Materi']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-        $this->load->view('materi/materi-tambah', array_merge($data, ['from_controller' => true]));
+        $this->load->view('mapel/bab-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -184,7 +184,7 @@ class Materi extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Materi']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-        $this->load->view('materi/materi-edit', array_merge($data, ['from_controller' => true]));
+        $this->load->view('mapel/bab-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 

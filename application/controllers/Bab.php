@@ -72,7 +72,7 @@ class Bab extends MY_Controller {
  
  		$this->load->view('partials/header_tailwind', ['title' => 'Bab']);
  		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-         $this->load->view('materi/bab', array_merge($data, ['from_controller' => true]));
+         $this->load->view('mapel/sub_bab', array_merge($data, ['from_controller' => true]));
  		$this->load->view('partials/footer_tailwind');
  	}
 
@@ -130,7 +130,7 @@ class Bab extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Tambah Bab']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-        $this->load->view('materi/bab-tambah', array_merge($data, ['from_controller' => true]));
+        $this->load->view('mapel/sub_bab-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -190,7 +190,7 @@ class Bab extends MY_Controller {
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Bab']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-        $this->load->view('materi/bab-edit', array_merge($data, ['from_controller' => true]));
+        $this->load->view('mapel/sub_bab-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
