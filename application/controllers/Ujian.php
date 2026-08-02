@@ -323,6 +323,7 @@ class Ujian extends MY_Controller {
         foreach ($soal as $d) {
             $jawaban[$d->uuid] = $this->jawaban_model->get_by_soal_uuid($d->uuid, $siswa_uuid);
         }
+        $nilai_ujian = 0;
         if($jawaban != NULL){
             //ambil nilai total 
             $total_nilai = 0;

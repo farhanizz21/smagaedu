@@ -53,6 +53,9 @@
                         class="text-red-500">*</span></label>
                 <select name="jenis_penilaian"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                    <option value="formatif" <?= set_value('jenis_penilaian') == 'formatif' ? 'selected' : '' ?>>
+                        Formatif
+                    </option>
                     <option value="penilaian_harian"
                         <?= set_value('jenis_penilaian') == 'penilaian_harian' ? 'selected' : '' ?>>Penilaian Harian
                     </option>

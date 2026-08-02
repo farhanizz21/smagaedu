@@ -90,9 +90,9 @@
                                 <p class="text-sm font-semibold text-gray-700 mb-1">Jawaban:</p>
                                 <div class="text-sm text-gray-800 bg-white rounded-lg p-3 border border-gray-200">
                                     <?php if (isset($jawaban[$d->uuid][0]->jawaban_siswa)): ?>
-                                        <?= $jawaban[$d->uuid][0]->jawaban_teks ?? $jawaban[$d->uuid][0]->jawaban_siswa; ?>
+                                    <?= $jawaban[$d->uuid][0]->jawaban_teks ?? $jawaban[$d->uuid][0]->jawaban_siswa; ?>
                                     <?php else: ?>
-                                        <span class="text-red-600">Tidak dijawab</span>
+                                    <span class="text-red-600">Tidak dijawab</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -103,9 +103,13 @@
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Nilai <span
                                         class="text-red-500">*</span></label>
                                 <p class="text-xs text-gray-500 mb-2">Isi dengan 0 - 10</p>
+                                <?php
+                                    $auto_nilai = in_array($d->jenis_soal, ['pilihan_ganda', 'pilihan_ganda_kompleks', 'menjodohkan', 'benar_salah']) ? 10 : '';
+                                    $nilai_value = !empty($jawaban[$d->uuid][0]->nilai) ? $jawaban[$d->uuid][0]->nilai : $auto_nilai;
+                                ?>
                                 <input type="number" name="nilai[<?= $d->uuid; ?>]"
                                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
-                                    min="0" max="10" value="<?= $jawaban[$d->uuid][0]->nilai;?>" required>
+                                    min="0" max="10" value="<?= $nilai_value;?>" required>
                             </div>
                             <?php else: ?>
                             <div class="bg-red-50 rounded-xl p-4 border border-red-200 text-center">
