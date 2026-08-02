@@ -61,6 +61,27 @@ class soal_model extends CI_Model {
 		}
 	}
 
+	public function insert_import($soal_data, $jodohkan_pairs = array())
+	{
+		$uuid = Uuid::uuid4()->toString();
+		$user = $this->session->userdata('uuid');
+
+		$data = array_merge(array(
+			'uuid' => $uuid,
+			'created_by' => $user,
+			'modified_at' => date("Y-m-d H:i:s")
+		), $soal_data);
+
+		$this->db->insert('ujian_soal', $data);
+		if ($this->db->affected_rows() > 0) {
+			if (!empty($jodohkan_pairs) && is_array($jodohkan_pairs)) {
+				$this->insert_jodohkan_pairs($uuid, $jodohkan_pairs);
+			}
+			return $uuid;
+		}
+		return false;
+	}
+
 	public function delete_by_uuid($uuid)
 	{
 		$data = array(

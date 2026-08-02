@@ -34,6 +34,17 @@
     </div>
     <?php endif; ?>
 
+    <?php if ($this->session->userdata('import_errors')): ?>
+    <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-start gap-2">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5"></i>
+        <div>
+            <strong class="font-semibold">Beberapa soal gagal diimport:</strong>
+            <div class="mt-1"><?= $this->session->userdata('import_errors'); ?></div>
+        </div>
+        <?php $this->session->unset_userdata('import_errors'); ?>
+    </div>
+    <?php endif; ?>
+
     <!-- Form Card -->
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow mb-8">
         <form method="post" action="<?= base_url('ujian/tambah_soal/' . $ujian->uuid); ?>">
@@ -267,6 +278,54 @@
         </form>
     </div>
 
+    <!-- Import / Export Excel -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div>
+                <h3 class="text-lg font-bold text-gray-900">Import / Export Soal Excel</h3>
+                <p class="text-sm text-gray-500 mt-1">Tambahkan banyak soal sekaligus menggunakan file Excel</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="<?= base_url('ujian/download_template_soal'); ?>"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-emerald-600 shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    Download Format Excel
+                </a>
+                <?php if(!empty($soal)): ?>
+                <a href="<?= base_url('ujian/export_soal/' . $ujian->uuid); ?>"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-all">
+                    <i data-lucide="file-down" class="w-4 h-4"></i>
+                    Export Soal ke Excel
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <form method="post" action="<?= base_url('ujian/import_soal/' . $ujian->uuid); ?>" enctype="multipart/form-data"
+            class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid ?>">
+            <div class="flex-1 w-full">
+                <label for="file_excel"
+                    class="flex items-center justify-center w-full px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer bg-gray-50 hover:bg-blue-50/50">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="file-spreadsheet" class="w-6 h-6 text-emerald-600 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700" id="file_excel_label">Pilih file Excel (.xlsx /
+                                .xls)</p>
+                            <p class="text-xs text-gray-400">Maksimal 5 MB</p>
+                        </div>
+                    </div>
+                    <input type="file" name="file_excel" id="file_excel" accept=".xlsx,.xls" class="hidden">
+                </label>
+            </div>
+            <button type="submit"
+                class="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all whitespace-nowrap">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                Import Soal
+            </button>
+        </form>
+    </div>
+
     <!-- Daftar Soal -->
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -411,16 +470,16 @@
                             ?>
                             <span class="text-xs text-gray-500"><?= $pair_count ?> pasangan</span>
                             <?php else: ?>
-                                <?php if ($s->jawaban_a): ?>
-                                <span class="text-xs text-gray-500">Kunci: <?= htmlspecialchars($s->jawaban_a) ?></span>
-                                <?php else: ?>
-                                <span class="text-xs text-gray-400">Kunci: (kosong)</span>
-                                <?php endif; ?>
-                                <?php if ($s->jawaban_b): ?>
-                                <span class="text-xs text-gray-500">Jawaban: <?= htmlspecialchars($s->jawaban_b) ?></span>
-                                <?php else: ?>
-                                <span class="text-xs text-gray-400">Jawaban: (kosong)</span>
-                                <?php endif; ?>
+                            <?php if ($s->jawaban_a): ?>
+                            <span class="text-xs text-gray-500">Kunci: <?= htmlspecialchars($s->jawaban_a) ?></span>
+                            <?php else: ?>
+                            <span class="text-xs text-gray-400">Kunci: (kosong)</span>
+                            <?php endif; ?>
+                            <?php if ($s->jawaban_b): ?>
+                            <span class="text-xs text-gray-500">Jawaban: <?= htmlspecialchars($s->jawaban_b) ?></span>
+                            <?php else: ?>
+                            <span class="text-xs text-gray-400">Jawaban: (kosong)</span>
+                            <?php endif; ?>
                             <?php endif; ?>
                         </div>
                         <?php endif; ?>
@@ -710,7 +769,10 @@ function openEditModal(uuid) {
                 editJodohkanWrapper.innerHTML = '';
                 var pairs = data.data.jodohkan_pairs || [];
                 if (pairs.length === 0 && data.data.jenis_soal === 'menjodohkan') {
-                    pairs = [{kunci: data.data.jawaban_a || '', jawaban: data.data.jawaban_b || ''}];
+                    pairs = [{
+                        kunci: data.data.jawaban_a || '',
+                        jawaban: data.data.jawaban_b || ''
+                    }];
                 }
                 pairs.forEach(function(pair, index) {
                     addEditJodohkanPair(pair.kunci || '', pair.jawaban || '');
@@ -732,12 +794,16 @@ function addEditJodohkanPair(kunci, jawaban) {
     div.className = 'edit-jodohkan-pair grid grid-cols-1 md:grid-cols-2 gap-3 mb-3';
     div.innerHTML = '<div>' +
         '<label class="block text-sm font-semibold text-gray-700 mb-1.5">Soal / Kunci</label>' +
-        '<textarea name="jodohkan_pairs[' + index + '][kunci]" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400" placeholder="Soal / Kunci...">' + (kunci || '') + '</textarea>' +
+        '<textarea name="jodohkan_pairs[' + index +
+        '][kunci]" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400" placeholder="Soal / Kunci...">' +
+        (kunci || '') + '</textarea>' +
         '</div>' +
         '<div class="flex flex-col justify-end">' +
         '<label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban</label>' +
         '<div class="flex gap-2">' +
-        '<textarea name="jodohkan_pairs[' + index + '][jawaban]" rows="2" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400" placeholder="Jawaban...">' + (jawaban || '') + '</textarea>' +
+        '<textarea name="jodohkan_pairs[' + index +
+        '][jawaban]" rows="2" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400" placeholder="Jawaban...">' +
+        (jawaban || '') + '</textarea>' +
         '<button type="button" class="remove-edit-jodohkan-pair p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors h-fit" title="Hapus pasangan">' +
         '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
         '</button>' +
@@ -754,12 +820,14 @@ function addJodohkanPair() {
     div.className = 'jodohkan-pair grid grid-cols-1 md:grid-cols-2 gap-4 mb-3';
     div.innerHTML = '<div>' +
         '<label class="block text-sm font-semibold text-gray-700 mb-1.5">Soal / Kunci <span class="text-red-500">*</span></label>' +
-        '<textarea name="jodohkan_pairs[' + index + '][kunci]" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400" placeholder="Masukkan soal/kunci..."></textarea>' +
+        '<textarea name="jodohkan_pairs[' + index +
+        '][kunci]" rows="2" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400" placeholder="Masukkan soal/kunci..."></textarea>' +
         '</div>' +
         '<div class="flex flex-col justify-end">' +
         '<label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban <span class="text-red-500">*</span></label>' +
         '<div class="flex gap-2">' +
-        '<textarea name="jodohkan_pairs[' + index + '][jawaban]" rows="2" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400" placeholder="Masukkan jawaban..."></textarea>' +
+        '<textarea name="jodohkan_pairs[' + index +
+        '][jawaban]" rows="2" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400" placeholder="Masukkan jawaban..."></textarea>' +
         '<button type="button" class="remove-jodohkan-pair p-2 rounded-lg text-red-500 hover:bg-red-50 transition-colors h-fit" title="Hapus pasangan">' +
         '<i data-lucide="trash-2" class="w-4 h-4"></i>' +
         '</button>' +
@@ -936,12 +1004,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function reindexJodohkanPairs(wrapperId, namePrefix) {
         var wrapper = document.getElementById(wrapperId);
-        var pairs = wrapper.querySelectorAll('.' + (wrapperId === 'jodohkan_pairs_wrapper' ? 'jodohkan-pair' : 'edit-jodohkan-pair'));
+        var pairs = wrapper.querySelectorAll('.' + (wrapperId === 'jodohkan_pairs_wrapper' ? 'jodohkan-pair' :
+            'edit-jodohkan-pair'));
         pairs.forEach(function(pair, index) {
             pair.querySelectorAll('textarea').forEach(function(textarea) {
                 var name = textarea.getAttribute('name');
                 if (name) {
-                    var newName = name.replace(/jodohkan_pairs\[\d+\]/, 'jodohkan_pairs[' + index + ']');
+                    var newName = name.replace(/jodohkan_pairs\[\d+\]/, 'jodohkan_pairs[' +
+                        index + ']');
                     textarea.setAttribute('name', newName);
                 }
             });
@@ -952,6 +1022,18 @@ document.addEventListener('DOMContentLoaded', function() {
     if (editAddJodohkanBtn) {
         editAddJodohkanBtn.addEventListener('click', function() {
             addEditJodohkanPair('', '');
+        });
+    }
+
+    var fileExcel = document.getElementById('file_excel');
+    if (fileExcel) {
+        fileExcel.addEventListener('change', function() {
+            var label = document.getElementById('file_excel_label');
+            if (this.files && this.files.length > 0) {
+                label.textContent = this.files[0].name;
+            } else {
+                label.textContent = 'Pilih file Excel (.xlsx / .xls)';
+            }
         });
     }
 });

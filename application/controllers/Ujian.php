@@ -1,6 +1,10 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 class Ujian extends MY_Controller {
 
 	public function __construct()
@@ -222,6 +226,433 @@ class Ujian extends MY_Controller {
 		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
         $this->load->view('ujian/ujian-soal', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
+	}
+
+	/**
+	 * Unduh template Excel (format soal) untuk diisi guru
+	 */
+	public function download_template_soal()
+	{
+		$spreadsheet = new Spreadsheet();
+		$sheet = $spreadsheet->getActiveSheet();
+		$sheet->setTitle('Template Soal');
+
+		// Header kolom
+		$headers = [
+			'Jenis Soal',
+			'Soal',
+			'Jawaban A',
+			'Jawaban B',
+			'Jawaban C',
+			'Jawaban D',
+			'Jawaban Benar',
+			'Kunci 1',
+			'Jawaban 1',
+			'Kunci 2',
+			'Jawaban 2',
+			'Kunci 3',
+			'Jawaban 3',
+			'Kunci 4',
+			'Jawaban 4',
+			'Kunci 5',
+			'Jawaban 5'
+		];
+
+		$sheet->fromArray($headers, NULL, 'A1');
+
+		// Style header
+		$headerStyle = [
+			'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+			'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']],
+			'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+			'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
+		];
+		$sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+
+		// Contoh data
+		$examples = [
+			[
+				'pilihan_ganda', 'Siapa presiden pertama Indonesia?', 'Soekarno', 'Soeharto', 'Habibie', 'Megawati', 'A', '', '', '', '', '', '', '', '', '', ''
+			],
+			[
+				'pilihan_ganda_kompleks', 'Pilih pernyataan yang benar tentang ekosistem!', 'Terdiri dari biotik dan abiotik', 'Hanya berisi hewan', 'Mengandung rantai makanan', 'Tidak ada interaksi', 'A, C', '', '', '', '', '', '', '', '', '', ''
+			],
+			[
+				'benar_salah', 'Air mendidih pada suhu 100°C di permukaan laut.', '', '', '', '', 'benar', '', '', '', '', '', '', '', '', '', ''
+			],
+			[
+				'essay', 'Jelaskan proses fotosintesis secara singkat!', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+			],
+			[
+				'menjodohkan', 'Jodohkan organ tubuh dengan fungsinya!', '', '', '', '', '', 'Jantung', 'Memompa darah', 'Paru-paru', 'Pertukaran oksigen', 'Lambung', 'Mencerna makanan', '', '', ''
+			]
+		];
+
+		$sheet->fromArray($examples, NULL, 'A2');
+
+		// Style contoh (abukan bagian header)
+		$sheet->getStyle('A2:Q6')->getFont()->setItalic(true);
+		$sheet->getStyle('A2:Q6')->getFont()->getColor()->setRGB('6B7280');
+
+		// Sheet Panduan
+		$panduanSheet = $spreadsheet->createSheet();
+		$panduanSheet->setTitle('Panduan');
+		$panduan = [
+			['PANDUAN PENGISIAN FORMAT SOAL UJIAN'],
+			[''],
+			['Kolom', 'Keterangan'],
+			['Jenis Soal', 'pilihan_ganda | pilihan_ganda_kompleks | menjodohkan | benar_salah | essay'],
+			['Soal', 'Teks soal ujian (wajib diisi)'],
+			['Jawaban A - D', 'Isi untuk jenis pilihan_ganda dan pilihan_ganda_kompleks'],
+			['Jawaban Benar', 'PG: A/B/C/D. PG Kompleks: A, B (pisahkan koma). Benar/Salah: benar atau salah. Essay & Menjodohkan: kosongkan.'],
+			['Kunci 1-5', 'Untuk jenis menjodohkan, isi bagian kiri (pernyataan/soal)'],
+			['Jawaban 1-5', 'Untuk jenis menjodohkan, isi bagian kanan (pasangan jawaban)'],
+			[''],
+			['CATATAN:'],
+			['1. Hapus baris contoh sebelum mengisi soal Anda.'],
+			['2. Satu baris = satu soal.'],
+			['3. Untuk menjodohkan, maksimal 5 pasangan.'],
+			['4. Baris yang kosong akan dilewati saat import.'],
+			['5. File format: .xlsx']
+		];
+		$panduanSheet->fromArray($panduan, NULL, 'A1');
+		$panduanSheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+		$panduanSheet->getColumnDimension('A')->setWidth(20);
+		$panduanSheet->getColumnDimension('B')->setWidth(80);
+
+		// Lebar kolom pada sheet Template
+		$columnWidths = ['A' => 28, 'B' => 50, 'C' => 25, 'D' => 25, 'E' => 25, 'F' => 25, 'G' => 20];
+		foreach ($columnWidths as $col => $width) {
+			$sheet->getColumnDimension($col)->setWidth($width);
+		}
+		for ($i = 8; $i <= 17; $i++) {
+			$sheet->getColumnDimensionByColumn($i)->setWidth(25);
+		}
+		$sheet->getRowDimension(1)->setRowHeight(25);
+
+		// Output file
+		$filename = 'format_import_soal.xlsx';
+		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		header('Content-Disposition: attachment; filename="' . $filename . '"');
+		header('Cache-Control: max-age=0');
+
+		$writer = new Xlsx($spreadsheet);
+		$writer->save('php://output');
+		exit;
+	}
+
+	/**
+	 * Unduh soal yang sudah ada ke Excel
+	 */
+	public function export_soal($ujian_uuid)
+	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+		$soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
+
+		$spreadsheet = new Spreadsheet();
+		$sheet = $spreadsheet->getActiveSheet();
+		$sheet->setTitle('Soal Ujian');
+
+		$headers = [
+			'Jenis Soal',
+			'Soal',
+			'Jawaban A',
+			'Jawaban B',
+			'Jawaban C',
+			'Jawaban D',
+			'Jawaban Benar',
+			'Kunci 1',
+			'Jawaban 1',
+			'Kunci 2',
+			'Jawaban 2',
+			'Kunci 3',
+			'Jawaban 3',
+			'Kunci 4',
+			'Jawaban 4',
+			'Kunci 5',
+			'Jawaban 5'
+		];
+		$sheet->fromArray($headers, NULL, 'A1');
+
+		$headerStyle = [
+			'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+			'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']],
+			'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+			'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
+		];
+		$sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+
+		$row = 2;
+		foreach ($soal as $s) {
+			$jawaban_benar = $s->jawaban_benar;
+			// Decode JSON untuk multiple answer
+			$decoded = json_decode($jawaban_benar, true);
+			if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+				$jawaban_benar = implode(', ', $decoded);
+			} else {
+				$jawaban_benar = $s->jawaban_benar;
+			}
+
+			$data_row = [
+				$s->jenis_soal,
+				$s->soal,
+				$s->jawaban_a,
+				$s->jawaban_b,
+				$s->jawaban_c,
+				$s->jawaban_d,
+				$jawaban_benar
+			];
+
+			// Untuk menjodohkan, isi pasangan Kunci/Jawaban
+			if ($s->jenis_soal === 'menjodohkan') {
+				$pairs = $this->soal_model->get_jodohkan_pairs($s->uuid);
+				$idx = 0;
+				foreach ($pairs as $pair) {
+					if ($idx >= 5) break;
+					$data_row[] = $pair->kunci;
+					$data_row[] = $pair->jawaban;
+					$idx++;
+				}
+				// Isi kolom kosong sampai kolom Q (17)
+				while (count($data_row) < 17) {
+					$data_row[] = '';
+				}
+			}
+
+			$sheet->fromArray($data_row, NULL, 'A' . $row);
+			$row++;
+		}
+
+		$columnWidths = ['A' => 28, 'B' => 50, 'C' => 25, 'D' => 25, 'E' => 25, 'F' => 25, 'G' => 20];
+		foreach ($columnWidths as $col => $width) {
+			$sheet->getColumnDimension($col)->setWidth($width);
+		}
+		for ($i = 8; $i <= 17; $i++) {
+			$sheet->getColumnDimensionByColumn($i)->setWidth(25);
+		}
+
+		$filename = 'soal_' . preg_replace('/[^A-Za-z0-9\-]/', '_', strtolower($ujian->nama)) . '.xlsx';
+		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		header('Content-Disposition: attachment; filename="' . $filename . '"');
+		header('Cache-Control: max-age=0');
+
+		$writer = new Xlsx($spreadsheet);
+		$writer->save('php://output');
+		exit;
+	}
+
+	/**
+	 * Import soal dari file Excel
+	 */
+	public function import_soal($ujian_uuid)
+	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+			show_error('Anda tidak memiliki akses untuk mengimport soal ujian.', 403);
+		}
+
+		if ($this->input->server('REQUEST_METHOD') === 'POST') {
+			if (empty($_FILES['file_excel']['name'])) {
+				$this->session->set_flashdata('error_msg', 'Pilih file Excel terlebih dahulu');
+				redirect('ujian/tambah_soal/' . $ujian_uuid);
+			}
+
+			$upload_config = array(
+				'upload_path' => './uploads/',
+				'allowed_types' => 'xlsx|xls',
+				'max_size' => 5120,
+				'encrypt_name' => TRUE
+			);
+			$this->load->library('upload', $upload_config);
+
+			if (!is_dir('./uploads/')) {
+				mkdir('./uploads/', 0777, TRUE);
+			}
+
+			if (!$this->upload->do_upload('file_excel')) {
+				$this->session->set_flashdata('error_msg', strip_tags($this->upload->display_errors()));
+				redirect('ujian/tambah_soal/' . $ujian_uuid);
+			}
+
+			$upload_data = $this->upload->data();
+			$file_path = './uploads/' . $upload_data['file_name'];
+
+			try {
+				$spreadsheet = IOFactory::load($file_path);
+				$sheet = $spreadsheet->getSheetByName('Template Soal');
+				if (!$sheet) {
+					$sheet = $spreadsheet->getActiveSheet();
+				}
+				$rows = $sheet->toArray();
+
+				// Buang header (baris 1)
+				array_shift($rows);
+
+				$inserted = 0;
+				$errors = [];
+				$no = 0; // Nomor baris asli (mulai 2 karena header di baris 1)
+
+				foreach ($rows as $row) {
+					$no++;
+					$baris = $no + 1; // baris sebenarnya di excel (+1 header)
+
+					$jenis = strtolower(trim((string)($row[0] ?? '')));
+					$soal = trim((string)($row[1] ?? ''));
+					$jawaban_a = trim((string)($row[2] ?? ''));
+					$jawaban_b = trim((string)($row[3] ?? ''));
+					$jawaban_c = trim((string)($row[4] ?? ''));
+					$jawaban_d = trim((string)($row[5] ?? ''));
+					$jawaban_benar = trim((string)($row[6] ?? ''));
+
+					if ($soal === '') {
+						continue; // lewati baris kosong
+					}
+
+					// Mapping jenis soal
+					$jenis_map = [
+						'pilihan_ganda' => 'pilihan_ganda',
+						'pg' => 'pilihan_ganda',
+						'pilihan ganda' => 'pilihan_ganda',
+						'pilgan' => 'pilihan_ganda',
+						'pilihan_ganda_kompleks' => 'pilihan_ganda_kompleks',
+						'pg kompleks' => 'pilihan_ganda_kompleks',
+						'pgk' => 'pilihan_ganda_kompleks',
+						'kompleks' => 'pilihan_ganda_kompleks',
+						'benar_salah' => 'benar_salah',
+						'benar atau salah' => 'benar_salah',
+						'benar/salah' => 'benar_salah',
+						'bs' => 'benar_salah',
+						'essay' => 'essay',
+						'esai' => 'essay',
+						'uraian' => 'essay',
+						'isian' => 'essay',
+						'menjodohkan' => 'menjodohkan',
+						'jodohkan' => 'menjodohkan',
+						'matching' => 'menjodohkan'
+					];
+
+					$jenis_soal = $jenis_map[$jenis] ?? null;
+					if (!$jenis_soal) {
+						$errors[] = "Baris {$baris}: Jenis soal '{$jenis}' tidak dikenal. Gunakan pilihan_ganda, pilihan_ganda_kompleks, menjodohkan, benar_salah, atau essay.";
+						continue;
+					}
+
+					// Validasi sesuai jenis
+					if ($jenis_soal === 'pilihan_ganda' || $jenis_soal === 'pilihan_ganda_kompleks') {
+						if ($jawaban_a === '' && $jawaban_b === '' && $jawaban_c === '' && $jawaban_d === '') {
+							$errors[] = "Baris {$baris}: Jawaban A-D wajib diisi untuk jenis {$jenis_soal}.";
+							continue;
+						}
+						if ($jawaban_benar === '') {
+							$errors[] = "Baris {$baris}: Jawaban Benar wajib diisi untuk jenis {$jenis_soal}.";
+							continue;
+						}
+					}
+
+					if ($jenis_soal === 'benar_salah') {
+						$jb = strtolower($jawaban_benar);
+						if (!in_array($jb, ['benar', 'salah', 'true', 'false', 'b', 's'])) {
+							$errors[] = "Baris {$baris}: Jawaban Benar harus 'benar' atau 'salah'.";
+							continue;
+						}
+						$jawaban_benar = ($jb === 'benar' || $jb === 'true' || $jb === 'b') ? 'benar' : 'salah';
+					}
+
+					if ($jenis_soal === 'pilihan_ganda') {
+						$jb = strtoupper($jawaban_benar);
+						if (!in_array($jb, ['A', 'B', 'C', 'D'])) {
+							$errors[] = "Baris {$baris}: Jawaban Benar harus A, B, C, atau D.";
+							continue;
+						}
+						$jawaban_benar = $jb;
+					}
+
+					if ($jenis_soal === 'pilihan_ganda_kompleks') {
+						$letters = array_map('trim', explode(',', $jawaban_benar));
+						$letters = array_map('strtoupper', $letters);
+						$valid = true;
+						foreach ($letters as $l) {
+							if (!in_array($l, ['A', 'B', 'C', 'D'])) {
+								$valid = false;
+								break;
+							}
+						}
+						if (!$valid || empty($letters)) {
+							$errors[] = "Baris {$baris}: Jawaban Benar harus kombinasi A, B, C, D dipisah koma (contoh: A, C).";
+							continue;
+						}
+						$jawaban_benar = json_encode(array_values(array_unique($letters)));
+					}
+
+					// Siapkan data
+					$soal_data = array(
+						'ujian_uuid' => $ujian_uuid,
+						'soal' => $soal,
+						'jenis_soal' => $jenis_soal,
+						'jawaban_a' => $jawaban_a ?: null,
+						'jawaban_b' => $jawaban_b ?: null,
+						'jawaban_c' => $jawaban_c ?: null,
+						'jawaban_d' => $jawaban_d ?: null
+					);
+
+					if ($jenis_soal !== 'menjodohkan' && $jenis_soal !== 'essay') {
+						$soal_data['jawaban_benar'] = $jawaban_benar;
+					} else {
+						$soal_data['jawaban_benar'] = null;
+					}
+
+					$jodohkan_pairs = [];
+					if ($jenis_soal === 'menjodohkan') {
+						// Ambil pasangan dari kolom H (index 7) sampai Q (index 16)
+						for ($i = 0; $i < 5; $i++) {
+							$kunci = trim((string)($row[7 + ($i * 2)] ?? ''));
+							$jawaban = trim((string)($row[8 + ($i * 2)] ?? ''));
+							if ($kunci !== '' && $jawaban !== '') {
+								$jodohkan_pairs[] = array('kunci' => $kunci, 'jawaban' => $jawaban);
+							}
+						}
+						if (empty($jodohkan_pairs)) {
+							$errors[] = "Baris {$baris}: Minimal 1 pasangan kunci-jawaban wajib diisi untuk jenis menjodohkan.";
+							continue;
+						}
+					}
+
+					$insert = $this->soal_model->insert_import($soal_data, $jodohkan_pairs);
+					if ($insert) {
+						$inserted++;
+					} else {
+						$errors[] = "Baris {$baris}: Gagal menyimpan soal ke database.";
+					}
+				}
+
+				// Hapus file upload
+				@unlink($file_path);
+
+				if ($inserted > 0) {
+					$this->session->set_flashdata('success_msg', "{$inserted} soal berhasil diimport dari Excel.");
+				}
+				if (!empty($errors)) {
+					$error_text = implode(' ', array_slice($errors, 0, 10));
+					if (count($errors) > 10) {
+						$error_text .= ' ... dan ' . (count($errors) - 10) . ' error lainnya.';
+					}
+					$this->session->set_flashdata('import_errors', $error_text);
+				}
+			} catch (\Exception $e) {
+				@unlink($file_path);
+				$this->session->set_flashdata('error_msg', 'Gagal membaca file Excel: ' . $e->getMessage());
+			}
+
+			redirect('ujian/tambah_soal/' . $ujian_uuid);
+		}
+
+		redirect('ujian/tambah_soal/' . $ujian_uuid);
 	}
 
 	public function tambah_kelas($ujian_uuid)
