@@ -4,17 +4,23 @@
 <?php endif; ?>
 
 <div class="max-w-4xl mx-auto px-6 py-8">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-            <div class="flex items-center gap-3 mb-1">
-                <a href="<?= base_url('ujian')?>" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    <!-- Colorful Header -->
+    <div
+        class="relative bg-gradient-to-r from-rose-500 to-red-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
+        <div class="relative z-10">
+            <div class="flex items-center gap-3">
+                <a href="<?= base_url('ujian')?>"
+                    class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                 </a>
-                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Tambah Ujian</h1>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Tambah Ujian</h1>
+                    <p class="text-rose-100 text-sm mt-1">Buat ujian baru untuk siswa</p>
+                </div>
             </div>
-            <p class="text-gray-500 text-sm ml-8">Buat ujian baru untuk siswa</p>
         </div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
     </div>
 
     <!-- Form Card -->

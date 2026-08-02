@@ -4,18 +4,30 @@
 <?php endif; ?>
 
 <div class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Daftar Ujian</h1>
-            <p class="text-gray-500 mt-1 text-sm">Kelola dan ikuti ujian di SMARTEDU</p>
+    <!-- Colorful Header -->
+    <div
+        class="relative bg-gradient-to-r from-rose-500 to-red-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
+        <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-2">
+                <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                    <i data-lucide="clipboard-list" class="w-7 h-7 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Daftar Ujian</h1>
+                </div>
+            </div>
+            <p class="text-rose-100 mt-1 text-sm ml-15">Kelola dan ikuti ujian di SMARTEDU</p>
         </div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
         <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
-        <a href="<?= base_url('ujian/tambah')?>"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            Tambah Data
-        </a>
+        <div class="relative z-10 mt-4">
+            <a href="<?= base_url('ujian/tambah')?>"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-rose-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Tambah Data
+            </a>
+        </div>
         <?php } ?>
     </div>
 

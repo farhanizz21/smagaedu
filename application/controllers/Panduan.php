@@ -13,7 +13,8 @@ class Panduan extends MY_Controller {
 
 	public function index()
 	{
-		$panduan = $this->panduan_model->get_all();
+		$user_role = $this->session->userdata('role');
+		$panduan = $this->panduan_model->get_all($user_role);
 
 		$data = array(
 			'panduan' => $panduan,

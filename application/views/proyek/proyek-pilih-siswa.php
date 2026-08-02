@@ -4,19 +4,25 @@
 <?php endif; ?>
 
 <div class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-            <div class="flex items-center gap-3 mb-1">
+    <!-- Colorful Header -->
+    <div
+        class="relative bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
+        <div class="relative z-10">
+            <div class="flex items-center gap-3">
                 <a href="<?= base_url('proyek/detail/'.$proyek->uuid)?>"
-                    class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                 </a>
-                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Pilih Siswa</h1>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Pilih Siswa</h1>
+                    <p class="text-violet-100 text-sm mt-1">Proyek:
+                        <span class="font-semibold"><?= $proyek->judul ?></span>
+                    </p>
+                </div>
             </div>
-            <p class="text-gray-500 text-sm ml-8">Proyek: <span
-                    class="text-blue-600 font-semibold"><?= $proyek->judul ?></span></p>
         </div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>

@@ -4,33 +4,40 @@
 <?php endif; ?>
 
 <div class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-            <div class="flex items-center gap-3 mb-1">
-                <a href="<?= base_url('proyek')?>" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    <!-- Colorful Header -->
+    <div
+        class="relative bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
+        <div class="relative z-10">
+            <div class="flex items-center gap-3 mb-2">
+                <a href="<?= base_url('proyek')?>"
+                    class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                 </a>
-                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Detail Proyek</h1>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Detail Proyek</h1>
+                    <p class="text-violet-100 text-sm mt-1">Mata Pelajaran:
+                        <span class="font-semibold"><?= $proyek->mapel ?></span>
+                    </p>
+                </div>
             </div>
-            <p class="text-gray-500 text-sm ml-8">Mata Pelajaran: <span
-                    class="text-blue-600 font-semibold"><?= $proyek->mapel ?></span></p>
+            <div class="flex items-center gap-2 mt-4">
+                <?php if(has_role(['superadmin', 'admin']) || $this->session->userdata('uuid') == $proyek->created_by ){?>
+                <a href="<?= base_url('proyek/pilih_siswa/'.$proyek->uuid)?>"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-violet-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
+                    <i data-lucide="users" class="w-4 h-4"></i>
+                    Data Siswa Proyek
+                </a>
+                <?php } ?>
+                <button type="button"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 shadow-lg hover:shadow-xl transition-all text-sm"
+                    data-bs-toggle="modal" data-bs-target="#pdfViewerModal">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    Buka File
+                </button>
+            </div>
         </div>
-        <div class="flex items-center gap-2">
-            <?php if(has_role(['superadmin', 'admin']) || $this->session->userdata('uuid') == $proyek->created_by ){?>
-            <a href="<?= base_url('proyek/pilih_siswa/'.$proyek->uuid)?>"
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-purple-600 shadow-lg shadow-purple-200 hover:bg-purple-700 hover:shadow-xl transition-all text-sm">
-                <i data-lucide="users" class="w-4 h-4"></i>
-                Data Siswa Proyek
-            </a>
-            <?php } ?>
-            <button type="button"
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm"
-                data-bs-toggle="modal" data-bs-target="#pdfViewerModal">
-                <i data-lucide="file-text" class="w-4 h-4"></i>
-                Buka File
-            </button>
-        </div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>

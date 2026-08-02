@@ -727,6 +727,163 @@ class Ujian extends MY_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
 	
+	/**
+	 * Export nilai siswa ke Excel dengan filter kelas
+	 */
+	public function export_nilai($ujian_uuid)
+	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+			show_error('Anda tidak memiliki akses untuk mengekspor nilai ujian.', 403);
+		}
+
+		// Ambil parameter filter kelas
+		$kelas_filter = $this->input->get('kelas');
+
+		// Ambil data peserta
+		$peserta = $this->siswa_model->get_by_ujian($ujian_uuid);
+		foreach ($peserta as $p) {
+			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
+			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
+			$p->nilai_ujian = !empty($p->ujian_nilai) ? $p->ujian_nilai : null;
+		}
+
+		// Filter berdasarkan kelas jika parameter diberikan
+		if (!empty($kelas_filter)) {
+			$peserta = array_filter($peserta, function($p) use ($kelas_filter) {
+				return $p->kelas_nama === $kelas_filter;
+			});
+			$peserta = array_values($peserta);
+		}
+
+		// Ambil nama mapel
+		$mapel = $this->mapel_model->get_by_uuid($ujian->mapel_uuid);
+
+		// Buat spreadsheet
+		$spreadsheet = new Spreadsheet();
+		$sheet = $spreadsheet->getActiveSheet();
+		$sheet->setTitle('Nilai Siswa');
+
+		// Baris judul
+		$sheet->setCellValue('A1', 'DAFTAR NILAI SISWA');
+		$sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+		$sheet->mergeCells('A1:F1');
+		$sheet->getStyle('A1')->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+		$sheet->setCellValue('A2', 'Ujian: ' . $ujian->nama);
+		$sheet->getStyle('A2')->getFont()->setBold(true);
+		$sheet->mergeCells('A2:F2');
+
+		if ($mapel) {
+			$sheet->setCellValue('A3', 'Mata Pelajaran: ' . $mapel->nama);
+			$sheet->mergeCells('A3:F3');
+		}
+
+		$sheet->setCellValue('A4', 'Filter Kelas: ' . (!empty($kelas_filter) ? $kelas_filter : 'Semua Kelas'));
+		$sheet->mergeCells('A4:F4');
+
+		$sheet->setCellValue('A5', 'Tanggal Export: ' . date('d M Y H:i:s'));
+		$sheet->mergeCells('A5:F5');
+
+		// Header tabel (baris 7)
+		$headers = ['No.', 'Nama Siswa', 'Kelas', 'Waktu Pengumpulan', 'Nilai', 'Status'];
+		$sheet->fromArray($headers, NULL, 'A7');
+
+		$headerStyle = [
+			'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+			'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['rgb' => '2563EB']],
+			'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
+			'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
+		];
+		$sheet->getStyle('A7:F7')->applyFromArray($headerStyle);
+
+		// Baris data
+		$row = 8;
+		$no = 1;
+		foreach ($peserta as $p) {
+			$waktu = !empty($p->pengumpulan) ? date('d M Y H:i', strtotime($p->pengumpulan)) : '-';
+			$nilai = !empty($p->nilai_ujian) ? $p->nilai_ujian : '-';
+			$kelas = !empty($p->kelas_nama) ? $p->kelas_nama : '-';
+
+			if (!empty($p->nilai_ujian)) {
+				$status = 'Sudah Dinilai';
+			} elseif (!empty($p->pengumpulan)) {
+				$status = 'Sudah Mengerjakan';
+			} else {
+				$status = 'Belum Mengerjakan';
+			}
+
+			$sheet->fromArray([$no, $p->nama, $kelas, $waktu, $nilai, $status], NULL, 'A' . $row);
+			$row++;
+			$no++;
+		}
+
+		// Border untuk data
+		$lastDataRow = $row - 1;
+		if ($lastDataRow >= 8) {
+			$sheet->getStyle('A8:F' . $lastDataRow)->getBorders()->getAllBorders()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
+			$sheet->getStyle('A8:F' . $lastDataRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+			$sheet->getStyle('B8:B' . $lastDataRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+		}
+
+		// Ringkasan
+		$summaryRow = $row + 1;
+		$sheet->setCellValue('A' . $summaryRow, 'RINGKASAN');
+		$sheet->getStyle('A' . $summaryRow)->getFont()->setBold(true)->setSize(12);
+		$sheet->mergeCells('A' . $summaryRow . ':F' . $summaryRow);
+
+		$total_siswa = count($peserta);
+		$sudah_dinilai = count(array_filter($peserta, function($p) { return !empty($p->nilai_ujian); }));
+		$sudah_mengerjakan = count(array_filter($peserta, function($p) { return !empty($p->pengumpulan); }));
+		$belum_mengerjakan = $total_siswa - $sudah_mengerjakan;
+
+		$nilai_list = array_filter(array_map(function($p) { return !empty($p->nilai_ujian) ? (float)$p->nilai_ujian : null; }, $peserta));
+		$rata_rata = count($nilai_list) > 0 ? (array_sum($nilai_list) / count($nilai_list)) : 0;
+		$nilai_max = count($nilai_list) > 0 ? max($nilai_list) : 0;
+		$nilai_min = count($nilai_list) > 0 ? min($nilai_list) : 0;
+
+		$sheet->setCellValue('A' . ($summaryRow + 1), 'Total Siswa:');
+		$sheet->setCellValue('C' . ($summaryRow + 1), $total_siswa);
+		$sheet->setCellValue('A' . ($summaryRow + 2), 'Sudah Mengerjakan:');
+		$sheet->setCellValue('C' . ($summaryRow + 2), $sudah_mengerjakan);
+		$sheet->setCellValue('A' . ($summaryRow + 3), 'Belum Mengerjakan:');
+		$sheet->setCellValue('C' . ($summaryRow + 3), $belum_mengerjakan);
+		$sheet->setCellValue('A' . ($summaryRow + 4), 'Sudah Dinilai:');
+		$sheet->setCellValue('C' . ($summaryRow + 4), $sudah_dinilai);
+		$sheet->setCellValue('A' . ($summaryRow + 5), 'Nilai Tertinggi:');
+		$sheet->setCellValue('C' . ($summaryRow + 5), $nilai_max > 0 ? number_format($nilai_max, 2) : '-');
+		$sheet->setCellValue('A' . ($summaryRow + 6), 'Nilai Terendah:');
+		$sheet->setCellValue('C' . ($summaryRow + 6), $nilai_min > 0 ? number_format($nilai_min, 2) : '-');
+		$sheet->setCellValue('A' . ($summaryRow + 7), 'Rata-rata Nilai:');
+		$sheet->setCellValue('C' . ($summaryRow + 7), $rata_rata > 0 ? number_format($rata_rata, 2) : '-');
+
+		for ($i = 1; $i <= 7; $i++) {
+			$sheet->getStyle('A' . ($summaryRow + $i))->getFont()->setBold(true);
+		}
+
+		// Lebar kolom
+		$columnWidths = ['A' => 22, 'B' => 35, 'C' => 20, 'D' => 25, 'E' => 10, 'F' => 22];
+		foreach ($columnWidths as $col => $width) {
+			$sheet->getColumnDimension($col)->setWidth($width);
+		}
+
+		$sheet->getRowDimension(1)->setRowHeight(25);
+		$sheet->getRowDimension(7)->setRowHeight(22);
+
+		// Output file
+		$filename = 'nilai_' . preg_replace('/[^A-Za-z0-9\-]/', '_', strtolower($ujian->nama)) . '.xlsx';
+		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		header('Content-Disposition: attachment; filename="' . $filename . '"');
+		header('Cache-Control: max-age=0');
+
+		$writer = new Xlsx($spreadsheet);
+		$writer->save('php://output');
+		exit;
+	}
+
 	public function tambah_nilai($ujian_uuid, $siswa_uuid)
 	{
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
