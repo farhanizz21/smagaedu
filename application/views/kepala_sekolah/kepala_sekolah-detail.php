@@ -49,6 +49,82 @@
         </div>
     </div>
 
+    <!-- Update Mapel Status Section -->
+    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow mb-8">
+        <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 text-green-600"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-gray-900">Status Update Mata Pelajaran</h3>
+                    <p class="text-xs text-gray-500">Kelengkapan pembaruan materi, bab, sub bab, dan ujian pada menu
+                        mata pelajaran</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <?php if ($guru->mapel_updated): ?>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div
+                    class="rounded-xl bg-blue-50 border border-blue-100 p-4 text-center hover:shadow-md transition-all">
+                    <i data-lucide="file-text" class="w-6 h-6 text-blue-600 mx-auto mb-2"></i>
+                    <p class="text-2xl font-bold text-gray-900"><?= $guru->materi_count ?></p>
+                    <p class="text-xs text-gray-500 mt-1">Materi</p>
+                </div>
+                <div
+                    class="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center hover:shadow-md transition-all">
+                    <i data-lucide="book" class="w-6 h-6 text-amber-600 mx-auto mb-2"></i>
+                    <p class="text-2xl font-bold text-gray-900"><?= $guru->bab_count ?></p>
+                    <p class="text-xs text-gray-500 mt-1">Bab / Sub Bab</p>
+                </div>
+                <div
+                    class="rounded-xl bg-purple-50 border border-purple-100 p-4 text-center hover:shadow-md transition-all">
+                    <i data-lucide="layers" class="w-6 h-6 text-purple-600 mx-auto mb-2"></i>
+                    <p class="text-2xl font-bold text-gray-900"><?= $guru->sub_materi_count ?></p>
+                    <p class="text-xs text-gray-500 mt-1">Sub Materi</p>
+                </div>
+                <div
+                    class="rounded-xl bg-cyan-50 border border-cyan-100 p-4 text-center hover:shadow-md transition-all">
+                    <i data-lucide="clipboard-list" class="w-6 h-6 text-cyan-600 mx-auto mb-2"></i>
+                    <p class="text-2xl font-bold text-gray-900"><?= $guru->ujian_count ?></p>
+                    <p class="text-xs text-gray-500 mt-1">Ujian</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 mt-4">
+                <span
+                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    Sudah melakukan update
+                </span>
+                <?php if ($guru->last_update): ?>
+                <span class="text-xs text-gray-500">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 inline text-gray-400"></i>
+                    Terakhir update: <?= date('d M Y H:i', strtotime($guru->last_update)) ?> WIB
+                </span>
+                <?php endif; ?>
+            </div>
+            <?php else: ?>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div
+                    class="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="alert-triangle" class="w-7 h-7 text-red-500"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="font-semibold text-gray-900 text-sm">Belum melakukan update pada menu mata pelajaran</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Guru belum menambahkan materi, bab/sub bab, atau ujian
+                        untuk mata pelajaran yang diampu.</p>
+                </div>
+                <span
+                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200 flex-shrink-0">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                    Belum Update
+                </span>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <!-- Left Column -->
         <div class="space-y-8">

@@ -128,11 +128,12 @@
                 <div class="space-y-2">
                     <?php foreach($mapel as $m): ?>
                     <label
-                        class="mapel-option flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-blue-50 transition-colors <?= in_array($m->uuid, old('namaMapel', [])) ? 'bg-blue-50 border-blue-300' : '' ?>"
+                        class="mapel-option flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:bg-blue-50 transition-colors <?= in_array($m->uuid, $this->input->post('namaMapel') ?? []) ? 'bg-blue-50 border-blue-300' : '' ?>"
                         data-uuid="<?= $m->uuid; ?>" data-nama="<?= $m->nama; ?>">
                         <input type="checkbox"
                             class="mapel-option-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                            value="<?= $m->uuid; ?>" <?= in_array($m->uuid, old('namaMapel', [])) ? 'checked' : ''; ?>>
+                            value="<?= $m->uuid; ?>"
+                            <?= in_array($m->uuid, $this->input->post('namaMapel') ?? []) ? 'checked' : ''; ?>>
                         <span class="text-sm font-medium text-gray-900"><?= $m->nama; ?></span>
                     </label>
                     <?php endforeach; ?>
@@ -211,8 +212,8 @@ $(document).ready(function() {
 
     // Restore from old input on validation error
     <?php 
-    $oldMapel = old('namaMapel', []);
-    $oldKelasMap = old('kelasMapel', []);
+    $oldMapel = $this->input->post('namaMapel') ?? [];
+    $oldKelasMap = $this->input->post('kelasMapel') ?? [];
     if (!empty($oldMapel)): 
     ?>
     restoreFromOldInput(<?= json_encode($oldMapel); ?>, <?= json_encode($oldKelasMap); ?>);
@@ -433,18 +434,18 @@ $(document).ready(function() {
         if (selectedMapels.length === 0) {
             container.html(
                 '<p id="emptyMapelMessage" class="text-sm text-gray-400 italic py-4 text-center border-2 border-dashed border-gray-200 rounded-xl">Belum ada mata pelajaran dipilih. Klik "Tambah Pelajaran" untuk menambahkan.</p>'
-                );
+            );
             return;
         }
 
         selectedMapels.forEach(function(m) {
             var card = $('<div>').addClass(
-            'bg-white rounded-xl border border-gray-200 overflow-hidden');
+                'bg-white rounded-xl border border-gray-200 overflow-hidden');
 
             // Header with mapel name and remove button
             var header = $('<div>').addClass(
                 'flex items-center justify-between px-5 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-100'
-                );
+            );
             header.append(
                 '<div class="flex items-center gap-2"><div class="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center"><i data-lucide="book" class="w-4 h-4 text-blue-600"></i></div><span class="font-semibold text-gray-900">' +
                 m.nama + '</span></div>');
@@ -452,7 +453,7 @@ $(document).ready(function() {
             var headerActions = $('<div>').addClass('flex items-center gap-2');
             var tambahKelasBtn = $('<button>').addClass(
                     'tambah-kelas-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 transition-all'
-                    )
+                )
                 .attr('type', 'button')
                 .attr('data-mapel-uuid', m.uuid)
                 .attr('data-mapel-nama', m.nama)
@@ -460,7 +461,7 @@ $(document).ready(function() {
 
             var removeBtn = $('<button>').addClass(
                     'remove-mapel-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-all'
-                    )
+                )
                 .attr('type', 'button')
                 .attr('data-mapel-uuid', m.uuid)
                 .html('<i data-lucide="trash-2" class="w-3 h-3"></i> Hapus');
@@ -476,13 +477,13 @@ $(document).ready(function() {
                 m.kelas.forEach(function(k) {
                     var kelasBadge = $('<span>').addClass(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200'
-                        );
+                    );
                     kelasBadge.append('<i data-lucide="users" class="w-3 h-3"></i>');
                     kelasBadge.append('<span>' + k.nama + '</span>');
 
                     var removeKelasBtn = $('<button>').addClass(
                             'remove-kelas-btn text-green-400 hover:text-red-500 transition-colors'
-                            )
+                        )
                         .attr('type', 'button')
                         .attr('data-mapel-uuid', m.uuid)
                         .attr('data-kelas-uuid', k.uuid)
@@ -494,7 +495,7 @@ $(document).ready(function() {
             } else {
                 body.append(
                     '<p class="text-sm text-gray-400 italic">Belum ada kelas. Klik "Tambah Kelas" untuk menambahkan.</p>'
-                    );
+                );
             }
             card.append(body);
             container.append(card);
