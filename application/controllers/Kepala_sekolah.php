@@ -12,6 +12,8 @@ class Kepala_sekolah extends MY_Controller {
 		$this->load->model('proyek_model');
 		$this->load->model('ujian_model');
 		$this->load->model('kelas_model');
+		$this->load->model('soal_model');
+		$this->load->model('siswa_model');
 		// Allow admin, kepala_sekolah, and superadmin to access
 		if (!has_role(['kepala_sekolah', 'admin', 'superadmin'])) {
 			show_error('Anda tidak memiliki akses ke halaman ini.', 403);
@@ -38,6 +40,46 @@ class Kepala_sekolah extends MY_Controller {
 		$this->load->view('partials/header_tailwind', ['title' => 'Data Guru - Kepala Sekolah']);
 		$this->load->view('partials/navbar', ['active_nav' => 'kepala_sekolah']);
 		$this->load->view('kepala_sekolah/kepala_sekolah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
+	}
+
+	public function detail_ujian($ujian_uuid)
+	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+
+		// Get soal for this ujian
+		$soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
+		foreach ($soal as $s) {
+			if ($s->jenis_soal === 'menjodohkan') {
+				$s->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($s->uuid);
+			}
+		}
+
+		// Get peserta (students) for this ujian
+		$peserta = $this->siswa_model->get_by_ujian($ujian_uuid);
+		foreach ($peserta as $p) {
+			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
+			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
+			$p->nilai_ujian = !empty($p->ujian_nilai) ? $p->ujian_nilai : null;
+		}
+
+		// Get guru who created this ujian
+		$guru = $this->guru_model->get_by_uuid($ujian->created_by);
+
+		$data = array(
+			'ujian' => $ujian,
+			'soal' => $soal,
+			'peserta' => $peserta,
+			'guru' => $guru,
+			'active_nav' => 'kepala_sekolah'
+		);
+
+		$this->load->view('partials/header_tailwind', ['title' => 'Detail Ujian - ' . $ujian->nama]);
+		$this->load->view('partials/navbar', ['active_nav' => 'kepala_sekolah']);
+		$this->load->view('kepala_sekolah/kepala_sekolah-detail-ujian', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 
