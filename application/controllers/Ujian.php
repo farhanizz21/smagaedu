@@ -58,6 +58,7 @@ class Ujian extends MY_Controller {
 		
 			$u->pengumpulan = $pengumpulan;
 			$u->pengerjaan = $pengerjaan;
+			$u->attempted = $this->ujian_model->has_attempts($u->uuid);
 		}
 		
 
@@ -116,6 +117,57 @@ class Ujian extends MY_Controller {
         $this->load->view('partials/header_tailwind', ['title' => 'Tambah Ujian']);
 		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
         $this->load->view('ujian/ujian-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
+	}
+
+	public function edit($ujian_uuid)
+	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+		// Edit ujian hanya dapat diakses oleh guru yang buat ujian ini (atau superadmin/admin)
+		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+			show_error('Anda tidak memiliki akses untuk mengedit ujian ini.', 403);
+		}
+
+		// Ujian yang sudah dikerjakan (ada siswa submit jawaban) tidak dapat di edit
+		$attempted = $this->ujian_model->has_attempts($ujian_uuid);
+		if ($attempted) {
+			$this->session->set_flashdata('error_msg', 'Ujian ini sudah dikerjakan oleh siswa, sehingga tidak dapat di edit.');
+			redirect('ujian');
+		}
+
+		$rules = $this->ujian_model->rules();
+		$this->form_validation->set_rules($rules);
+		if ($this->form_validation->run() == TRUE) {
+			$update = $this->ujian_model->update($ujian_uuid);
+			if ($update) {
+				$this->session->set_flashdata('success_msg', 'Data ujian berhasil di Update');
+			} else {
+				$this->session->set_flashdata('error_msg', 'Data ujian gagal di Update');
+			}
+			redirect('ujian');
+		}
+
+		$guru_uuid = $this->session->userdata('uuid');
+		$guru = $this->guru_model->get_by_uuid($guru_uuid);
+		if ($guru) {
+			$mapel = $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? []);
+		} else {
+			$mapel = $this->mapel_model->get_all();
+		}
+
+		$data = array(
+			'ujian' => $ujian,
+			'mapel' => $mapel,
+			'attempted' => $attempted,
+			'active_nav' => 'ujian'
+		);
+
+        $this->load->view('partials/header_tailwind', ['title' => 'Edit Ujian']);
+		$this->load->view('partials/navbar', ['active_nav' => 'ujian']);
+        $this->load->view('ujian/ujian-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
 	}
 

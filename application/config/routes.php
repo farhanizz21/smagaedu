@@ -61,6 +61,7 @@ $route['reset_password/(:any)'] = 'auth/reset_password/$1';
 // Exam routes
 $route['ujian/tambah_sub/(:any)'] = 'ujian/tambah_sub/$1';
 $route['ujian/tambah_soal/(:any)'] = 'ujian/tambah_soal/$1';
+$route['ujian/edit/(:any)'] = 'ujian/edit/$1';
 $route['ujian/tambah_kelas/(:any)'] = 'ujian/tambah_kelas/$1';
 $route['ujian/get_soal/(:any)'] = 'ujian/get_soal_by_uuid/$1';
 $route['ujian/bulk_hapus_soal'] = 'ujian/bulk_hapus_soal';

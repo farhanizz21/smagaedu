@@ -1,96 +1,166 @@
-<div class="container-fluid">
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Edit Ujian']); ?>
+<?php $this->load->view('partials/navbar', ['active_nav' => 'ujian']); ?>
+<?php endif; ?>
 
-    <!-- Page Heading -->
-    <h1 class="h3 mb-2 text-gray-800">Edit Data Guru</h1>
+<?php
+$edit_tgl_mulai   = mb_substr(preg_replace('/ /', 'T', (string)$ujian->tgl_mulai), 0, 16);
+$edit_tgl_selesai = mb_substr(preg_replace('/ /', 'T', (string)$ujian->tgl_selesai), 0, 16);
+?>
 
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item">
-                <a href="<?= base_url('guru')?>">
-                    <i class="fas fa-arrow-left">
-                    </i> Daftar Guru</a>
-            </li>
-            <li class="breadcrumb-item active" aria-current="page">Edit</li>
-        </ol>
-    </nav>
+<div class="max-w-4xl mx-auto px-6 py-8">
+    <!-- Colorful Header -->
+    <div
+        class="relative bg-gradient-to-r from-rose-500 to-red-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
+        <div class="relative z-10">
+            <div class="flex items-center gap-3">
+                <a href="<?= base_url('ujian')?>"
+                    class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Edit Ujian</h1>
+                    <p class="text-rose-100 text-sm mt-1">Ujian: <span class="font-semibold"><?= $ujian->nama; ?></span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
+    </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <form class="user" method="post" action="<?= base_url('guru/edit/'.$guru->uuid);?>">
-                <div class="form-group row">
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Nama Lengkap<span
-                                class="text-danger">*</span></label>
-                        <input type="text" name="namaLengkap" id="namaLengkap" class="form-control"
-                            placeholder="Masukkan Nama Lengkap" value="<?= $guru->nama; ?>">
-                        <div class="invalid-feedback <?= !empty(form_error('namaLengkap')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('namaLengkap') ?>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Username<span class="text-danger">*</span></label>
-                        <input type="text" name="username" id="username" class="form-control"
-                            placeholder="Masukkan Username" value="<?= $guru->username; ?>" readonly>
-                        <div class="invalid-feedback <?= !empty(form_error('username')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('username') ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Mata Pelajaran<span
-                                class="text-danger">*</span></label>
-                        <select name="namaMapel" class="form-control">
-                            <option disabled selected>Pilih Mata Pelajaran</option>
-                            <?php 
-                            foreach($mapel as $val){
-                            ?>
-                            <option value="<?= $val->uuid; ?>" <?= $guru->mapel_uuid==$val->uuid?'selected':'';?>>
-                                <?= $val->nama; ?>
-                            </option>
-                            <?php 
-                            }
-                            ?>
-                        </select>
-                        <div class="invalid-feedback <?= !empty(form_error('namaMapel')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('namaMapel') ?>
-                        </div>
-                    </div>
-                    <div class="col-sm-6">
-                        <label class="form-label font-weight-bold">Jenis Kelamin<span
-                                class="text-danger">*</span></label>
-                        <select class="form-control" name="jenisKelamin">
-                            <option disabled selected>Pilih Jenis Kelamin</option>
-                            <option value="1" <?= $guru->jenis_kelamin==1?'selected':'';?>>Laki-Laki</option>
-                            <option value="2" <?= $guru->jenis_kelamin==2?'selected':'';?>>Perempuan</option>
-                        </select>
-                        <div class="invalid-feedback <?= !empty(form_error('jenisKelamin')) ? 'd-block' : '' ; ?> ">
-                            <?= form_error('jenisKelamin') ?>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <button type="submit" class="btn btn-md btn-success mr-2">
-                            <i class="fa fa-save"></i> Simpan
-                        </button>
-                        <a href="<?= base_url('guru')?>" class="btn btn-md btn-danger">
-                            <i class="fa fa-times"></i> Batal
-                        </a>
-                    </div>
-                </div>
-            </form>
+    <?php if ($attempted): ?>
+    <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-start gap-2">
+        <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-500 flex-shrink-0"></i>
+        <div>Ujian ini <strong>sudah dikerjakan oleh siswa</strong>, sehingga tidak dapat di edit. Formulaar disaktif.
         </div>
     </div>
+    <?php endif; ?>
+
+    <?php if ($this->session->userdata('success_msg')): ?>
+    <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-500 flex-shrink-0"></i>
+        <?= $this->session->userdata('success_msg'); ?>
+        <?php $this->session->unset_userdata('success_msg'); ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($this->session->userdata('error_msg')): ?>
+    <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
+        <?= $this->session->userdata('error_msg'); ?>
+        <?php $this->session->unset_userdata('error_msg'); ?>
+    </div>
+    <?php endif; ?>
+
+    <!-- Form Card -->
+    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
+        <form method="post" action="<?= base_url('ujian/edit/'.$ujian->uuid);?>">
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Mata Pelajaran -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mata Pelajaran <span
+                            class="text-red-500">*</span></label>
+                    <select name="namaMapel" <?= $attempted ? 'disabled' : '' ?>
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                        <?php foreach($mapel as $val){ ?>
+                        <option value="<?= $val->uuid; ?>" <?= $ujian->mapel_uuid == $val->uuid ? 'selected' : '' ;?>>
+                            <?= $val->nama; ?>
+                        </option>
+                        <?php } ?>
+                    </select>
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('namaMapel')) ? '' : 'hidden' ?>">
+                        <?= form_error('namaMapel') ?>
+                    </div>
+                </div>
+<!-- Nama Ujian -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Ujian <span
+                            class="text-red-500">*</span></label>
+                    <input type="text" name="namaUjian" id="namaUjian" <?= $attempted ? 'disabled' : '' ?>
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                        placeholder="Masukkan Nama Ujian" value="<?= $ujian->nama; ?>">
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('namaUjian')) ? '' : 'hidden' ?>">
+                        <?= form_error('namaUjian') ?>
+                    </div>
+                </div>
+
+                <!-- Jenis Penilaian -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jenis Penilaian <span
+                            class="text-red-500">*</span></label>
+                    <select name="jenis_penilaian" <?= $attempted ? 'disabled' : '' ?>
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                        <option value="formatif" <?= $ujian->jenis_penilaian == 'formatif' ? 'selected' : '' ?>>
+                            Formatif
+                        </option>
+                        <option value="penilaian_harian"
+                            <?= $ujian->jenis_penilaian == 'penilaian_harian' ? 'selected' : '' ?>>Penilaian Harian
+                        </option>
+                        <option value="penilaian_tengah_semester"
+                            <?= $ujian->jenis_penilaian == 'penilaian_tengah_semester' ? 'selected' : '' ?>>
+                            Penilaian Tengah Semester
+                        </option>
+                        <option value="penilaian_akhir_semester"
+                            <?= $ujian->jenis_penilaian == 'penilaian_akhir_semester' ? 'selected' : '' ?>>
+                            Penilaian Akhir Semester
+                        </option>
+                        <option value="tryout_tka"
+                            <?= $ujian->jenis_penilaian == 'tryout_tka' ? 'selected' : '' ?>>
+                            Try Out TKA
+                        </option>
+                    </select>
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('jenis_penilaian')) ? '' : 'hidden' ?>">
+                        <?= form_error('jenis_penilaian') ?>
+                    </div>
+                </div>
+
+                <!-- Tanggal Mulai -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Mulai <span
+                            class="text-red-500">*</span></label>
+                    <input type="datetime-local" name="tgl_mulai" id="tgl_mulai" <?= $attempted ? 'disabled' : '' ?>
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                        value="<?= $edit_tgl_mulai; ?>">
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('tgl_mulai')) ? '' : 'hidden' ?>">
+                        <?= form_error('tgl_mulai') ?>
+                    </div>
+                </div>
+
+                <!-- Tanggal Selesai -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Selesai <span
+                            class="text-red-500">*</span></label>
+                    <input type="datetime-local" name="tgl_selesai" id="tgl_selesai" <?= $attempted ? 'disabled' : '' ?>
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
+                        value="<?= $edit_tgl_selesai; ?>">
+                    <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('tgl_selesai')) ? '' : 'hidden' ?>">
+                        <?= form_error('tgl_selesai') ?>
+                    </div>
+                </div>
 </div>
+
+            <!-- Buttons -->
+            <div class="flex items-center gap-3 mt-8 pt-6 border-t border-gray-100">
+                <button type="submit" <?= $attempted ? 'disabled' : '' ?>
+                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
+                    <i data-lucide="save" class="w-4 h-4"></i>
+                    Simpan
+                </button>
+                <a href="<?= base_url('ujian')?>"
+                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                    Batal
+                </a>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
-$(document).ready(function() {
-    $("#namaLengkap").change(function() {
-        var namaLengkap = $(this).val().toLowerCase();
-        var username = namaLengkap.replace(/\s+/g, '.');
-        $('#username').val(username);
-    });
-});
+lucide.createIcons();
 </script>
+
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/footer_tailwind'); ?>
+<?php endif; ?>

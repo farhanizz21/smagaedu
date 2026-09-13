@@ -122,6 +122,20 @@
                                     data-toggle="tooltip" data-placement="top" title="Tambah Soal">
                                     <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                                 </a>
+                                <?php if (!$val->attempted): ?>
+                                <a href="<?= base_url('ujian/edit/'.$val->uuid) ?>"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+                                    data-toggle="tooltip" data-placement="top" title="Edit Ujian">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                </a>
+                                <?php else: ?>
+                                <a href="#"
+                                    class="btn-edit-blocked inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 cursor-not-allowed"
+                                    data-nama="<?= htmlspecialchars($val->nama) ?>"
+                                    data-toggle="tooltip" data-placement="top" title="Edit Ujian (sudah dikerjakan)">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                </a>
+                                <?php endif; ?>
                                 <a href="<?=base_url('ujian/hapus/'.$val->uuid)?>"
                                     class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
                                     data-toggle="tooltip" data-placement="top" title="Hapus Ujian"
@@ -169,6 +183,17 @@ $(document).ready(function() {
             if (result.isConfirmed) {
                 window.location.href = base_url + "ujian/pengerjaan/" + uuid;
             }
+        });
+    });
+    $('.btn-edit-blocked').on("click", function(e) {
+        e.preventDefault();
+        const nama = $(this).data('nama');
+        Swal.fire({
+            title: "Tidak dapat Edit",
+            text: "Ujian \"" + nama + "\" sudah dikerjakan oleh siswa, sehingga tidak dapat di edit.",
+            icon: "warning",
+            confirmButtonColor: "#3085d6",
+            confirmButtonText: "OK"
         });
     });
     lucide.createIcons();

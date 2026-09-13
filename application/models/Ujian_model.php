@@ -177,6 +177,35 @@ class ujian_model extends CI_Model {
 			return false;
 		}
 	}
+public function update($uuid)
+	{
+		$data = array(
+			'nama'            => $this->input->post('namaUjian'),
+			'mapel_uuid'      => $this->input->post('namaMapel'),
+			'jenis_penilaian' => $this->input->post('jenis_penilaian'),
+			'tgl_mulai'       => $this->input->post('tgl_mulai'),
+			'tgl_selesai'     => $this->input->post('tgl_selesai'),
+			'modified_at'     => date('Y-m-d H:i:s')
+		);
+
+		$this->db->update('ujian', $data, array('uuid' => $uuid));
+		return $this->db->affected_rows() > 0;
+	}
+
+	/**
+	 * Check jika ada siswa yang sudah mengerjakan (submit jawaban) ujian tertentu.
+	 * Ujian yang sudah dikerjakan tidak dapat di edit.
+	 *
+	 * @param string $ujian_uuid UUID ujian
+	 * @return bool true jika ada siswa yang sudah mengerjakan
+	 */
+	public function has_attempts($ujian_uuid)
+	{
+		$this->db->where('ujian_uuid', $ujian_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$count = $this->db->count_all_results('ujian_jawaban');
+		return $count > 0;
+	}
 
 	/**
 	 * Get ujian yang terhubung dengan bab (sub bab) tertentu.
