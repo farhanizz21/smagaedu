@@ -67,6 +67,9 @@
                             class="text-red-500">*</span></label>
                     <select name="jenis_penilaian"
                         class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                        <option value="" disabled selected <?= empty(set_value('jenis_penilaian')) ? 'selected' : '' ?>>
+                            Pilih jenis penilaian
+                        </option>
                         <option value="formatif" <?= set_value('jenis_penilaian') == 'formatif' ? 'selected' : '' ?>>
                             Formatif
                         </option>
@@ -75,10 +78,16 @@
                         </option>
                         <option value="penilaian_tengah_semester"
                             <?= set_value('jenis_penilaian') == 'penilaian_tengah_semester' ? 'selected' : '' ?>>
-                            Penilaian Tengah Semester</option>
+                            Penilaian Tengah Semester
+                        </option>
                         <option value="penilaian_akhir_semester"
                             <?= set_value('jenis_penilaian') == 'penilaian_akhir_semester' ? 'selected' : '' ?>>
-                            Penilaian Akhir Semester</option>
+                            Penilaian Akhir Semester
+                        </option>
+                        <option value="tryout_tka"
+                            <?= set_value('jenis_penilaian') == 'tryout_tka' ? 'selected' : '' ?>>
+                            Try Out TKA
+                        </option>
                     </select>
                     <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('jenis_penilaian')) ? '' : 'hidden' ?>">
                         <?= form_error('jenis_penilaian') ?>

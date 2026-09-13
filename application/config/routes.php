@@ -64,6 +64,7 @@ $route['ujian/tambah_soal/(:any)'] = 'ujian/tambah_soal/$1';
 $route['ujian/tambah_kelas/(:any)'] = 'ujian/tambah_kelas/$1';
 $route['ujian/get_soal/(:any)'] = 'ujian/get_soal_by_uuid/$1';
 $route['ujian/bulk_hapus_soal'] = 'ujian/bulk_hapus_soal';
+$route['ujian/upload_editor_file'] = 'ujian/upload_editor_file';
 
 // Materi routes
 $route['mata_pelajaran'] = 'materi';

@@ -1186,4 +1186,52 @@ class Ujian extends MY_Controller {
 		}
 		redirect('ujian/tambah_soal/' . $ujian_uuid);
 	}
+
+	/**
+	 * Upload gambar untuk editor soal (CKEditor 5 classic / CKFinderUploadAdapter).
+	 * Respond format: { uploaded: true, url: '...' } on success,
+	 *                 { uploaded: false, error: { message: '...' } } on failure.
+	 */
+	public function upload_editor_file()
+	{
+		if (!$this->session->userdata('uuid')) {
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'uploaded' => FALSE,
+					'error' => ['message' => 'Kita tidak dapat mengupload file. Navigasi salah atau authenticated.']
+				]));
+			return;
+		}
+
+		$upload_config = array(
+			'upload_path'   => './uploads/soal/',
+			'allowed_types' => 'jpg|jpeg|png|gif|bmp|webp|tiff|svg',
+			'max_size'      => 10240,
+			'encrypt_name'  => TRUE
+		);
+		$this->load->library('upload', $upload_config);
+
+		if (!is_dir('./uploads/soal/')) {
+			mkdir('./uploads/soal/', 0777, TRUE);
+		}
+
+		if (!$this->upload->do_upload('upload')) {
+			$this->output
+				->set_content_type('application/json')
+				->set_output(json_encode([
+					'uploaded' => FALSE,
+					'error' => ['message' => strip_tags($this->upload->display_errors())]
+				]));
+			return;
+		}
+
+		$upload_data = $this->upload->data();
+		$this->output
+			->set_content_type('application/json')
+			->set_output(json_encode([
+				'uploaded' => TRUE,
+				'url' => base_url('uploads/soal/' . $upload_data['file_name'])
+			]));
+	}
 }

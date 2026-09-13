@@ -60,8 +60,8 @@
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Soal <span
                             class="text-red-500">*</span></label>
-                    <textarea name="soal" rows="4"
-                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                    <textarea name="soal" id="addSoalEditor"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
                         placeholder="Masukkan soal ujian..."><?= set_value('soal'); ?></textarea>
                     <div class="text-red-500 text-xs mt-1"><?= form_error('soal') ?></div>
                 </div>
@@ -401,6 +401,18 @@
 
         <!-- Soal List -->
         <div class="space-y-3" id="soalList">
+            <?php
+            // Output plain text from rich HTML (for summary & search) without showing markup
+            function soal_plain_text($html) {
+                if ($html === null || $html === '') { return ''; }
+                $t = preg_replace('/<br\s*\/?>/i', "\n", $html);
+                $t = preg_replace('/<\/(p|div|li|h[1-6])>/i', " ", $t);
+                $t = preg_replace('/<[^>]+>/', ' ', $t);
+                $t = html_entity_decode($t, ENT_QUOTES | ENT_HTML5);
+                $t = preg_replace('/\s+/', ' ', $t);
+                return trim($t);
+            }
+            ?>
             <?php $no = 1; ?>
             <?php foreach($soal as $s):
                 $jenis_label = $jenis_labels[$s->jenis_soal] ?? ($s->jenis_soal ?? '-');
@@ -421,10 +433,11 @@
                     }
                 }
 
-                $soal_truncated = mb_strlen($s->soal) > 80 ? mb_substr($s->soal, 0, 80) . '...' : $s->soal;
+                $soal_plain = soal_plain_text($s->soal);
+                $soal_truncated = mb_strlen($soal_plain) > 80 ? mb_substr($soal_plain, 0, 80) . '...' : $soal_plain;
             ?>
             <div class="soal-item border border-gray-200 rounded-xl overflow-hidden transition-all"
-                data-jenis="<?= $s->jenis_soal ?>" data-soal="<?= htmlspecialchars(strtolower($s->soal)) ?>">
+                data-jenis="<?= $s->jenis_soal ?>" data-soal="<?= htmlspecialchars(strtolower($soal_plain)) ?>">
                 <div class="flex items-center gap-3 px-4 py-3 hover:bg-gray-50/50 transition-colors accordion-header cursor-pointer"
                     onclick="toggleAccordion(this)">
                     <label class="flex items-center" onclick="event.stopPropagation()">
@@ -513,10 +526,12 @@
                 </div>
                 <div class="accordion-content hidden border-t border-gray-100 bg-white">
                     <div class="px-4 py-3 space-y-3">
-                        <!-- <div class="flex items-start gap-2">
+                        <?php if (!empty($s->soal)): ?>
+                        <div class="flex items-start gap-2">
                             <span class="text-xs font-semibold text-gray-500 mt-0.5">Soal:</span>
-                            <p class="text-sm text-gray-700 leading-relaxed"><?= htmlspecialchars($s->soal) ?></p>
-                        </div> -->
+                            <div class="text-sm text-gray-800 leading-relaxed max-w-none"><?= $s->soal ?></div>
+                        </div>
+                        <?php endif; ?>
 
                         <?php if (in_array($s->jenis_soal, ['pilihan_ganda', 'pilihan_ganda_kompleks'])): ?>
                         <div class="space-y-1.5">
@@ -723,7 +738,10 @@
     </div>
 </div>
 
+<script src="https://cdn.ckeditor.com/ckeditor5/41.2.0/classic/ckeditor.js"></script>
 <script>
+var editSoalEditor = null;
+
 function toggleAccordion(header) {
     var content = header.nextElementSibling;
     var icon = header.querySelector('i[data-lucide="chevron-down"]');
@@ -748,7 +766,11 @@ function openEditModal(uuid) {
         })
         .then(function(data) {
             if (data.status === 'success') {
-                document.getElementById('editSoalText').value = data.data.soal;
+                if (editSoalEditor) {
+                    editSoalEditor.setData(data.data.soal);
+                } else {
+                    document.getElementById('editSoalText').value = data.data.soal;
+                }
                 document.getElementById('editSoalJenis').value = data.data.jenis_soal;
 
                 document.getElementById('editJawabanA').value = data.data.jawaban_a || '';
@@ -915,6 +937,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     lucide.createIcons();
+
+    // Inisialisasi CKEditor untuk bidang "soal"
+    var ckeditorUploadUrl = '<?= base_url('ujian/upload_editor_file') ?>';
+    var ckeditorConfig = {
+        placeholder: 'Masukkan soal ujian...',
+        ckfinder: {
+            uploadUrl: ckeditorUploadUrl
+        }
+    };
+    var editCkeditorConfig = {
+        placeholder: 'Masukkan soal...',
+        ckfinder: {
+            uploadUrl: ckeditorUploadUrl
+        }
+    };
+    var addSoalEditorEl = document.getElementById('addSoalEditor');
+    var editSoalTextareaEl = document.getElementById('editSoalText');
+    if (window.ClassicEditor) {
+        if (addSoalEditorEl) {
+            ClassicEditor.create(addSoalEditorEl, ckeditorConfig)
+                .catch(function(err) { console.error('CKEditor add soal error:', err); });
+        }
+        if (editSoalTextareaEl) {
+            ClassicEditor.create(editSoalTextareaEl, editCkeditorConfig)
+                .then(function(editor) { editSoalEditor = editor; })
+                .catch(function(err) { console.error('CKEditor edit soal error:', err); });
+        }
+    }
 
     var searchInput = document.getElementById('soalSearch');
     var typeFilter = document.getElementById('soalTypeFilter');
