@@ -1,18 +1,14 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Siswa extends CI_Controller {
+class Siswa extends MY_Controller {
 
 	public function __construct()
 	{
 		parent::__construct();
-
 		$this->load->model('siswa_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
+		$this->load->model('kelas_model');
+		$this->require_admin_or_superadmin(); // Superadmin dan admin bisa akses
 	}
 
 	public function index()
@@ -21,18 +17,12 @@ class Siswa extends CI_Controller {
 
 		$data = array(
 			'siswa' => $siswa,
-			'active_nav' => 'siswa'
 		);
-		
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar' , $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('siswa/siswa', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Data Siswa']);
+		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
+        $this->load->view('master/siswa/siswa', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
     public function tambah()
@@ -52,14 +42,14 @@ class Siswa extends CI_Controller {
 		}
 
 		$data = array(
+			'daftar_kelas' => $this->kelas_model->get_all(),
 			'active_nav' => 'siswa'
 		);
 
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar' , $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('siswa/siswa-tambah', $data);
-		$this->load->view('partials/footer');;
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Siswa']);
+		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
+        $this->load->view('master/siswa/siswa-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function edit($uuid){
@@ -101,17 +91,13 @@ class Siswa extends CI_Controller {
 
 		$data = array(
 			'siswa' => $this->siswa_model->get_by_uuid($uuid),
-			'active_nav' => 'siswa'
+			'daftar_kelas' => $this->kelas_model->get_all(),
 		);
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
-		$this->load->view('partials/header');
-		$this->load->view('partials/sidebar' , $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('siswa/siswa-edit', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/header_tailwind', ['title' => 'Edit Siswa']);
+		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
+        $this->load->view('master/siswa/siswa-edit', $data);
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function username_check($username, $uuid)

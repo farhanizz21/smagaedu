@@ -55,3 +55,30 @@ $route['translate_uri_dashes'] = FALSE;
 
 $route['login'] = 'auth/login';
 $route['logout'] = 'auth/logout';
+$route['ganti_password'] = 'auth/ganti_password';
+$route['reset_password/(:any)'] = 'auth/reset_password/$1';
+
+// Exam routes
+$route['ujian/tambah_sub/(:any)'] = 'ujian/tambah_sub/$1';
+$route['ujian/tambah_soal/(:any)'] = 'ujian/tambah_soal/$1';
+$route['ujian/edit/(:any)'] = 'ujian/edit/$1';
+$route['ujian/tambah_kelas/(:any)'] = 'ujian/tambah_kelas/$1';
+$route['ujian/get_soal/(:any)'] = 'ujian/get_soal_by_uuid/$1';
+$route['ujian/bulk_hapus_soal'] = 'ujian/bulk_hapus_soal';
+$route['ujian/upload_editor_file'] = 'ujian/upload_editor_file';
+
+// Materi routes
+$route['mata_pelajaran'] = 'materi';
+$route['mata_pelajaran/detail/(:any)'] = 'materi/detail/$1';
+$route['mata_pelajaran/hapus/(:any)'] = 'materi/hapus/$1';
+
+// Bab routes
+$route['bab/tambah/(:any)'] = 'materi/tambah/$1';
+$route['bab/edit/(:any)'] = 'materi/edit/$1';
+
+// Bab/Sub Bab routes
+$route['sub_bab/index/(:any)'] = 'bab/index/$1';
+$route['sub_bab/tambah/(:any)'] = 'bab/tambah/$1';
+$route['sub_bab/tambah_ujian/(:any)'] = 'bab/tambah_ujian/$1';
+$route['sub_bab/edit/(:any)'] = 'bab/edit/$1';
+$route['sub_bab/hapus/(:any)'] = 'bab/hapus/$1';

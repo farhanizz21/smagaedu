@@ -52,7 +52,8 @@ class kelompok_model extends CI_Model {
 		$data = array(			
 			'uuid' => $uuid,
 			'siswa_uuid' => $siswa_uuid,
-			'kelompok_uuid' => $kelompok_uuid
+			'kelompok_uuid' => $kelompok_uuid,
+			'created_by' => $this->session->userdata('uuid')
 		);
 		$this->db->insert('kelompok_siswa', $data);
 		return($this->db->affected_rows() > 0) ? true :false;
@@ -67,17 +68,22 @@ class kelompok_model extends CI_Model {
 	public function delete_siswa_kelompok_by_relasi($uuid)
 	{
 		$this->db->where('uuid', $uuid);
-		return $this->db->delete('kelompok_siswa');
+		$this->db->where('deleted_at', NULL, FALSE);
+		$data = array(
+			'deleted_at' => date("Y-m-d H:i:s")
+		);
+		$this->db->update('kelompok_siswa', $data);
+		return($this->db->affected_rows() > 0) ? true :false;
 	}
 
 	public function get_by_proyek_uuid($proyek_uuid)
 	{	
-		$this->db->select('k.kelompok, k.uuid AS kelompok_uuid, ks.uuid AS relasi, s.nama, s.uuid AS siswa_uuid, ks.uuid AS ks_uuid');
+		$this->db->select('k.kelompok, k.uuid AS kelompok_uuid, ks.uuid AS relasi, s.nama, s.uuid AS siswa_uuid');
 		$this->db->from('kelompok k');
 		$this->db->join('kelompok_siswa ks', 'ks.kelompok_uuid = k.uuid','left');
 		$this->db->join('siswa s', 's.uuid = ks.siswa_uuid','left');
-		// $this->db->group_by('ks.kelompok_uuid');
         $this->db->where('k.proyek_uuid', $proyek_uuid);
+		$this->db->where('ks.deleted_at', NULL, FALSE);
 		$this->db->order_by('k.modified_at', 'ASC');
 		
 		$query = $this->db->get();
@@ -90,14 +96,14 @@ class kelompok_model extends CI_Model {
 				$data[$uuid] = [
 					'kelompok' => $row['kelompok'],
 					'kelompok_uuid' => $row['kelompok_uuid'],
-					'siswa' => []
+					'anggota' => []
 				];
 			}
 			if (!empty($row['siswa_uuid'])) {
-				$data[$uuid]['siswa'][] = [
+				$data[$uuid]['anggota'][] = [
 					'relasi' => $row['relasi'],
 					'nama' => $row['nama'],
-					'uuid' => $row['siswa_uuid']
+					'siswa_uuid' => $row['siswa_uuid']
 				];
 			}
 		}
@@ -111,6 +117,7 @@ class kelompok_model extends CI_Model {
 		$this->db->join('kelompok k', 'k.uuid = ks.kelompok_uuid', 'left');
 		$this->db->where('ks.siswa_uuid', $siswa_uuid);
 		$this->db->where('k.proyek_uuid', $proyek_uuid);
+		$this->db->where('ks.deleted_at', NULL, FALSE);
 		
 		$query = $this->db->get();
 		

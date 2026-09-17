@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Materi extends CI_Controller {
+class Materi extends MY_Controller {
 
     public function __construct()
 	{
@@ -10,33 +10,40 @@ class Materi extends CI_Controller {
 		$this->load->model('materi_model');
 		$this->load->model('mapel_model');
 		$this->load->model('guru_model');
-		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
 	}
 
 	public function index()
 	{
-		$mapel = $this->mapel_model->get_all();
+		$user_role = $this->session->userdata('role');
+		$user_uuid = $this->session->userdata('uuid');
+		
+		// Jika guru, tampilkan mata pelajaran yang dibuat sendiri + yang diampu
+		if ($user_role === 'guru') {
+			$guru = $this->guru_model->get_by_uuid($user_uuid);
+			$assigned_uuids = $guru->mapel_list ?? [];
+			$mapel = $this->mapel_model->get_all_by_guru_relation($user_uuid, $assigned_uuids);
+		} elseif ($user_role === 'siswa') {
+			// Siswa hanya bisa melihat mata pelajaran sesuai kelasnya
+			$this->load->model('siswa_model');
+			$siswa = $this->siswa_model->get_by_uuid($user_uuid);
+			$kelas_uuid = $siswa->kelas_uuid ?? null;
+			$mapel = $this->mapel_model->get_all_by_kelas($kelas_uuid);
+		} else {
+			$mapel = $this->mapel_model->get_all();
+		}
 
 		$data = array(
 			'mapel' => $mapel,
 			'active_nav' => 'materi'
 		);
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
-		
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('materi/materi', $data);
-		$this->load->view('partials/footer');
+
+        $this->load->view('partials/header_tailwind', ['title' => 'Daftar Mata Pelajaran']);
+		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
+        $this->load->view('mapel/mapel', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
     
-	public function detail($mapel_uuid)
+    public function detail($mapel_uuid)
 	{
 		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid);
 		$mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
@@ -58,34 +65,28 @@ class Materi extends CI_Controller {
 			'materi' => $materi,
 			'mapel' => $mapel,
 			'pengampu' => $pengampu,
+			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
 
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
-		
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('materi/materi-list', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Daftar Materi']);
+		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
+        $this->load->view('mapel/bab-list', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
     public function tambah($mapel_uuid)
 	{
-        $rules = $this->materi_model->rules();
+		// Superadmin and admin have full access, guru needs permission
+		$this->require_permission('manage_materi');
+		
+		$rules = $this->materi_model->rules();
 		$this->form_validation->set_rules($rules);
 		
-		if (empty($_FILES['berkas']['name'])) {
-			$this->form_validation->set_rules('berkas', 'File Materi', 'required');
-		}
-
 		if ($this->form_validation->run() == TRUE) {
 			$this->load->library('upload');
 
 			$thumbnail = null;
-			$berkas = null;
 
 			$config_thumbnail = array(
 				'upload_path'   => "./uploads/thumbnail/",
@@ -100,37 +101,17 @@ class Materi extends CI_Controller {
 					$thumbnail = $this->upload->data('file_name');
 				} else {
 					$this->session->set_flashdata('error_msg', 'Gagal mengunggah thumbnail: ' . $this->upload->display_errors());
-					redirect('materi/tambah/'.$mapel_uuid);
+					redirect('bab/tambah/'.$mapel_uuid);
 				}
 			}
 
-			$config_berkas = array(
-				'upload_path'   => "./uploads/materi/",
-				'allowed_types' => "jpg|png|jpeg|pdf|docx|pptx|mp4|avi|mov|mkv",
-				'max_size'      => 50000, 
-				'encrypt_name'  => TRUE
-			);
-			// echo mime_content_type($_FILES['berkas']['tmp_name']);
-			// exit;
-
-			$this->upload->initialize($config_berkas);
-			if (!empty($_FILES['berkas']['name'])) {
-				if ($this->upload->do_upload('berkas')) {
-					$berkas = $this->upload->data('file_name');
-				} else {
-					$this->session->set_flashdata('error_msg', 'Gagal mengunggah file materi: ' . $this->upload->display_errors());
-					redirect('materi/tambah/'.$mapel_uuid);
-				}
-				
-			}
-	
-			$insert = $this->materi_model->insert($thumbnail, $berkas);
+			$insert = $this->materi_model->insert($thumbnail);
 			if ($insert) {
 				$this->session->set_flashdata('success_msg', 'Data Materi berhasil disimpan');
 			} else {
 				$this->session->set_flashdata('error_msg', 'Data Materi gagal disimpan');
 			}
-			redirect('materi/detail/'.$mapel_uuid);	
+			redirect('mata_pelajaran/detail/'.$mapel_uuid);
 		}
 		
 		$guru_uuid = $this->session->userdata('uuid');
@@ -138,63 +119,98 @@ class Materi extends CI_Controller {
 
 		$data = array(
 			'guru' => $guru,
+			'mapel_uuid' => $mapel_uuid,
+			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
 
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
-        
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar',$data);
-        $this->load->view('partials/topbar');
-        $this->load->view('materi/materi-tambah',$data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Materi']);
+		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
+        $this->load->view('mapel/bab-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function edit($uuid){
+		$materi = $this->materi_model->get_by_uuid($uuid);
+		if (empty($materi)) {
+			show_404();
+		}
+
+		$is_admin = is_admin_or_superadmin();
+		// Admin bebas edit; guru hanya untuk materi miliknya; superadmin bisa semua
+		if (!$is_admin && !is_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
+			show_error('Anda tidak memiliki akses untuk mengubah materi ini.', 403);
+		}
+
 		$rules = [
 			[
-				'field' => 'namamateri',
-				'label' => 'Nama Mata Pelajaran',
+				'field' => 'judul',
+				'label' => 'Judul Materi',
 				'rules' => 'required'
 			]
 		];
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
-			$update = $this->materi_model->update($uuid);
-			if ($update) {
-				$this->session->set_flashdata('success_msg', 'Data Mata Pelajaran berhasil di Update');
-				redirect('materi');
-			}else {
-				$this->session->set_flashdata('error_msg', 'Data Mata Pelajaran gagal di Update');
-				redirect('materi');
+			$this->load->library('upload');
+
+			$thumbnail = $materi->thumbnail;
+
+			$config_thumbnail = array(
+				'upload_path'   => "./uploads/thumbnail/",
+				'allowed_types' => "jpg|png|jpeg",
+				'max_size'      => 2048,
+			);
+			$this->upload->initialize($config_thumbnail);
+
+			if (!empty($_FILES['thumbnail']['name'])) {
+				if ($this->upload->do_upload('thumbnail')) {
+					$thumbnail = $this->upload->data('file_name');
+				} else {
+					$this->session->set_flashdata('error_msg', 'Gagal mengunggah thumbnail: ' . $this->upload->display_errors());
+					redirect('bab/edit/' . $uuid);
+				}
 			}
+
+			$update = $this->materi_model->update($uuid, $thumbnail);
+			if ($update) {
+				$this->session->set_flashdata('success_msg', 'Data Materi berhasil di Update');
+			} else {
+				$this->session->set_flashdata('error_msg', 'Data Materi gagal di Update');
+			}
+			redirect('mata_pelajaran/detail/' . $materi->mapel_uuid);
 		}
 
 		$data = array(
-			'materi' => $this->materi_model->get_by_uuid($uuid),
+			'materi' => $materi,
+			'mapel_uuid' => $materi->mapel_uuid,
+			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
 
-		$this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('materi/materi-edit', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/header_tailwind', ['title' => 'Edit Materi']);
+		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
+        $this->load->view('mapel/bab-edit', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function hapus($uuid){
-		{
-			$result = $this->materi_model->delete_by_uuid($uuid);
-			if ($result) {
-				$this->session->set_flashdata('success_msg', 'Data mata pelajaran berhasil dihapus');
-			} else {
-				$this->session->set_flashdata('error_msg', 'Gagal menghapus data mata pelajaran');
-			}
-			redirect($_SERVER['HTTP_REFERER']);
+		$materi = $this->materi_model->get_by_uuid($uuid);
+		if (empty($materi)) {
+			show_404();
 		}
+		// Superadmin, admin, atau pembuat materi yang boleh hapus
+		if (!is_admin_or_superadmin() && !is_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
+			show_error('Anda tidak memiliki akses untuk menghapus materi ini.', 403);
+		}
+
+		$result = $this->materi_model->delete_by_uuid($uuid);
+		if ($result) {
+			$this->session->set_flashdata('success_msg', 'Data materi berhasil dihapus');
+		} else {
+			$this->session->set_flashdata('error_msg', 'Gagal menghapus data materi');
+		}
+		redirect($_SERVER['HTTP_REFERER']);
 	}
     
 }

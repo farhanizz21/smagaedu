@@ -15,22 +15,25 @@ class jawaban_model extends CI_Model {
 	// 	];
 	// }
 
-	public function insert()
-	{
-		$ujian_uuid = $this->input->post('ujian_uuid');
-		$jawaban = $this->input->post('jawaban');
-	
-		foreach ($jawaban as $soal_uuid => $jawaban_siswa) {
-			$data = [
-				'ujian_uuid' => $ujian_uuid,
-				'soal_uuid' => $soal_uuid,
-				'jawaban_siswa' => $jawaban_siswa,
-				'created_by' => $this->session->userdata('uuid')
-			];
-			$this->db->insert('ujian_jawaban', $data);
-		}
-		redirect('ujian');
-	}
+public function insert()
+    {
+        $ujian_uuid = $this->input->post('ujian_uuid');
+        $jawaban = $this->input->post('jawaban');
+
+        foreach ($jawaban as $soal_uuid => $jawaban_siswa) {
+            if (is_array($jawaban_siswa)) {
+                $jawaban_siswa = json_encode($jawaban_siswa);
+            }
+            $data = [
+                'ujian_uuid' => $ujian_uuid,
+                'soal_uuid' => $soal_uuid,
+                'jawaban_siswa' => $jawaban_siswa,
+                'created_by' => $this->session->userdata('uuid')
+            ];
+            $this->db->insert('ujian_jawaban', $data);
+        }
+        redirect('ujian');
+    }
 
 	public function get_by_soal_uuid($soal_uuid, $siswa_uuid)
 	{

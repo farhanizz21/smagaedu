@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Panduan extends CI_Controller {
+class Panduan extends MY_Controller {
 
 	public function __construct()
 	{
@@ -9,30 +9,23 @@ class Panduan extends CI_Controller {
 
 		$this->load->model('panduan_model');
 		$this->load->library('form_validation');
-		$this->load->model('auth_model');
-		if(!$this->auth_model->current_user()){
-			redirect('login');
-		}
 	}
 
 	public function index()
 	{
-		$panduan = $this->panduan_model->get_all();
+		$user_role = $this->session->userdata('role');
+		$panduan = $this->panduan_model->get_all($user_role);
 
 		$data = array(
 			'panduan' => $panduan,
 			'active_nav' => 'panduan'
 		);
 		
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('panduan/panduan', $data);
-		$this->load->view('partials/footer');
+        $this->load->view('partials/header_tailwind', ['title' => 'Panduan']);
+		$this->load->view('partials/navbar', $data);
+        $this->load->view('panduan/panduan', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function tambah()
@@ -60,7 +53,6 @@ class Panduan extends CI_Controller {
 				$insert = $this->panduan_model->insert($berkas);
 				if ($insert) {
 					$this->session->set_flashdata('success_msg', 'Data panduan berhasil disimpan');
-					// redirect('panduan');
 				} else {
 					$this->session->set_flashdata('error_msg', 'Data panduan gagal disimpan');
 				}
@@ -71,16 +63,11 @@ class Panduan extends CI_Controller {
 		$data = array(
 			'active_nav' => 'panduan'
 		);
-		
-		// echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
-        $this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('panduan/panduan-tambah', $data);
-		$this->load->view('partials/footer');;
+        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Panduan']);
+		$this->load->view('partials/navbar', $data);
+        $this->load->view('panduan/panduan-tambah', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function edit($uuid){
@@ -91,12 +78,7 @@ class Panduan extends CI_Controller {
 				'rules' => 'required'
 			],
 			[
-				'field' => 'berkas',
-				'label' => 'Berkas Panduan',
-				'rules' => 'uploaded[berkas]|max_size[berkas,5120]' // 5MB
-			],
-			[
-				'field' => 'tujuan',
+				'field' => 'tujuan[]',
 				'label' => 'Tujuan',
 				'rules' => 'required'
 			]
@@ -118,20 +100,15 @@ class Panduan extends CI_Controller {
 			'panduan' => $this->panduan_model->get_by_uuid($uuid),
 			'active_nav' => 'panduan'
 		);
-		// 		echo "<pre>";
-		// print_r($data);
-		// echo "</pre>";
 
-		$this->load->view('partials/header');
-		$this->load->view('partials/sidebar', $data);
-        $this->load->view('partials/topbar');
-        $this->load->view('panduan/panduan-edit', $data);
-		$this->load->view('partials/footer');
+		$this->load->view('partials/header_tailwind', ['title' => 'Edit Panduan']);
+		$this->load->view('partials/navbar', $data);
+        $this->load->view('panduan/panduan-edit', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
 	}
 
 	public function hapus($uuid)
 	{
-		$this->load->model('panduan_model');
 		$result = $this->panduan_model->delete_by_uuid($uuid);
 		if ($result) {
 			$this->session->set_flashdata('success_msg', 'Data Panduan berhasil dihapus');
@@ -140,5 +117,5 @@ class Panduan extends CI_Controller {
 		}
 		redirect($_SERVER['HTTP_REFERER']);
 	}
-    
+     
 }

@@ -35,14 +35,38 @@ class proyek_model extends CI_Model {
         ];
 	}
 
-	public function get_all()
+	public function get_all($created_by = null)
 	{
 		$this->db->where('deleted_at', NULL, FALSE);
+		if ($created_by !== null) {
+			$this->db->where('created_by', $created_by);
+		}
 		$this->db->order_by('modified_at', 'DESC');
 		$data = $this->db->get('proyek')->result();
 
 		return $data;
 	} 
+
+	/**
+	 * Get all proyek yang mapel-nya diampu untuk kumpulan mapel UUID tertentu.
+	 * Digunakan untuk memfilter proyek yang dapat dilihat siswa berdasarkan kelasnya.
+	 *
+	 * @param array $mapel_uuids Daftar UUID mapel yang diampu untuk kelas siswa
+	 * @return array Daftar proyek
+	 */
+	public function get_all_by_mapel_uuids($mapel_uuids = [])
+	{
+		if (empty($mapel_uuids)) {
+			return [];
+		}
+
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->where_in('mapel_uuid', $mapel_uuids);
+		$this->db->order_by('modified_at', 'DESC');
+		$data = $this->db->get('proyek')->result();
+
+		return $data;
+	}
 	
 	public function insert($berkas)
 	{

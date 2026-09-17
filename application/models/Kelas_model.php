@@ -8,30 +8,47 @@ class kelas_model extends CI_Model {
 	{
 		return[
 			[
-				'field' => 'namaLengkap',
-				'label' => 'Nama Lengkap',
+				'field' => 'namaKelas',
+				'label' => 'Nama Kelas',
 				'rules' => 'required'
-			],
-			
+			]
 		];
 	}
+
+    public function get_all()
+	{
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->order_by('modified_at', 'DESC');
+		$data = $this->db->get('kelas')->result();
+
+		return $data;
+	}
+
+    /**
+     * Get kelas by array of UUIDs.
+     *
+     * @param array $uuids Daftar UUID kelas
+     * @return array Daftar kelas
+     */
+    public function get_by_uuids($uuids = [])
+    {
+        if (empty($uuids) || !is_array($uuids)) {
+            return [];
+        }
+        $this->db->where('deleted_at', NULL, FALSE);
+        $this->db->where_in('uuid', $uuids);
+        $this->db->order_by('modified_at', 'DESC');
+        return $this->db->get('kelas')->result();
+    }
 
     public function insert()
 	{
 		$uuid = Uuid::uuid4()->toString();
-        $namaLengkap = $this->input->post('namaLengkap');
-        $username = $this->input->post('username');
-        $password = 'edu12345';
-		$mapel_uuid = $this->input->post('namaMapel');
-        $jenisKelamin = $this->input->post('jenisKelamin');
+        $namaKelas = $this->input->post('namaKelas');
 
 		$data = array(
 			'uuid' => $uuid,
-			'nama' => $namaLengkap,
-            'username' => $username,
-            'mapel_uuid' => $mapel_uuid,
-            'password' =>  password_hash($password, PASSWORD_DEFAULT),
-            'jenis_kelamin' => $jenisKelamin,
+			'nama' => $namaKelas,
 			'created_by' => $this->session->userdata('uuid')
 		);
 
@@ -45,27 +62,18 @@ class kelas_model extends CI_Model {
 
 	public function update($uuid)
 	{
-		$namaLengkap = $this->input->post('namaLengkap');
-		$username = $this->input->post('username');
-		$mapel_uuid = $this->input->post('namaMapel');
-		$jenisKelamin = $this->input->post('jenisKelamin');
+		$namaKelas = $this->input->post('namaKelas');
 		$data = array(
-			'nama' => $namaLengkap,
-            'username' => $username,
-            'mapel_uuid' => $mapel_uuid,
-            'jenis_kelamin' => $jenisKelamin,
+			'nama' => $namaKelas,
 			'modified_at' => date("Y-m-d H:i:s")
 		);
 		$this->db->update('kelas', $data, array('uuid' => $uuid));
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
 
-	public function get_all()
+	public function get_by_uuid($uuid)
 	{
-		$this->db->where('deleted_at', NULL, FALSE);
-		$this->db->order_by('modified_at', 'DESC');
-		$data = $this->db->get('kelas')->result();
-
+		$data = $this->db->get_where('kelas', array('uuid' => $uuid))->row();
 		return $data;
 	}
 
@@ -77,11 +85,5 @@ class kelas_model extends CI_Model {
 		$this->db->update('kelas', $data, array('uuid' => $uuid));
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
-	public function get_by_uuid($uuid)
-	{
-		$data = $this->db->get_where('kelas', array('uuid' => $uuid))->row();
-		return $data;
-	}
 
 }
-?>

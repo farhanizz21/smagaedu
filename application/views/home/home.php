@@ -1,150 +1,169 @@
-<!DOCTYPE html>
-<html lang="en">
+<?php if(!isset($from_controller)): ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Home']); ?>
+<?php $this->load->view('partials/navbar', ['active_nav' => 'home']); ?>
+<?php endif; ?>
 
-<head>
-    <meta charset="utf-8">
-    <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <meta name="description" content="">
-    <meta name="keywords" content="">
-
-    <link rel="icon" type="image/x-icon" href="<?= base_url('assets/img/Logo_Smartedu.svg'); ?>">
-    <title>Dashboard - Smartedu</title>
-    <!-- Favicons -->
-    <!-- <link href="<?= base_url('assets_dashboard/img/favicon.png') ?>" rel="icon"> -->
-    <!-- <link href="<?= base_url('assets_dashboard/img/apple-touch-icon.png') ?>" rel="apple-touch-icon"> -->
-
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com" rel="preconnect">
-    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Raleway:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-        rel="stylesheet">
-
-    <!-- Vendor CSS Files -->
-    <link href="<?= base_url('assets_dashboard/vendor/bootstrap/css/bootstrap.min.css') ?>" rel="stylesheet">
-    <link href="<?= base_url('assets_dashboard/vendor/bootstrap-icons/bootstrap-icons.css') ?>" rel="stylesheet">
-    <link href="<?= base_url('assets_dashboard/vendor/aos/aos.css') ?>" rel="stylesheet">
-    <link href="<?= base_url('assets_dashboard/vendor/swiper/swiper-bundle.min.css') ?>" rel="stylesheet">
-    <link href="<?= base_url('assets_dashboard/vendor/glightbox/css/glightbox.min.css') ?>" rel="stylesheet">
-
-    <!-- Main CSS File -->
-    <link href="<?= base_url('assets_dashboard/css/main.css') ?>" rel="stylesheet">
-
-    <!-- =======================================================
-  * Template Name: Day
-  * Template URL: https://bootstrapmade.com/day-multipurpose-html-template-for-free/
-  * Updated: Aug 07 2024 with Bootstrap v5.3.3
-  * Author: BootstrapMade.com
-  * License: https://bootstrapmade.com/license/
-  ======================================================== -->
-</head>
-
-<body class="index-page">
-
-    <header id="header" class="header fixed-top">
-
-        <!-- <div class="topbar d-flex align-items-center">
-            <div class="container d-flex justify-content-center justify-content-md-between">
-                <div class="contact-info d-flex align-items-center">
-                    <i class="bi bi-envelope d-flex align-items-center"><a
-                            href="mailto:contact@example.com">contact@example.com</a></i>
-                    <i class="bi bi-phone d-flex align-items-center ms-4"><span>+1 5589 55488 55</span></i>
-                </div>
-                <div class="social-links d-none d-md-flex align-items-center">
-                    <a href="#" class="twitter"><i class="bi bi-twitter-x"></i></a>
-                    <a href="#" class="facebook"><i class="bi bi-facebook"></i></a>
-                    <a href="#" class="instagram"><i class="bi bi-instagram"></i></a>
-                    <a href="#" class="linkedin"><i class="bi bi-linkedin"></i></a>
-                </div>
+<!-- Hero Section -->
+<section class="hero-gradient w-full">
+    <div class="max-w-7xl mx-auto px-6 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
+        <div class="space-y-6">
+            <h1 class="font-extrabold text-5xl md:text-6xl leading-tight tracking-tight text-gray-900">SMARTEDU</h1>
+            <p class="text-lg leading-relaxed max-w-lg text-gray-600">
+                Platform Learning Management System untuk mendukung pembelajaran berbasis proyek secara efektif,
+                kolaboratif, dan terstruktur.
+            </p>
+            <div class="flex flex-wrap gap-3 pt-2">
+                <a href="<?= base_url('mata_pelajaran') ?>"
+                    class="px-6 py-3 rounded-2xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:shadow-xl transition-all">Mulai
+                    Belajar</a>
+                <a href="<?= base_url('panduan') ?>"
+                    class="px-6 py-3 rounded-2xl font-semibold border-2 border-blue-600 text-blue-600 bg-white hover:bg-gray-50 transition-all">Pelajari
+                    Panduan</a>
             </div>
-        </div> -->
-        <!-- End Top Bar -->
-
-        <div class="branding d-flex align-items-center">
-
-            <div class="container position-relative d-flex align-items-center justify-content-between">
-                <a href="index.html" class="logo d-flex align-items-center">
-                    <!-- Uncomment the line below if you also wish to use an image logo -->
-                    <img src="<?= base_url('assets/img/Logo_Smartedu.svg') ?>" alt="">
-                    <h1 class="sitename">Smartedu</h1>
-                </a>
-
-                <nav id="navmenu" class="navmenu">
-                    <ul>
-                        <li><a href="" class="active">Home</a></li>
-                        <li><a href="<?= base_url('panduan')?>">Panduan</a></li>
-                        <li><a href="<?= base_url('materi')?>">Materi</a></li>
-                        <li><a href="<?= base_url('proyek')?>">Proyek</a></li>
-                        <li><a href="<?= base_url('ujian')?>">Ujian</a></li>
-                        <li><a href="<?= base_url('kalender')?>">Kalender</a></li>
-                        <?php if($this->session->userdata('role') == 1 ){?>
-                        <li class="dropdown"><a href="#"><span>Master Data</span> <i
-                                    class="bi bi-chevron-down toggle-dropdown"></i></a>
-                            <ul>
-                                <li><a href="<?= base_url('guru')?>">Data Guru</a></li>
-                                <li><a href="<?= base_url('siswa')?>">Data Siswa</a></li>
-                                <li><a href="<?= base_url('mapel')?>">Data Mata Pelajaran</a></li>
-                            </ul>
-                        </li>
-                        <?php } ?>
-                        <li class="dropdown">
-                            <a href="#"><span>Hai, <?= $this->session->userdata('nama');?></span> <i
-                                    class="bi bi-chevron-down toggle-dropdown"></i>
-                            </a>
-                            <ul>
-                                <li><a href="<?= base_url('logout');?>">Logout</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                    <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
-                </nav>
+            <div class="flex flex-wrap gap-3 pt-4">
+                <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-600">✓ Project Based
+                    Learning</span>
+                <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-600">✓
+                    Terintegrasi</span>
+                <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-600">✓ Mudah
+                    Digunakan</span>
             </div>
-
         </div>
-
-    </header>
-
-    <main class="main">
-
-        <!-- Hero Section -->
-        <section id="hero" class="hero section dark-background">
-
-            <img src="assets_dashboard/img/bg.jpg" alt="" data-aos="fade-in">
-
-            <div class="container py-5" data-aos="fade-up" data-aos-delay="100">
-                <div class="row justify-content-start">
-                    <div class="col-lg-8">
-                        <h2>Welcome to Smartedu</h2>
-                        <h6>TERSTRUKTUR, EFISIEN, MUDAH DIAKSES </h6>
-                        <br>
-                        <p>Sebuah platform digital berbasis web yang dirancang khusus untuk mendukung
-                            kegiatan pembelajaran project-based learning di lingkungan sekolah</p>
+        <div class="relative">
+            <div class="dash-shadow rounded-3xl overflow-hidden border border-gray-200 bg-white p-1">
+                <div class="bg-gray-50 rounded-t-2xl px-4 py-2.5 flex items-center gap-2 border-b border-gray-100">
+                    <div class="flex gap-1.5">
+                        <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                    </div>
+                    <div class="flex-1 mx-4">
+                        <div
+                            class="bg-white rounded-lg px-3 py-1 text-xs text-gray-400 border border-gray-200 max-w-xs">
+                            smartedu.app/dashboard</div>
+                    </div>
+                </div>
+                <div class="p-4 grid grid-cols-3 gap-3 bg-gradient-to-br from-slate-50 to-blue-50/30">
+                    <div class="col-span-1 space-y-2">
+                        <div class="bg-blue-600 text-white rounded-xl p-3 text-xs font-semibold">📊 Dashboard</div>
+                        <div class="bg-white rounded-xl p-2.5 text-xs text-gray-500 border border-gray-100">📚
+                            Materi</div>
+                        <div class="bg-white rounded-xl p-2.5 text-xs text-gray-500 border border-gray-100">📂
+                            Proyek</div>
+                        <div class="bg-white rounded-xl p-2.5 text-xs text-gray-500 border border-gray-100">📅
+                            Kalender</div>
+                        <div class="bg-white rounded-xl p-2.5 text-xs text-gray-500 border border-gray-100">📝 Ujian
+                        </div>
+                    </div>
+                    <div class="col-span-2 space-y-3">
+                        <div class="glass-card rounded-xl p-3">
+                            <div class="text-xs font-semibold text-gray-700 mb-2">Progress Belajar</div>
+                            <div class="w-full bg-gray-100 rounded-full h-2.5">
+                                <div class="bg-blue-600 h-2.5 rounded-full" style="width:72%"></div>
+                            </div>
+                            <div class="text-[10px] text-gray-400 mt-1">72% selesai</div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="glass-card rounded-xl p-2.5 text-center">
+                                <div class="text-lg font-bold text-blue-600">24</div>
+                                <div class="text-[10px] text-gray-500">Assignment</div>
+                            </div>
+                            <div class="glass-card rounded-xl p-2.5 text-center">
+                                <div class="text-lg font-bold text-amber-500">8</div>
+                                <div class="text-[10px] text-gray-500">Jadwal Hari Ini</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="bg-white rounded-xl p-2.5 border border-gray-100">
+                                <div class="text-[10px] font-medium text-gray-700">Matematika</div>
+                                <div class="text-[9px] text-gray-400 mt-0.5">Bab 4 - Aljabar</div>
+                                <div class="mt-1.5 w-full bg-gray-100 rounded-full h-1.5">
+                                    <div class="bg-green-500 h-1.5 rounded-full" style="width:60%"></div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl p-2.5 border border-gray-100">
+                                <div class="text-[10px] font-medium text-gray-700">Fisika</div>
+                                <div class="text-[9px] text-gray-400 mt-0.5">Proyek Energi</div>
+                                <div class="mt-1.5 w-full bg-gray-100 rounded-full h-1.5">
+                                    <div class="bg-amber-400 h-1.5 rounded-full" style="width:40%"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</section>
 
-        </section><!-- /Hero Section -->
-    </main>
+<!-- Features Section -->
+<section class="w-full py-20 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-6">
+        <h2 class="text-center font-bold text-3xl mb-4 text-gray-900">Fitur Unggulan</h2>
+        <p class="text-center max-w-xl mx-auto mb-12 text-gray-600">Semua yang Anda butuhkan untuk mengelola
+            pembelajaran digital dalam satu platform.</p>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="glass-card rounded-3xl p-6 hover:shadow-lg transition-shadow">
+                <div class="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl mb-4">📚
+                </div>
+                <h3 class="font-semibold mb-2 text-gray-900">Manajemen Materi</h3>
+                <p class="text-sm text-gray-600">Kelola dan distribusikan materi pembelajaran secara terstruktur.
+                </p>
+            </div>
+            <div class="glass-card rounded-3xl p-6 hover:shadow-lg transition-shadow">
+                <div class="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-2xl mb-4">📝
+                </div>
+                <h3 class="font-semibold mb-2 text-gray-900">Ujian Online</h3>
+                <p class="text-sm text-gray-600">Buat, kelola, dan koreksi ujian secara otomatis.</p>
+            </div>
+            <div class="glass-card rounded-3xl p-6 hover:shadow-lg transition-shadow">
+                <div class="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center text-2xl mb-4">📂
+                </div>
+                <h3 class="font-semibold mb-2 text-gray-900">Project Management</h3>
+                <p class="text-sm text-gray-600">Pantau progres proyek siswa secara real-time.</p>
+            </div>
+            <div class="glass-card rounded-3xl p-6 hover:shadow-lg transition-shadow">
+                <div class="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center text-2xl mb-4">📅
+                </div>
+                <h3 class="font-semibold mb-2 text-gray-900">Kalender Akademik</h3>
+                <p class="text-sm text-gray-600">Jadwalkan kegiatan akademik dengan mudah.</p>
+            </div>
+        </div>
+    </div>
+</section>
 
+<!-- Stats Section -->
+<section class="w-full py-16">
+    <div class="max-w-7xl mx-auto px-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-4xl font-extrabold text-blue-600">500+</div>
+                <div class="text-sm mt-1 text-gray-600">Materi</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-extrabold text-amber-500">120</div>
+                <div class="text-sm mt-1 text-gray-600">Proyek</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-extrabold text-blue-600">1.200</div>
+                <div class="text-sm mt-1 text-gray-600">Siswa</div>
+            </div>
+            <div class="text-center">
+                <div class="text-4xl font-extrabold text-amber-500">45</div>
+                <div class="text-sm mt-1 text-gray-600">Guru</div>
+            </div>
+        </div>
+    </div>
+</section>
 
-    <!-- Scroll Top -->
-    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i
-            class="bi bi-arrow-up-short"></i></a>
+<!-- Footer -->
+<footer class="w-full py-8 border-t border-gray-100 bg-gray-50">
+    <p class="text-center text-sm text-gray-400">© <?= date('Y'); ?> SMARTEDU. All rights reserved.</p>
+</footer>
 
-    <!-- Preloader -->
-    <div id="preloader"></div>
-
-    <!-- Vendor JS Files -->
-    <script src="<?= base_url('assets_dashboard/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
-    <script src="<?= base_url('assets_dashboard/vendor/php-email-form/validate.js') ?>"></script>
-    <script src="<?= base_url('assets_dashboard/vendor/aos/aos.js') ?>"></script>
-    <script src="<?= base_url('assets_dashboard/vendor/swiper/swiper-bundle.min.js') ?>"></script>
-    <script src="<?= base_url('assets_dashboard/vendor/glightbox/js/glightbox.min.js') ?>"></script>
-    <script src="<?= base_url('assets_dashboard/vendor/imagesloaded/imagesloaded.pkgd.min.js') ?>"></script>
-    <script src="<?= base_url('assets_dashboard/vendor/isotope-layout/isotope.pkgd.min.js') ?>"></script>
-
-    <!-- Main JS File -->
-    <script src="<?= base_url('assets_dashboard/js/main.js') ?>"></script>
+<script>
+lucide.createIcons();
+</script>
 
 </body>
 
