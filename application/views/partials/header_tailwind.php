@@ -8,7 +8,7 @@
     <meta name="keywords" content="">
 
     <link rel="icon" type="image/x-icon" href="<?= base_url('assets/img/Logo_Smartedu.svg'); ?>">
-    <title>SMARTEDU - <?= $title ?? 'Master Data Guru' ?></title>
+    <title>SMAGAEDU - <?= $title ?? 'Master Data Guru' ?></title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>

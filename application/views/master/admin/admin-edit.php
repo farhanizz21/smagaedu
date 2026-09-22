@@ -12,7 +12,7 @@
             Kembali
         </a>
         <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Edit Admin</h1>
-        <p class="text-gray-500 mt-1 text-sm">Mengubah data administrator SMARTEDU</p>
+        <p class="text-gray-500 mt-1 text-sm">Mengubah data administrator SMAGAEDU</p>
     </div>
 
     <!-- Form Card -->

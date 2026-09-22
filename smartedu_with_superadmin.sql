@@ -1,4 +1,4 @@
--- phpMyAdmin SQL Dump - COMPLETE SETUP FOR SMARTEDU WITH SUPERADMIN
+-- phpMyAdmin SQL Dump - COMPLETE SETUP FOR SMAGAEDU WITH SUPERADMIN
 -- Run this file to set up the database with centralized role system
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";

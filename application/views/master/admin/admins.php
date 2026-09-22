@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Data Admin</h1>
-            <p class="text-gray-500 mt-1 text-sm">Kelola data administrator SMARTEDU</p>
+            <p class="text-gray-500 mt-1 text-sm">Kelola data administrator SMAGAEDU</p>
         </div>
         <?php if(is_superadmin()): ?>
         <a href="<?= base_url('admin/admins_tambah')?>"

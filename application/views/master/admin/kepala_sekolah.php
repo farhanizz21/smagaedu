@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Data Kepala Sekolah</h1>
-            <p class="text-gray-500 mt-1 text-sm">Kelola akun Kepala Sekolah SMARTEDU</p>
+            <p class="text-gray-500 mt-1 text-sm">Kelola akun Kepala Sekolah SMAGAEDU</p>
         </div>
         <a href="<?= base_url('admin/kepala_sekolah_tambah')?>"
             class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">

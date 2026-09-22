@@ -5,7 +5,7 @@
         <div class="flex items-center gap-8">
             <a href="<?= base_url('home') ?>" class="flex items-center gap-2">
                 <img src="<?= base_url('assets/img/Logo_Smartedu.svg') ?>" alt="Smartedu" class="h-8 w-8">
-                <h1 class="text-xl font-extrabold tracking-tight text-blue-600">SMARTEDU</h1>
+                <h1 class="text-xl font-extrabold tracking-tight text-blue-600">SMAGAEDU</h1>
             </a>
             <div class="hidden md:flex items-center gap-1 text-sm font-medium">
                 <a href="<?= base_url('home') ?>"

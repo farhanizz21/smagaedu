@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Data Guru</h1>
-            <p class="text-gray-500 mt-1 text-sm">Kelola data guru pengajar di SMARTEDU</p>
+            <p class="text-gray-500 mt-1 text-sm">Kelola data guru pengajar di SMAGAEDU</p>
         </div>
         <div class="flex items-center gap-2">
             <a href="<?= base_url('guru/import')?>"

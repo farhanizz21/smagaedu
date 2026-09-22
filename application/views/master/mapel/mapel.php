@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Data Mata Pelajaran</h1>
-            <p class="text-gray-500 mt-1 text-sm">Kelola data mata pelajaran di SMARTEDU</p>
+            <p class="text-gray-500 mt-1 text-sm">Kelola data mata pelajaran di SMAGAEDU</p>
         </div>
         <?php if(has_role(['admin', 'superadmin'])): ?>
         <div class="flex items-center gap-2">
