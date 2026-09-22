@@ -297,6 +297,7 @@ class Ujian extends MY_Controller {
 			'Jawaban B',
 			'Jawaban C',
 			'Jawaban D',
+			'Jawaban E',
 			'Jawaban Benar',
 			'Kunci 1',
 			'Jawaban 1',
@@ -319,32 +320,32 @@ class Ujian extends MY_Controller {
 			'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
 			'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
 		];
-		$sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+		$sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
 
 		// Contoh data
 		$examples = [
 			[
-				'pilihan_ganda', 'Siapa presiden pertama Indonesia?', 'Soekarno', 'Soeharto', 'Habibie', 'Megawati', 'A', '', '', '', '', '', '', '', '', '', ''
+				'pilihan_ganda', 'Siapa presiden pertama Indonesia?', 'Soekarno', 'Soeharto', 'Habibie', 'Megawati', 'Abdurrahman Wahid', 'A', '', '', '', '', '', '', '', '', '', ''
 			],
 			[
-				'pilihan_ganda_kompleks', 'Pilih pernyataan yang benar tentang ekosistem!', 'Terdiri dari biotik dan abiotik', 'Hanya berisi hewan', 'Mengandung rantai makanan', 'Tidak ada interaksi', 'A, C', '', '', '', '', '', '', '', '', '', ''
+				'pilihan_ganda_kompleks', 'Pilih pernyataan yang benar tentang ekosistem!', 'Terdiri dari biotik dan abiotik', 'Hanya berisi hewan', 'Mengandung rantai makanan', 'Tidak ada interaksi', 'Komponen saling berinteraksi', 'A, C', '', '', '', '', '', '', '', '', '', ''
 			],
 			[
-				'benar_salah', 'Air mendidih pada suhu 100°C di permukaan laut.', '', '', '', '', 'benar', '', '', '', '', '', '', '', '', '', ''
+				'benar_salah', 'Air mendidih pada suhu 100°C di permukaan laut.', '', '', '', '', '', 'benar', '', '', '', '', '', '', '', '', '', ''
 			],
 			[
-				'essay', 'Jelaskan proses fotosintesis secara singkat!', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+				'essay', 'Jelaskan proses fotosintesis secara singkat!', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
 			],
 			[
-				'menjodohkan', 'Jodohkan organ tubuh dengan fungsinya!', '', '', '', '', '', 'Jantung', 'Memompa darah', 'Paru-paru', 'Pertukaran oksigen', 'Lambung', 'Mencerna makanan', '', '', ''
+				'menjodohkan', 'Jodohkan organ tubuh dengan fungsinya!', '', '', '', '', '', '', 'Jantung', 'Memompa darah', 'Paru-paru', 'Pertukaran oksigen', 'Lambung', 'Mencerna makanan', '', '', '', ''
 			]
 		];
 
 		$sheet->fromArray($examples, NULL, 'A2');
 
 		// Style contoh (abukan bagian header)
-		$sheet->getStyle('A2:Q6')->getFont()->setItalic(true);
-		$sheet->getStyle('A2:Q6')->getFont()->getColor()->setRGB('6B7280');
+		$sheet->getStyle('A2:R6')->getFont()->setItalic(true);
+		$sheet->getStyle('A2:R6')->getFont()->getColor()->setRGB('6B7280');
 
 		// Sheet Panduan
 		$panduanSheet = $spreadsheet->createSheet();
@@ -355,8 +356,8 @@ class Ujian extends MY_Controller {
 			['Kolom', 'Keterangan'],
 			['Jenis Soal', 'pilihan_ganda | pilihan_ganda_kompleks | menjodohkan | benar_salah | essay'],
 			['Soal', 'Teks soal ujian (wajib diisi)'],
-			['Jawaban A - D', 'Isi untuk jenis pilihan_ganda dan pilihan_ganda_kompleks'],
-			['Jawaban Benar', 'PG: A/B/C/D. PG Kompleks: A, B (pisahkan koma). Benar/Salah: benar atau salah. Essay & Menjodohkan: kosongkan.'],
+			['Jawaban A - E', 'Isi untuk jenis pilihan_ganda dan pilihan_ganda_kompleks'],
+			['Jawaban Benar', 'PG: A/B/C/D/E. PG Kompleks: A, B (pisahkan koma). Benar/Salah: benar atau salah. Essay & Menjodohkan: kosongkan.'],
 			['Kunci 1-5', 'Untuk jenis menjodohkan, isi bagian kiri (pernyataan/soal)'],
 			['Jawaban 1-5', 'Untuk jenis menjodohkan, isi bagian kanan (pasangan jawaban)'],
 			[''],
@@ -365,7 +366,8 @@ class Ujian extends MY_Controller {
 			['2. Satu baris = satu soal.'],
 			['3. Untuk menjodohkan, maksimal 5 pasangan.'],
 			['4. Baris yang kosong akan dilewati saat import.'],
-			['5. File format: .xlsx']
+			['5. File format: .xlsx'],
+			['6. Format terbaru: kolom Jawaban E berada setelah Jawaban D, sehingga kolom Jawaban Benar dan Kunci/Jawaban bergeser satu kolom.']
 		];
 		$panduanSheet->fromArray($panduan, NULL, 'A1');
 		$panduanSheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
@@ -373,11 +375,11 @@ class Ujian extends MY_Controller {
 		$panduanSheet->getColumnDimension('B')->setWidth(80);
 
 		// Lebar kolom pada sheet Template
-		$columnWidths = ['A' => 28, 'B' => 50, 'C' => 25, 'D' => 25, 'E' => 25, 'F' => 25, 'G' => 20];
+		$columnWidths = ['A' => 28, 'B' => 50, 'C' => 25, 'D' => 25, 'E' => 25, 'F' => 25, 'G' => 25, 'H' => 20];
 		foreach ($columnWidths as $col => $width) {
 			$sheet->getColumnDimension($col)->setWidth($width);
 		}
-		for ($i = 8; $i <= 17; $i++) {
+		for ($i = 9; $i <= 18; $i++) {
 			$sheet->getColumnDimensionByColumn($i)->setWidth(25);
 		}
 		$sheet->getRowDimension(1)->setRowHeight(25);
@@ -415,6 +417,7 @@ class Ujian extends MY_Controller {
 			'Jawaban B',
 			'Jawaban C',
 			'Jawaban D',
+			'Jawaban E',
 			'Jawaban Benar',
 			'Kunci 1',
 			'Jawaban 1',
@@ -435,13 +438,13 @@ class Ujian extends MY_Controller {
 			'borders' => ['allBorders' => ['borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN]],
 			'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER, 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER]
 		];
-		$sheet->getStyle('A1:Q1')->applyFromArray($headerStyle);
+		$sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
 
 		$row = 2;
 		foreach ($soal as $s) {
 			$jawaban_benar = $s->jawaban_benar;
 			// Decode JSON untuk multiple answer
-			$decoded = json_decode($jawaban_benar, true);
+			$decoded = is_string($jawaban_benar) ? json_decode($jawaban_benar, true) : null;
 			if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
 				$jawaban_benar = implode(', ', $decoded);
 			} else {
@@ -455,6 +458,7 @@ class Ujian extends MY_Controller {
 				$s->jawaban_b,
 				$s->jawaban_c,
 				$s->jawaban_d,
+				$s->jawaban_e,
 				$jawaban_benar
 			];
 
@@ -468,8 +472,8 @@ class Ujian extends MY_Controller {
 					$data_row[] = $pair->jawaban;
 					$idx++;
 				}
-				// Isi kolom kosong sampai kolom Q (17)
-				while (count($data_row) < 17) {
+				// Isi kolom kosong sampai kolom R (18)
+				while (count($data_row) < 18) {
 					$data_row[] = '';
 				}
 			}
@@ -478,11 +482,11 @@ class Ujian extends MY_Controller {
 			$row++;
 		}
 
-		$columnWidths = ['A' => 28, 'B' => 50, 'C' => 25, 'D' => 25, 'E' => 25, 'F' => 25, 'G' => 20];
+		$columnWidths = ['A' => 28, 'B' => 50, 'C' => 25, 'D' => 25, 'E' => 25, 'F' => 25, 'G' => 25, 'H' => 20];
 		foreach ($columnWidths as $col => $width) {
 			$sheet->getColumnDimension($col)->setWidth($width);
 		}
-		for ($i = 8; $i <= 17; $i++) {
+		for ($i = 9; $i <= 18; $i++) {
 			$sheet->getColumnDimensionByColumn($i)->setWidth(25);
 		}
 
@@ -560,7 +564,8 @@ class Ujian extends MY_Controller {
 					$jawaban_b = trim((string)($row[3] ?? ''));
 					$jawaban_c = trim((string)($row[4] ?? ''));
 					$jawaban_d = trim((string)($row[5] ?? ''));
-					$jawaban_benar = trim((string)($row[6] ?? ''));
+					$jawaban_e = trim((string)($row[6] ?? ''));
+					$jawaban_benar = trim((string)($row[7] ?? ''));
 
 					if ($soal === '') {
 						continue; // lewati baris kosong
@@ -597,8 +602,8 @@ class Ujian extends MY_Controller {
 
 					// Validasi sesuai jenis
 					if ($jenis_soal === 'pilihan_ganda' || $jenis_soal === 'pilihan_ganda_kompleks') {
-						if ($jawaban_a === '' && $jawaban_b === '' && $jawaban_c === '' && $jawaban_d === '') {
-							$errors[] = "Baris {$baris}: Jawaban A-D wajib diisi untuk jenis {$jenis_soal}.";
+						if ($jawaban_a === '' && $jawaban_b === '' && $jawaban_c === '' && $jawaban_d === '' && $jawaban_e === '') {
+							$errors[] = "Baris {$baris}: Jawaban A-E wajib diisi untuk jenis {$jenis_soal}.";
 							continue;
 						}
 						if ($jawaban_benar === '') {
@@ -618,8 +623,8 @@ class Ujian extends MY_Controller {
 
 					if ($jenis_soal === 'pilihan_ganda') {
 						$jb = strtoupper($jawaban_benar);
-						if (!in_array($jb, ['A', 'B', 'C', 'D'])) {
-							$errors[] = "Baris {$baris}: Jawaban Benar harus A, B, C, atau D.";
+						if (!in_array($jb, ['A', 'B', 'C', 'D', 'E'])) {
+							$errors[] = "Baris {$baris}: Jawaban Benar harus A, B, C, D, atau E.";
 							continue;
 						}
 						$jawaban_benar = $jb;
@@ -630,13 +635,13 @@ class Ujian extends MY_Controller {
 						$letters = array_map('strtoupper', $letters);
 						$valid = true;
 						foreach ($letters as $l) {
-							if (!in_array($l, ['A', 'B', 'C', 'D'])) {
+							if (!in_array($l, ['A', 'B', 'C', 'D', 'E'])) {
 								$valid = false;
 								break;
 							}
 						}
 						if (!$valid || empty($letters)) {
-							$errors[] = "Baris {$baris}: Jawaban Benar harus kombinasi A, B, C, D dipisah koma (contoh: A, C).";
+							$errors[] = "Baris {$baris}: Jawaban Benar harus kombinasi A, B, C, D, E dipisah koma (contoh: A, C).";
 							continue;
 						}
 						$jawaban_benar = json_encode(array_values(array_unique($letters)));
@@ -650,7 +655,8 @@ class Ujian extends MY_Controller {
 						'jawaban_a' => $jawaban_a ?: null,
 						'jawaban_b' => $jawaban_b ?: null,
 						'jawaban_c' => $jawaban_c ?: null,
-						'jawaban_d' => $jawaban_d ?: null
+						'jawaban_d' => $jawaban_d ?: null,
+						'jawaban_e' => $jawaban_e ?: null
 					);
 
 					if ($jenis_soal !== 'menjodohkan' && $jenis_soal !== 'essay') {
@@ -661,10 +667,10 @@ class Ujian extends MY_Controller {
 
 					$jodohkan_pairs = [];
 					if ($jenis_soal === 'menjodohkan') {
-						// Ambil pasangan dari kolom H (index 7) sampai Q (index 16)
+						// Ambil pasangan dari kolom I (index 8) sampai R (index 17)
 						for ($i = 0; $i < 5; $i++) {
-							$kunci = trim((string)($row[7 + ($i * 2)] ?? ''));
-							$jawaban = trim((string)($row[8 + ($i * 2)] ?? ''));
+							$kunci = trim((string)($row[8 + ($i * 2)] ?? ''));
+							$jawaban = trim((string)($row[9 + ($i * 2)] ?? ''));
 							if ($kunci !== '' && $jawaban !== '') {
 								$jodohkan_pairs[] = array('kunci' => $kunci, 'jawaban' => $jawaban);
 							}

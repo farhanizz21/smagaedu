@@ -124,6 +124,14 @@
                                 placeholder="Jawaban D" value="<?= set_value('jawaban_d'); ?>">
                             <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_d') ?></div>
                         </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban E <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" name="jawaban_e"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                                placeholder="Jawaban E" value="<?= set_value('jawaban_e'); ?>">
+                            <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_e') ?></div>
+                        </div>
                     </div>
                     <div class="grid md:grid-cols-2 gap-6 mt-4">
                         <div>
@@ -136,6 +144,7 @@
                                 <option value="B" <?= set_select('jawaban_benar', 'B'); ?>>B</option>
                                 <option value="C" <?= set_select('jawaban_benar', 'C'); ?>>C</option>
                                 <option value="D" <?= set_select('jawaban_benar', 'D'); ?>>D</option>
+                                <option value="E" <?= set_select('jawaban_benar', 'E'); ?>>E</option>
                             </select>
                             <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_benar') ?></div>
                         </div>
@@ -177,6 +186,14 @@
                                 placeholder="Jawaban D" value="<?= set_value('jawaban_d'); ?>">
                             <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_d') ?></div>
                         </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban E <span
+                                    class="text-red-500">*</span></label>
+                            <input type="text" name="jawaban_e"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                                placeholder="Jawaban E" value="<?= set_value('jawaban_e'); ?>">
+                            <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_e') ?></div>
+                        </div>
                     </div>
                     <div class="grid md:grid-cols-2 gap-6 mt-4">
                         <div>
@@ -198,6 +215,10 @@
                                 <label class="flex items-center gap-2 text-sm">
                                     <input type="checkbox" name="jawaban_benar[]" value="D"
                                         class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"> D
+                                </label>
+                                <label class="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" name="jawaban_benar[]" value="E"
+                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"> E
                                 </label>
                             </div>
                             <div class="text-red-500 text-xs mt-1"><?= form_error('jawaban_benar') ?></div>
@@ -478,6 +499,11 @@
                             <?php else: ?>
                             <span class="text-xs text-gray-400">D. (kosong)</span>
                             <?php endif; ?>
+                            <?php if ($s->jawaban_e): ?>
+                            <span class="text-xs text-gray-500">E. <?= htmlspecialchars($s->jawaban_e) ?></span>
+                            <?php else: ?>
+                            <span class="text-xs text-gray-400">E. (kosong)</span>
+                            <?php endif; ?>
                         </div>
                         <?php endif; ?>
 
@@ -542,7 +568,8 @@
                                     'A' => $s->jawaban_a,
                                     'B' => $s->jawaban_b,
                                     'C' => $s->jawaban_c,
-                                    'D' => $s->jawaban_d
+                                    'D' => $s->jawaban_d,
+                                    'E' => $s->jawaban_e
                                 ];
                                 $correct_answers = [];
                                 if ($s->jawaban_benar) {
@@ -690,6 +717,12 @@
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
                             placeholder="Jawaban D">
                     </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Jawaban E</label>
+                        <input type="text" name="jawaban_e" id="editJawabanE"
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                            placeholder="Jawaban E">
+                    </div>
                 </div>
             </div>
 
@@ -721,7 +754,7 @@
                 <input type="text" name="jawaban_benar" id="editSoalJawaban"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
                     placeholder="Contoh: A atau A, B">
-                <p class="text-xs text-gray-400 mt-1">Untuk PG ketik A/B/C/D. Untuk PG Kompleks ketik A, B (pisahkan
+                <p class="text-xs text-gray-400 mt-1">Untuk PG ketik A/B/C/D/E. Untuk PG Kompleks ketik A, B (pisahkan
                     koma). Untuk Menjodohkan/Essay biarkan kosong.</p>
             </div>
             <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
@@ -777,6 +810,7 @@ function openEditModal(uuid) {
                 document.getElementById('editJawabanB').value = data.data.jawaban_b || '';
                 document.getElementById('editJawabanC').value = data.data.jawaban_c || '';
                 document.getElementById('editJawabanD').value = data.data.jawaban_d || '';
+                document.getElementById('editJawabanE').value = data.data.jawaban_e || '';
 
                 var jawaban = data.data.jawaban_benar;
                 if (jawaban && jawaban !== 'null') {

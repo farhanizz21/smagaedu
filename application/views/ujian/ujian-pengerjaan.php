@@ -64,6 +64,10 @@
                                 <input type="radio" name="jawaban[<?= $s->uuid; ?>]" value="D" class="form-check-input">
                                 D. <?= $s->jawaban_d ?>
                             </label>
+                            <label class="form-check-label">
+                                <input type="radio" name="jawaban[<?= $s->uuid; ?>]" value="E" class="form-check-input">
+                                E. <?= $s->jawaban_e ?>
+                            </label>
                         </div>
                         <?php elseif ($s->jenis_soal == 'pilihan_ganda_kompleks'): ?>
                         <div class="d-flex flex-column gap-2">
@@ -86,6 +90,11 @@
                                 <input type="checkbox" name="jawaban[<?= $s->uuid; ?>][]" value="D"
                                     class="form-check-input">
                                 D. <?= $s->jawaban_d ?>
+                            </label>
+                            <label class="form-check-label">
+                                <input type="checkbox" name="jawaban[<?= $s->uuid; ?>][]" value="E"
+                                    class="form-check-input">
+                                E. <?= $s->jawaban_e ?>
                             </label>
                         </div>
                         <?php elseif ($s->jenis_soal == 'menjodohkan'): ?>
