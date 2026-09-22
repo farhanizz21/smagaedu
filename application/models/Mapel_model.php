@@ -79,6 +79,108 @@ class mapel_model extends CI_Model {
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
 
+	/**
+	 * Hapus beberapa data mata pelajaran sekaligus (soft delete).
+	 * Hanya baris yang belum dihapus yang diproses.
+	 *
+	 * @param array $uuids
+	 * @return int jumlah baris yang terhapus
+	 */
+	public function delete_batch_by_uuid($uuids)
+	{
+		if (!is_array($uuids) || empty($uuids)) {
+			return 0;
+		}
+
+		$this->db->where_in('uuid', $uuids);
+		$this->db->where('deleted_at', NULL);
+		$this->db->update('mapel', array(
+			'deleted_at' => date("Y-m-d H:i:s")
+		));
+
+		return $this->db->affected_rows();
+	}
+
+	/**
+	 * Cek apakah nama mata pelajaran masih dipakai data AKTIF.
+	 * Dibandingkan tanpa membedakan huruf besar/kecil (case-insensitive).
+	 */
+	public function is_nama_dipakai_aktif($nama, $ignore_uuid = null)
+	{
+		$nama = trim((string) $nama);
+		if ($nama === '') {
+			return false;
+		}
+
+		$this->db->from('mapel');
+		// Kolom nama memakai collation utf8mb4_general_ci sehingga perbandingan
+		// "Koding" dan "koding" otomatis dianggap sama.
+		$this->db->where('nama', $nama);
+		$this->db->where('deleted_at', NULL);
+
+		if ($ignore_uuid !== null && $ignore_uuid !== '') {
+			$this->db->where('uuid !=', $ignore_uuid);
+		}
+
+		return $this->db->count_all_results() > 0;
+	}
+
+	/**
+	 * Daftar nama mata pelajaran AKTIF (kunci lowercase) => nama asli.
+	 * Dipakai untuk validasi keunikan saat import Excel.
+	 * Data yang sudah dihapus tidak lagi menghalangi nama yang sama.
+	 *
+	 * @return array nama (lowercase) => TRUE
+	 */
+	public function get_existing_nama()
+	{
+		$daftar = array();
+
+		$this->db->select('nama');
+		$this->db->where('deleted_at', NULL);
+		foreach ($this->db->get('mapel')->result() as $row) {
+			$nama = trim((string) $row->nama);
+			if ($nama !== '') {
+				$daftar[strtolower($nama)] = TRUE;
+			}
+		}
+
+		return $daftar;
+	}
+
+	/**
+	 * Simpan satu data mata pelajaran hasil import Excel.
+	 *
+	 * @param string $nama       nama mata pelajaran
+	 * @param string $created_by uuid pembuat data
+	 * @return bool TRUE bila insert berhasil
+	 */
+	public function insert_import($nama, $created_by = null)
+	{
+		$data = array(
+			'uuid' => Uuid::uuid4()->toString(),
+			'nama' => trim((string) $nama),
+			'created_by' => $created_by,
+			'modified_at' => date("Y-m-d H:i:s")
+		);
+
+		$this->db->insert('mapel', $data);
+
+		return ($this->db->affected_rows() > 0);
+	}
+
+	/**
+	 * Pesan error query terakhir, dipakai untuk laporan import Excel.
+	 *
+	 * @return string
+	 */
+	public function last_db_error()
+	{
+		$error = $this->db->error();
+
+		return (isset($error['message']) && $error['message'] !== '') ? $error['message'] : 'Gagal menyimpan data ke database.';
+	}
+
 	
 	public function get_many_mapel_by_uuid($uuids = [])
 	{
