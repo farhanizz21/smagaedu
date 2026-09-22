@@ -1077,7 +1077,7 @@ class Ujian extends MY_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
 
-	public function pengerjaan($ujian_uuid)
+		public function pengerjaan($ujian_uuid)
 	{
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
             $insert = $this->jawaban_model->insert($ujian_uuid);
@@ -1089,23 +1089,46 @@ class Ujian extends MY_Controller {
             redirect('ujian');
         }
 	
-		$data = array(
-			'ujian' => $this->ujian_model->get_by_uuid($ujian_uuid),
-			'soal' => $this->soal_model->get_by_ujian_uuid($ujian_uuid),
-			'active_nav' => 'ujian'
-		);
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		$soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
 
-		foreach ($data['soal'] as $s) {
+		foreach ($soal as $s) {
 			if ($s->jenis_soal === 'menjodohkan') {
 				$s->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($s->uuid);
 			}
 		}
+
+		// Hitung durasi ujian (dalam menit)
+		$durasi = 60; // default 60 menit
+		if (property_exists($ujian, 'durasi') && $ujian->durasi && (int)$ujian->durasi > 0) {
+			$durasi = (int)$ujian->durasi;
+		} else {
+			// Hitung dari tgl_mulai dan tgl_selesai jika durasi tidak tersedia
+			if (isset($ujian->tgl_mulai) && isset($ujian->tgl_selesai)) {
+				$ts_mulai = strtotime($ujian->tgl_mulai);
+				$ts_selesai = strtotime($ujian->tgl_selesai);
+				if ($ts_mulai && $ts_selesai && $ts_selesai > $ts_mulai) {
+					$hitung = (int)(($ts_selesai - $ts_mulai) / 60);
+					if ($hitung >= 1 && $hitung <= 1440) {
+						$durasi = $hitung;
+					}
+				}
+			}
+		}
+
+		$data = array(
+			'ujian' => $ujian,
+			'soal' => $soal,
+			'durasi' => $durasi,
+			'active_nav' => 'ujian'
+		);
 
         // $this->load->view('partials/header_tailwind', ['title' => 'Pengerjaan Ujian']);
 		// $this->load->view('partials/navbar', ['active_nav' => 'ujian']);
         $this->load->view('ujian/ujian-pengerjaan', array_merge($data, ['from_controller' => true]));
 		// $this->load->view('partials/footer_tailwind');
 	}
+
 
 	public function hapus_siswa($relasi_uuid)
 	{
