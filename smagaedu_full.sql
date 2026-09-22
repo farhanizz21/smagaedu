@@ -228,7 +228,7 @@ CREATE TABLE `guru` (
 CREATE TABLE `siswa` (
   `id` int(50) NOT NULL AUTO_INCREMENT,
   `uuid` varchar(100) NOT NULL,
-  `nis` int(100) NOT NULL,
+  `nis` bigint(20) unsigned NOT NULL,
   `nama` varchar(100) NOT NULL,
   `username` varchar(100) NOT NULL,
   `password` varchar(100) NOT NULL,

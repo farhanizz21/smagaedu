@@ -10,7 +10,7 @@ class siswa_model extends CI_Model {
 			[
 				'field' => 'nis',
 				'label' => 'Nomor Induk Siswa',
-				'rules' => 'required|is_unique[siswa.nis]|regex_match[/^[0-9]{10}$/]',
+				'rules' => 'required|callback_nis_check|regex_match[/^[0-9]{10}$/]',
 				'errors' => array(
 				'regex_match' => 'Kolom {field} hanya menerima angka dengan 10 angka'
 			),
@@ -23,7 +23,7 @@ class siswa_model extends CI_Model {
 			[
 				'field' => 'username',
 				'label' => 'Username',
-				'rules' => 'required|is_unique[siswa.username]|regex_match[/^[a-z]/]'
+				'rules' => 'required|callback_username_check|regex_match[/^[a-z]/]'
 			],
 			[
 				'field' => 'tanggal_lahir',
@@ -53,6 +53,12 @@ class siswa_model extends CI_Model {
 		$tanggal_lahir = $this->input->post('tanggal_lahir');
 		$jenisKelamin = $this->input->post('jenisKelamin');
 		$kelas = $this->input->post('kelas');
+
+		// Pengaman tambahan: tolak bila NIS/username masih dipakai data aktif
+		// (validasi form sudah menfilternya, ini untuk menghindari race condition)
+		if ($this->is_nis_dipakai_aktif($nis) || $this->is_username_dipakai_aktif($username)) {
+			return false;
+		}
 
 		// Insert ke tabel users (role_id = 4 untuk siswa)
 		$data_user = array(
@@ -204,6 +210,144 @@ class siswa_model extends CI_Model {
 		return $data;
 	}
 
+		/**
+	 * Daftar username yang sudah dipakai oleh data AKTIF (tabel users & siswa).
+	 * Data yang sudah soft delete (deleted_at terisi) tidak lagi "menahan"
+	 * username, sehingga NIS/username lama bisa dipakai ulang setelah hapus.
+	 *
+	 * @return array username (lowercase) => TRUE
+	 */
+	public function get_existing_username()
+	{
+		$usernames = array();
+
+		$this->db->select('username');
+		$this->db->where('deleted_at', NULL);
+		foreach ($this->db->get('users')->result() as $row) {
+			if ($row->username !== NULL && $row->username !== '') {
+				$usernames[strtolower($row->username)] = TRUE;
+			}
+		}
+
+		$this->db->select('username');
+		$this->db->where('deleted_at', NULL);
+		foreach ($this->db->get('siswa')->result() as $row) {
+			if ($row->username !== NULL && $row->username !== '') {
+				$usernames[strtolower($row->username)] = TRUE;
+			}
+		}
+
+		return $usernames;
+	}
+
+	/**
+	 * Daftar NIS yang sudah terdaftar pada data AKTIF (tabel siswa &
+	 * user_profiles). Data yang sudah soft delete tidak lagi "menahan" NIS.
+	 *
+	 * @return array nis => TRUE
+	 */
+	public function get_existing_nis()
+	{
+		$nis_list = array();
+
+		$this->db->select('nis');
+		$this->db->where('deleted_at', NULL);
+		foreach ($this->db->get('siswa')->result() as $row) {
+			if ($row->nis !== NULL && trim((string) $row->nis) !== '') {
+				$nis_list[(int) $row->nis] = TRUE;
+			}
+		}
+
+		// user_profiles tidak punya kolom deleted_at; hanya ambil NIS milik
+		// akun users yang masih aktif (belum soft delete).
+		$this->db->select('user_profiles.nis');
+		$this->db->from('user_profiles');
+		$this->db->join('users', 'user_profiles.user_id = users.id', 'inner');
+		$this->db->where('users.deleted_at', NULL);
+		foreach ($this->db->get()->result() as $row) {
+			if ($row->nis !== NULL && trim((string) $row->nis) !== '') {
+				$nis_list[(int) $row->nis] = TRUE;
+			}
+		}
+
+		return $nis_list;
+	}
+
+	/**
+	 * Simpan satu data siswa hasil import Excel.
+	 * Data ditulis ke tabel users, user_profiles, dan siswa dalam satu transaksi
+	 * sehingga tidak ada data yang setengah jadi bila salah satu insert gagal.
+	 *
+	 * @param array $data nis, nama, username, tgl_lahir, jenis_kelamin (1/2), kelas_uuid
+	 * @return bool TRUE bila seluruh insert berhasil
+	 */
+	public function insert_import($data)
+	{
+		$uuid = Uuid::uuid4()->toString();
+		$password = 'edu12345';
+		$created_by = $this->session->userdata('uuid');
+		$now = date("Y-m-d H:i:s");
+
+		// db_debug dimatikan sementara agar kegagalan insert dikembalikan sebagai
+		// false (bukan halaman error) dan pesannya bisa dilaporkan per baris.
+		$db_debug = $this->db->db_debug;
+		$this->db->db_debug = FALSE;
+
+		$this->db->trans_start();
+
+		// Insert ke tabel users (role_id = 4 untuk siswa)
+		$this->db->insert('users', array(
+			'uuid' => $uuid,
+			'role_id' => 4,
+			'nama' => $data['nama'],
+			'username' => $data['username'],
+			'password' => password_hash($password, PASSWORD_DEFAULT),
+			'created_by' => $created_by,
+			'modified_at' => $now
+		));
+		$user_id = $this->db->insert_id();
+
+		// Insert ke tabel user_profiles (nis, tgl_lahir, jenis_kelamin)
+		$this->db->insert('user_profiles', array(
+			'user_id' => $user_id,
+			'nis' => $data['nis'],
+			'tgl_lahir' => $data['tgl_lahir'],
+			'jenis_kelamin' => ($data['jenis_kelamin'] == 1) ? 'L' : 'P'
+		));
+
+		// Insert ke tabel siswa (legacy)
+		$this->db->insert('siswa', array(
+			'uuid' => $uuid,
+			'nis' => $data['nis'],
+			'nama' => $data['nama'],
+			'username' => $data['username'],
+			'password' => password_hash($password, PASSWORD_DEFAULT),
+			'tgl_lahir' => $data['tgl_lahir'],
+			'jenis_kelamin' => $data['jenis_kelamin'],
+			'kelas_uuid' => $data['kelas_uuid'],
+			'created_by' => $created_by,
+			'modified_at' => $now
+		));
+
+		$this->db->trans_complete();
+
+		$this->db->db_debug = $db_debug;
+
+		return $this->db->trans_status();
+	}
+
+	/**
+	 * Pesan error query terakhir, dipakai untuk laporan import Excel.
+	 *
+	 * @return string
+	 */
+	public function last_db_error()
+	{
+		$error = $this->db->error();
+
+		return (isset($error['message']) && $error['message'] !== '') ? $error['message'] : 'Gagal menyimpan data ke database.';
+	}
+
 	public function get_by_kelompok_uuid($kelompok_uuid)
 	{
 		$this->db->select("siswa_uuid");
@@ -300,13 +444,116 @@ class siswa_model extends CI_Model {
 	}
 
 	
+			/**
+	 * Cek apakah NIS masih dipakai oleh data siswa yang AKTIF (belum dihapus).
+	 * Data yang sudah soft delete (deleted_at terisi) tidak lagi "menahan" NIS.
+	 */
+	public function is_nis_dipakai_aktif($nis, $ignore_uuid = null)
+	{
+		$this->db->from('siswa');
+		$this->db->where('nis', $nis);
+		$this->db->where('deleted_at', NULL);
+
+		if ($ignore_uuid !== null && $ignore_uuid !== '') {
+			$this->db->where('uuid !=', $ignore_uuid);
+		}
+
+		return $this->db->count_all_results() > 0;
+	}
+
+	/**
+	 * Cek apakah username masih dipakai oleh data AKTIF.
+	 * Dicek di dua tabel: siswa (data aktif) dan users (data aktif, karena
+	 * users.username memiliki UNIQUE index di database).
+	 * Data yang sudah soft delete tidak lagi "menahan" username.
+	 */
+	public function is_username_dipakai_aktif($username, $ignore_uuid = null)
+	{
+		$this->db->from('siswa');
+		$this->db->where('username', $username);
+		$this->db->where('deleted_at', NULL);
+
+		if ($ignore_uuid !== null && $ignore_uuid !== '') {
+			$this->db->where('uuid !=', $ignore_uuid);
+		}
+
+		if ($this->db->count_all_results() > 0) {
+			return true;
+		}
+
+		$this->db->from('users');
+		$this->db->where('username', $username);
+		$this->db->where('deleted_at', NULL);
+
+		if ($ignore_uuid !== null && $ignore_uuid !== '') {
+			$this->db->where('uuid !=', $ignore_uuid);
+		}
+
+		return $this->db->count_all_results() > 0;
+	}
+
+	/**
+	 * Nonaktifkan akun login (tabel users) milik siswa yang dihapus dan
+	 * lepaskan username-nya (rename) agar username lama bisa dipakai ulang
+	 * oleh siswa baru. Username lama tetap tersimpan dengan suffix agar
+	 * jejak datanya tidak hilang.
+	 *
+	 * @param array $uuids uuid siswa (sama dengan uuid di tabel users)
+	 */
+	private function _lepas_akun_users($uuids)
+	{
+		if (!is_array($uuids) || empty($uuids)) {
+			return;
+		}
+
+		$this->db->where_in('uuid', $uuids);
+		$this->db->where('deleted_at', NULL);
+
+		$this->db->set('username', "CONCAT(LEFT(username, 80), '_terhapus_', id)", FALSE);
+		$this->db->set('status', 'nonaktif');
+		$this->db->set('deleted_at', date("Y-m-d H:i:s"));
+		$this->db->update('users');
+	}
+
+	public function delete_batch_by_uuid($uuids)
+	{
+		if (!is_array($uuids) || empty($uuids)) {
+			return 0;
+		}
+
+		// Soft delete pada tabel siswa (konsisten dengan delete_by_uuid).
+		// Perlu diketahui: hanya baris tabel siswa yang dihapus; akun login
+		// di tabel users & user_profiles tetap ada. Jika ingin menghapus pula
+		// akun loginnya, lakukan soft delete juga pada tabel users.
+		$data = array(
+			'deleted_at' => date("Y-m-d H:i:s")
+		);
+
+		$this->db->where_in('uuid', $uuids);
+		$this->db->update('siswa', $data);
+
+		$deleted = $this->db->affected_rows();
+
+		// Nonaktifkan akun login & lepaskan username agar bisa dipakai ulang
+		$this->_lepas_akun_users($uuids);
+
+		return $deleted;
+	}
+
 	public function delete_by_uuid($uuid)
 	{
 		$data = array(
 			'deleted_at' => date("Y-m-d H:i:s")
 		);
 		$this->db->update('siswa', $data, array('uuid' => $uuid));
-		return($this->db->affected_rows() > 0) ? true :false;
+		$result = ($this->db->affected_rows() > 0) ? true : false;
+
+		// Nonaktifkan akun login & lepaskan username agar bisa dipakai ulang
+		if ($result) {
+			$this->_lepas_akun_users(array($uuid));
+		}
+
+		return $result;
 	}
 }
 ?>

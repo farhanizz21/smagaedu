@@ -76,6 +76,11 @@ $route['mata_pelajaran/hapus/(:any)'] = 'materi/hapus/$1';
 $route['bab/tambah/(:any)'] = 'materi/tambah/$1';
 $route['bab/edit/(:any)'] = 'materi/edit/$1';
 
+// Siswa routes (import / format Excel / bulk delete)
+$route['siswa/import'] = 'siswa/import_excel';
+$route['siswa/format_excel'] = 'siswa/download_template_siswa';
+$route['siswa/bulk_hapus'] = 'siswa/bulk_hapus';
+
 // Bab/Sub Bab routes
 $route['sub_bab/index/(:any)'] = 'bab/index/$1';
 $route['sub_bab/tambah/(:any)'] = 'bab/tambah/$1';
