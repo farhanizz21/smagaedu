@@ -7,7 +7,7 @@
 <section class="hero-gradient w-full">
     <div class="max-w-7xl mx-auto px-6 py-16 md:py-24 grid md:grid-cols-2 gap-12 items-center">
         <div class="space-y-6">
-            <h1 class="font-extrabold text-5xl md:text-6xl leading-tight tracking-tight text-gray-900">SMARTEDU</h1>
+            <h1 class="font-extrabold text-5xl md:text-6xl leading-tight tracking-tight text-gray-900">SMAGAEDU</h1>
             <p class="text-lg leading-relaxed max-w-lg text-gray-600">
                 Platform Learning Management System untuk mendukung pembelajaran berbasis proyek secara efektif,
                 kolaboratif, dan terstruktur.
@@ -158,7 +158,7 @@
 
 <!-- Footer -->
 <footer class="w-full py-8 border-t border-gray-100 bg-gray-50">
-    <p class="text-center text-sm text-gray-400">© <?= date('Y'); ?> SMARTEDU. All rights reserved.</p>
+    <p class="text-center text-sm text-gray-400">© <?= date('Y'); ?> SMAGAEDU. All rights reserved.</p>
 </footer>
 
 <script>

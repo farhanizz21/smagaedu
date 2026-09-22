@@ -58,6 +58,16 @@ $route['logout'] = 'auth/logout';
 $route['ganti_password'] = 'auth/ganti_password';
 $route['reset_password/(:any)'] = 'auth/reset_password/$1';
 
+// Mapel routes (import / format Excel / bulk delete)
+$route['mapel/import'] = 'mapel/import_excel';
+$route['mapel/format_excel'] = 'mapel/download_template_mapel';
+$route['mapel/bulk_hapus'] = 'mapel/bulk_hapus';
+
+// Guru routes (import / format Excel / bulk delete)
+$route['guru/import'] = 'guru/import_excel';
+$route['guru/format_excel'] = 'guru/download_template_guru';
+$route['guru/bulk_hapus'] = 'guru/bulk_hapus';
+
 // Exam routes
 $route['ujian/tambah_sub/(:any)'] = 'ujian/tambah_sub/$1';
 $route['ujian/tambah_soal/(:any)'] = 'ujian/tambah_soal/$1';
@@ -75,6 +85,11 @@ $route['mata_pelajaran/hapus/(:any)'] = 'materi/hapus/$1';
 // Bab routes
 $route['bab/tambah/(:any)'] = 'materi/tambah/$1';
 $route['bab/edit/(:any)'] = 'materi/edit/$1';
+
+// Siswa routes (import / format Excel / bulk delete)
+$route['siswa/import'] = 'siswa/import_excel';
+$route['siswa/format_excel'] = 'siswa/download_template_siswa';
+$route['siswa/bulk_hapus'] = 'siswa/bulk_hapus';
 
 // Bab/Sub Bab routes
 $route['sub_bab/index/(:any)'] = 'bab/index/$1';

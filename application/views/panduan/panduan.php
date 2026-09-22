@@ -16,7 +16,7 @@
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Panduan</h1>
                 </div>
             </div>
-            <p class="text-amber-100 mt-1 text-sm ml-15">Kelola dokumen panduan di SMARTEDU</p>
+            <p class="text-amber-100 mt-1 text-sm ml-15">Kelola dokumen panduan di SMAGAEDU</p>
         </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
@@ -128,7 +128,7 @@
             </div>
 
             <!-- Decorative dots pattern -->
-            <div class="absolute -bottom-6 -right-6 w-24 h-24 opacity-5">
+            <div class="absolute -bottom-6 -right-6 w-24 h-24 opacity-5 pointer-events-none">
                 <div class="grid grid-cols-4 gap-2">
                     <?php for($d=0; $d<16; $d++): ?>
                     <div class="w-2 h-2 rounded-full bg-gray-800"></div>

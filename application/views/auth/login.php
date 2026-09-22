@@ -8,7 +8,7 @@
     <meta name="keywords" content="">
 
     <link rel="icon" type="image/x-icon" href="<?= base_url('assets/img/Logo_Smartedu.svg'); ?>">
-    <title>Login - SMARTEDU</title>
+    <title>Login - SMAGAEDU</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
@@ -66,7 +66,7 @@
             <div class="text-center mb-8">
                 <img src="<?= base_url('assets/img/Logo_Smartedu.svg') ?>" alt="Smartedu"
                     class="h-14 w-14 mx-auto mb-4">
-                <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">SMARTEDU</h1>
+                <h1 class="text-2xl font-extrabold tracking-tight text-gray-900">SMAGAEDU</h1>
                 <p class="text-sm text-gray-500 mt-1">Masuk ke akun Anda</p>
             </div>
 
@@ -138,7 +138,7 @@
         </div>
 
         <!-- Footer -->
-        <p class="text-center text-sm text-gray-400 mt-8">© <?= date('Y'); ?> SMARTEDU. All rights reserved.</p>
+        <p class="text-center text-sm text-gray-400 mt-8">© <?= date('Y'); ?> SMAGAEDU. All rights reserved.</p>
 
     </div>
 
