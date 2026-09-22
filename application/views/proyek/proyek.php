@@ -16,7 +16,7 @@
                     <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Daftar Proyek</h1>
                 </div>
             </div>
-            <p class="text-violet-100 mt-1 text-sm ml-15">Kelola proyek pembelajaran di SMARTEDU</p>
+            <p class="text-violet-100 mt-1 text-sm ml-15">Kelola proyek pembelajaran di SMAGAEDU</p>
         </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>

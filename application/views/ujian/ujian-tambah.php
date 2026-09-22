@@ -106,7 +106,7 @@
                     </div>
                 </div>
 
-                <!-- Tanggal Selesai -->
+                                <!-- Tanggal Selesai -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Selesai <span
                             class="text-red-500">*</span></label>
@@ -116,6 +116,16 @@
                     <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('tgl_selesai')) ? '' : 'hidden' ?>">
                         <?= form_error('tgl_selesai') ?>
                     </div>
+                </div>
+
+                <!-- Durasi (menit) -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Durasi Ujian (menit) <span
+                            class="text-red-500">*</span></label>
+                    <input type="number" name="durasi" id="durasi" min="1" max="1440"
+                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
+                        placeholder="Misal: 60" value="<?= set_value('durasi', 60); ?>">
+                    <p class="text-xs text-gray-500 mt-1">Durasi waktu pengerjaan ujian dalam menit.</p>
                 </div>
             </div>
 

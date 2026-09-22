@@ -8,11 +8,209 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-    .timer-box {
-        font-size: 20px;
-        font-weight: bold;
-        color: red;
-    }
+        * { font-family: 'DM Sans', sans-serif; }
+        body { background: #f3f4f6; }
+
+        /* ===== Topbar: nama ujian + waktu pengerjaan ===== */
+        .exam-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        .exam-topbar-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .exam-title { font-size: 16px; font-weight: 700; color: #111827; margin: 0; }
+        .exam-subtitle { font-size: 12px; color: #6b7280; margin: 2px 0 0; }
+        .timer-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            font-weight: 800;
+            font-size: 18px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-variant-numeric: tabular-nums;
+        }
+        .timer-box.warning {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #d97706;
+            animation: timer-pulse 1s infinite;
+        }
+        @keyframes timer-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* ===== Layout dua kolom ===== */
+        .exam-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+        }
+        .exam-main { flex: 1 1 auto; min-width: 0; }
+        .exam-side {
+            width: 300px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 90px;
+        }
+        @media (max-width: 992px) {
+            .exam-layout { flex-direction: column-reverse; }
+            .exam-side { width: 100%; position: static; }
+        }
+        /* ===== Soal (kiri) ===== */
+        .question-progress {
+            font-size: 13px;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 12px;
+        }
+        .question-item { display: none; }
+        .question-item.current { display: block; }
+        .question-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .question-badge {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            margin-bottom: 12px;
+        }
+        .question-text {
+            font-size: 15px;
+            line-height: 1.7;
+            color: #111827;
+            white-space: pre-wrap;
+        }
+        .question-item .form-check-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            background: #fff;
+            transition: all 0.15s;
+            font-weight: 500;
+            color: #374151;
+        }
+        .question-item .form-check-label:hover {
+            border-color: #93c5fd;
+            background: #f8faff;
+        }
+        .question-item .form-check-label:has(input:checked) {
+            border-color: #2563eb;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 246, 0.1);
+            color: #1e40af;
+        }
+        .question-nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        /* ===== Panel navigasi (kanan) ===== */
+        .side-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }
+        .side-card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 14px;
+        }
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+        .nav-btn {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            border-radius: 10px;
+            border: 1.5px solid #d1d5db;
+            background: #f9fafb;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.15s;
+            padding: 0;
+        }
+        .nav-btn:hover { border-color: #60a5fa; color: #2563eb; }
+        .nav-btn.answered {
+            background: #dcfce7;
+            border-color: #22c55e;
+            color: #15803d;
+        }
+        .nav-btn.current {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(37, 99, 246, 0.3);
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 16px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+            border: 1.5px solid #d1d5db;
+            background: #f9fafb;
+        }
+        .legend-dot.answered { background: #dcfce7; border-color: #22c55e; }
+        .legend-dot.current { background: #2563eb; border-color: #2563eb; }
+        .answered-info {
+            margin-top: 14px;
+            font-size: 13px;
+            color: #374151;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
     </style>
 </head>
 
@@ -36,16 +234,35 @@
     <form id="ujianForm" method="post" action="<?= base_url('ujian/pengerjaan/'.$ujian->uuid); ?>">
         <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid; ?>">
         <div id="ujianContent" style="display:none;">
-            <div class="container mt-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="text-primary">Pengerjaan Ujian</h4>
-                    <div class="timer-box">Sisa Waktu: <span id="timer">--:--</span></div>
+
+            <!-- Topbar: nama ujian + waktu pengerjaan -->
+            <div class="exam-topbar">
+                <div class="exam-topbar-inner">
+                    <div>
+                        <p class="exam-title"><?= htmlspecialchars($ujian->nama); ?></p>
+                        <p class="exam-subtitle">Pengerjaan Ujian<?= !empty($ujian->mapel_nama) ? ' &middot; ' . htmlspecialchars($ujian->mapel_nama) : ''; ?></p>
+                    </div>
+                    <div class="timer-box" id="timerBox" title="Sisa waktu pengerjaan">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                        <span id="timer">--:--</span>
+                    </div>
                 </div>
-                <hr>
+            </div>
+
+            <!-- Layout: kiri soal & jawaban, kanan navigasi soal -->
+            <div class="exam-layout">
+                <div class="exam-main">
+                    <div class="question-progress" id="questionProgress"></div>
                 <?php $no = 1; foreach ($soal as $s) : ?>
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <p><strong><?= $no++; ?>. <?= $s->soal; ?></strong></p>
+                <div class="question-item card mb-3" id="question-<?= $s->uuid; ?>" data-uuid="<?= $s->uuid; ?>">
+                    <div class="question-card">
+                        <span class="question-badge">Soal <?= $no; ?> &middot; <?= ucwords(str_replace('_', ' ', $s->jenis_soal)); ?></span>
+                        <p class="question-text"><strong><?= $no++; ?>. <?= $s->soal; ?></strong></p>
                         <?php if ($s->jenis_soal == 'pilihan_ganda'): ?>
                         <div class="d-flex flex-column gap-2">
                             <label class="form-check-label">
@@ -63,6 +280,10 @@
                             <label class="form-check-label">
                                 <input type="radio" name="jawaban[<?= $s->uuid; ?>]" value="D" class="form-check-input">
                                 D. <?= $s->jawaban_d ?>
+                            </label>
+                            <label class="form-check-label">
+                                <input type="radio" name="jawaban[<?= $s->uuid; ?>]" value="E" class="form-check-input">
+                                E. <?= $s->jawaban_e ?>
                             </label>
                         </div>
                         <?php elseif ($s->jenis_soal == 'pilihan_ganda_kompleks'): ?>
@@ -86,6 +307,11 @@
                                 <input type="checkbox" name="jawaban[<?= $s->uuid; ?>][]" value="D"
                                     class="form-check-input">
                                 D. <?= $s->jawaban_d ?>
+                            </label>
+                            <label class="form-check-label">
+                                <input type="checkbox" name="jawaban[<?= $s->uuid; ?>][]" value="E"
+                                    class="form-check-input">
+                                E. <?= $s->jawaban_e ?>
                             </label>
                         </div>
                         <?php elseif ($s->jenis_soal == 'menjodohkan'): ?>
@@ -171,8 +397,39 @@
                 </div>
                 <?php endforeach; ?>
 
-                <button type="submit" class="btn btn-success">Kirim Jawaban</button>
-            </div>
+                <?php if (empty($soal)): ?>
+                <div class="question-card text-center text-muted">Belum ada soal untuk ujian ini.</div>
+                <?php endif; ?>
+
+                <!-- Navigasi antar soal -->
+                <div class="question-nav-buttons">
+                    <button type="button" class="btn btn-outline-secondary px-4" id="btnPrev" disabled>&larr;
+                        Sebelumnya</button>
+                    <button type="button" class="btn btn-primary px-4" id="btnNext">Berikutnya &rarr;</button>
+                </div>
+                </div><!-- /.exam-main -->
+
+                <!-- Panel kanan: navigasi soal -->
+                <aside class="exam-side">
+                    <div class="side-card">
+                        <div class="side-card-title">Navigasi Soal</div>
+                        <div class="nav-grid" id="navGrid">
+                            <?php $idx = 0; foreach ($soal as $s): ?>
+                            <button type="button" class="nav-btn" data-index="<?= $idx; ?>"
+                                data-uuid="<?= $s->uuid; ?>"><?= ++$idx; ?></button>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="legend">
+                            <span class="legend-item"><span class="legend-dot current"></span> Dibuka</span>
+                            <span class="legend-item"><span class="legend-dot answered"></span> Terjawab</span>
+                            <span class="legend-item"><span class="legend-dot"></span> Kosong</span>
+                        </div>
+                        <div class="answered-info">Terjawab: <strong id="answeredCount">0</strong> dari
+                            <strong><?= count($soal); ?></strong> soal</div>
+                        <button type="button" class="btn btn-success w-100 mt-3" id="btnSubmit">Kirim Jawaban</button>
+                    </div>
+                </aside>
+            </div><!-- /.exam-layout -->
         </div>
     </form>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -181,15 +438,29 @@
 </html>
 
 <script>
-var waktuUjian = 30 * 60;
+var waktuUjian = <?= max(1, (int)($durasi ?? 60)) * 60 ?>;
 var warningCount = 0;
 var timerInterval;
+var currentIndex = 0;
+var questionUuids = <?= json_encode(array_map(function ($s) { return $s->uuid; }, $soal)); ?>;
+var totalSoal = questionUuids.length;
+
+function renderTimer() {
+    var menit = Math.floor(waktuUjian / 60);
+    var detik = waktuUjian % 60;
+    document.getElementById('timer').textContent =
+        (menit < 10 ? '0' : '') + menit + ':' + (detik < 10 ? '0' : '') + detik;
+    var box = document.getElementById('timerBox');
+    if (box) {
+        box.classList.toggle('warning', waktuUjian <= 60);
+    }
+}
 
 function startTimer() {
+    renderTimer();
     timerInterval = setInterval(function() {
-        var menit = Math.floor(waktuUjian / 60);
-        var detik = waktuUjian % 60;
-        document.getElementById('timer').textContent = menit + ":" + (detik < 10 ? '0' : '') + detik;
+        waktuUjian--;
+        renderTimer();
 
         if (waktuUjian <= 0) {
             clearInterval(timerInterval);
@@ -200,13 +471,82 @@ function startTimer() {
                 allowOutsideClick: false,
                 showConfirmButton: false,
                 timer: 3000
-            }).then(() => {
+            }).then(function() {
                 document.getElementById('ujianForm').submit();
             });
         }
-
-        waktuUjian--;
     }, 1000);
+}
+
+function isAnswered(uuid) {
+    var el = document.getElementById('question-' + uuid);
+    if (!el) return false;
+
+    var radios = el.querySelectorAll('input[type="radio"]');
+    for (var i = 0; i < radios.length; i++) {
+        if (radios[i].checked) return true;
+    }
+
+    var checks = el.querySelectorAll('input[type="checkbox"]');
+    for (var i = 0; i < checks.length; i++) {
+        if (checks[i].checked) return true;
+    }
+
+    var selects = el.querySelectorAll('select');
+    if (selects.length > 0) {
+        for (var i = 0; i < selects.length; i++) {
+            if (selects[i].value !== '') return true;
+        }
+        return false;
+    }
+
+    var texts = el.querySelectorAll('textarea, input[type="text"]');
+    for (var i = 0; i < texts.length; i++) {
+        if (texts[i].value.trim() !== '') return true;
+    }
+    return false;
+}
+
+function refreshNav() {
+    var answered = 0;
+    document.querySelectorAll('.nav-btn').forEach(function(btn) {
+        var uuid = btn.getAttribute('data-uuid');
+        var idx = parseInt(btn.getAttribute('data-index'), 10);
+        var ok = isAnswered(uuid);
+        btn.classList.toggle('answered', ok && idx !== currentIndex);
+        btn.classList.toggle('current', idx === currentIndex);
+        if (ok) answered++;
+    });
+    var cnt = document.getElementById('answeredCount');
+    if (cnt) cnt.textContent = answered;
+}
+
+function showQuestion(index) {
+    if (totalSoal === 0) return;
+    if (index < 0) index = 0;
+    if (index > totalSoal - 1) index = totalSoal - 1;
+    currentIndex = index;
+
+    document.querySelectorAll('.question-item').forEach(function(el, i) {
+        el.classList.toggle('current', i === index);
+    });
+
+    var prog = document.getElementById('questionProgress');
+    if (prog) prog.textContent = 'Soal ' + (index + 1) + ' dari ' + totalSoal;
+
+    document.getElementById('btnPrev').disabled = (index === 0);
+
+    var next = document.getElementById('btnNext');
+    if (index === totalSoal - 1) {
+        next.innerHTML = 'Soal Terakhir';
+        next.disabled = true;
+    } else {
+        next.innerHTML = 'Berikutnya &rarr;';
+        next.disabled = false;
+    }
+
+    refreshNav();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function enterFullscreen() {
@@ -231,6 +571,8 @@ $(document).ready(function() {
         history.go(1);
     });
 
+    showQuestion(0);
+
     $('#btnFullscreen').on('click', function() {
         enterFullscreen();
         $('#fullscreenOverlay').fadeOut(300, function() {
@@ -239,7 +581,37 @@ $(document).ready(function() {
         });
     });
 
-    console.log('aa');
+    $('#btnPrev').on('click', function() {
+        showQuestion(currentIndex - 1);
+    });
+
+    $('#btnNext').on('click', function() {
+        showQuestion(currentIndex + 1);
+    });
+
+    $('#navGrid').on('click', '.nav-btn', function() {
+        showQuestion(parseInt($(this).data('index'), 10));
+    });
+
+    $('#ujianForm').on('change input', 'input, textarea, select', function() {
+        refreshNav();
+    });
+
+    $('#btnSubmit').on('click', function() {
+        Swal.fire({
+            title: 'Kirim Jawaban?',
+            text: 'Pastikan semua soal sudah dijawab. Jawaban tidak dapat diubah setelah dikirim.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Kirim Jawaban',
+            cancelButtonText: 'Periksa Lagi',
+            confirmButtonColor: '#16a34a'
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                document.getElementById('ujianForm').submit();
+            }
+        });
+    });
 });
 
 $(window).on('blur', function() {
@@ -262,14 +634,4 @@ $(window).on('blur', function() {
         });
     }
 });
-// var warningCount = 0;
-// $(window).on('blur', function() {
-//     warningCount++;
-//     if (warningCount > 2) {
-//         alert("Anda telah meninggalkan halaman lebih dari 2 kali! Ujian akan dikirim otomatis.");
-//         document.getElementById('ujianForm').submit();
-//     } else {
-//         alert("Jangan beralih tab! Jika dilakukan 2 kali, ujian akan dikirim otomatis.");
-//     }
-// });
 </script>

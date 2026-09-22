@@ -90,7 +90,8 @@ class ujian_model extends CI_Model {
 		$tgl_selesai = $this->input->post('tgl_selesai');
 		$user = $this->session->userdata('uuid');
 
-		$jenis_penilaian = $this->input->post('jenis_penilaian');
+				$jenis_penilaian = $this->input->post('jenis_penilaian');
+		$durasi = $this->input->post('durasi') ? (int)$this->input->post('durasi') : 60;
 		
 		$data = array(
 			'uuid' => $uuid,
@@ -99,6 +100,7 @@ class ujian_model extends CI_Model {
 			'jenis_penilaian' => $jenis_penilaian,
 			'tgl_mulai' => $tgl_mulai,
 			'tgl_selesai' => $tgl_selesai,
+			'durasi' => $durasi,
 			'created_by' => $user
 		);
 
@@ -120,7 +122,8 @@ class ujian_model extends CI_Model {
 		$tgl_selesai = $this->input->post('tgl_selesai');
 		$user = $this->session->userdata('uuid');
 
-		$jenis_penilaian = $this->input->post('jenis_penilaian');
+			$jenis_penilaian = $this->input->post('jenis_penilaian');
+		$durasi = $this->input->post('durasi') ? (int)$this->input->post('durasi') : 60;
 		
 		$data = array(
 			'uuid' => $uuid,
@@ -130,6 +133,7 @@ class ujian_model extends CI_Model {
 			'jenis_penilaian' => $jenis_penilaian,
 			'tgl_mulai' => $tgl_mulai,
 			'tgl_selesai' => $tgl_selesai,
+			'durasi' => $durasi,
 			'created_by' => $user
 		);
 
@@ -157,7 +161,8 @@ class ujian_model extends CI_Model {
 		$tgl_selesai = $this->input->post('tgl_selesai');
 		$user = $this->session->userdata('uuid');
 
-		$jenis_penilaian = $this->input->post('jenis_penilaian');
+			$jenis_penilaian = $this->input->post('jenis_penilaian');
+		$durasi = $this->input->post('durasi') ? (int)$this->input->post('durasi') : 60;
 		
 		$data = array(
 			'uuid' => $uuid,
@@ -167,6 +172,7 @@ class ujian_model extends CI_Model {
 			'jenis_penilaian' => $jenis_penilaian,
 			'tgl_mulai' => $tgl_mulai,
 			'tgl_selesai' => $tgl_selesai,
+			'durasi' => $durasi,
 			'created_by' => $user
 		);
 
@@ -177,14 +183,16 @@ class ujian_model extends CI_Model {
 			return false;
 		}
 	}
-public function update($uuid)
+	public function update($uuid)
 	{
+		$durasi_post = $this->input->post('durasi');
 		$data = array(
 			'nama'            => $this->input->post('namaUjian'),
 			'mapel_uuid'      => $this->input->post('namaMapel'),
 			'jenis_penilaian' => $this->input->post('jenis_penilaian'),
 			'tgl_mulai'       => $this->input->post('tgl_mulai'),
 			'tgl_selesai'     => $this->input->post('tgl_selesai'),
+			'durasi'          => $durasi_post ? (int)$durasi_post : 60,
 			'modified_at'     => date('Y-m-d H:i:s')
 		);
 
