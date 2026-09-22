@@ -1,12 +1,9 @@
 -- ============================================================================
 -- SMAGAEDU - SETUP DATABASE LENGKAP (1 FILE UNTUK IMPORT KE MYSQL)
 -- ----------------------------------------------------------------------------
--- File ini adalah konsolidasi dari seluruh file migrasi yang ada di project:
---   smartedu.sql, smartedu_updated.sql, smartedu_with_superadmin.sql,
---   smartedu_backup.sql, migrate_users.sql, migrasi_kelas.sql,
---   migrasi_kepala_sekolah.sql, migrasi_jenis_penilaian.sql,
---   migrasi_jenis_soal.sql, migrasi_jawaban_soal.sql, migrasi_jawaban_e.sql,
---   migrasi_ujian_soal_jodohkan.sql, migrasi_ujian_sub_bab.sql
+-- File ini adalah SATU-SATUNYA file SQL di project (file migrasi lama sudah
+-- dihapus karena seluruh perubahannya sudah menyatu di dalam definisi tabel
+-- di bawah ini, disesuaikan dengan struktur terbaru database `smagaedu_fix`).
 --
 -- Isi file (28 tabel + 3 view + data master wajib):
 --   A. TABEL UTAMA (RBAC / user terpusat)
@@ -24,7 +21,7 @@
 --      5 role, 7 permission, 16 role_permission, 1 user superadmin
 --
 -- Semua perubahan hasil migrasi lama SUDAH menyatu di dalam definisi tabel:
---   ujian.bab_uuid, ujian.jenis_penilaian
+--   ujian.bab_uuid, ujian.sub_materi_uuid, ujian.jenis_penilaian, ujian.durasi
 --   ujian_soal.jenis_soal, jawaban_a, jawaban_b, jawaban_c, jawaban_d,
 --   ujian_soal.jawaban_e, ujian_soal.jawaban_benar
 --   siswa.kelas_uuid
@@ -467,6 +464,7 @@ CREATE TABLE `ujian` (
   `nama` varchar(100) NOT NULL,
   `tgl_mulai` datetime NOT NULL,
   `tgl_selesai` datetime NOT NULL,
+  `durasi` int(11) NOT NULL DEFAULT 60 COMMENT 'durasi pengerjaan ujian dalam menit',
   `created_by` varchar(100) NOT NULL,
   `modified_at` datetime NOT NULL DEFAULT current_timestamp(),
   `deleted_at` datetime DEFAULT NULL,
