@@ -292,6 +292,56 @@ class Proyek extends MY_Controller {
 		redirect('proyek/detail/' . $proyek_uuid);
 	}
 
+	/**
+	 * Upload gambar untuk editor deskripsi (Quill) pada form Tambah Proyek.
+	 *
+	 * Dipakai karena secara default Quill menyisipkan gambar sebagai base64
+	 * (data:image/...) langsung ke dalam HTML deskripsi, sementara kolom
+	 * `proyek`.`deskripsi` bertipe TEXT (maksimal 65.535 byte). Akibatnya gambar
+	 * terpotong / query gagal sehingga gambar tidak tersimpan penuh.
+	 *
+	 * Response JSON: { success: true, url: '...' } atau { success: false, message: '...' }
+	 */
+	public function upload_gambar()
+	{
+		$this->output->set_content_type('application/json');
+
+		if (!is_admin_or_superadmin() && !has_permission('manage_proyek')) {
+			$this->output->set_output(json_encode([
+				'success' => FALSE,
+				'message' => 'Anda tidak memiliki akses untuk mengunggah gambar.'
+			]));
+			return;
+		}
+
+		$upload_path = FCPATH . 'uploads/proyek/';
+		if (!is_dir($upload_path)) {
+			mkdir($upload_path, 0777, TRUE);
+		}
+
+		$config = array(
+			'upload_path'   => $upload_path,
+			'allowed_types' => 'jpg|jpeg|png|gif|bmp|webp|tiff|svg',
+			'max_size'      => 10240, // 10MB
+			'encrypt_name'  => TRUE
+		);
+		$this->load->library('upload', $config);
+
+		if (!$this->upload->do_upload('upload')) {
+			$this->output->set_output(json_encode([
+				'success' => FALSE,
+				'message' => strip_tags($this->upload->display_errors())
+			]));
+			return;
+		}
+
+		$upload_data = $this->upload->data();
+		$this->output->set_output(json_encode([
+			'success' => TRUE,
+			'url'     => base_url('uploads/proyek/' . $upload_data['file_name'])
+		]));
+	}
+
 	public function hapus_jawaban_proyek($uuid){
 		{
 			$result = $this->jawaban_model->delete_jawaban_proyek_by_uuid($uuid);

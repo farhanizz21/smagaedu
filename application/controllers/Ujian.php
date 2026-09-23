@@ -1269,9 +1269,11 @@ class Ujian extends MY_Controller {
 	}
 
 	/**
-	 * Upload gambar untuk editor soal (CKEditor 5 classic / CKFinderUploadAdapter).
+	 * Upload gambar untuk editor soal (Quill 2 / handler tombol image toolbar).
 	 * Respond format: { uploaded: true, url: '...' } on success,
 	 *                 { uploaded: false, error: { message: '...' } } on failure.
+	 * Dipakai agar gambar tersimpan sebagai URL, bukan base64 (agar tidak
+	 * melewati kapasitas kolom TEXT).
 	 */
 	public function upload_editor_file()
 	{
