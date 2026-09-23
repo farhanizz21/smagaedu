@@ -3,6 +3,108 @@
 <?php $this->load->view('partials/navbar', ['active_nav' => 'materi']); ?>
 <?php endif; ?>
 
+<?php
+/**
+ * Helper tampilan card sub bab.
+ * Kolom `deskripsi` disimpan sebagai HTML (hasil editor Quill, bisa berisi gambar),
+ * sehingga perlu diubah menjadi teks biasa agar preview di card tetap ringkas.
+ */
+if (!function_exists('sub_bab_plain_text')) {
+    function sub_bab_plain_text($html)
+    {
+        if (empty($html)) {
+            return '';
+        }
+
+        // Buang tag yang terpotong di akhir teks (mis. gambar base64 yang tidak
+        // tersimpan penuh karena melebihi kapasitas kolom `deskripsi`).
+        $text = preg_replace('/<[a-zA-Z\/!][^>]*$/s', ' ', $html);
+        $text = preg_replace('/<br\s*\/?>/i', ' ', $text);
+        $text = preg_replace('/<\/(p|div|li|h[1-6]|blockquote)>/i', ' ', $text);
+        $text = preg_replace('/<[^>]+>/', ' ', $text);
+        $text = html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        return trim($text);
+    }
+}
+
+if (!function_exists('sub_bab_trim_text')) {
+    function sub_bab_trim_text($text, $limit = 220)
+    {
+        if ($text === null || $text === '') {
+            return '';
+        }
+
+        if (function_exists('mb_strlen') && function_exists('mb_substr')) {
+            if (mb_strlen($text, 'UTF-8') <= $limit) {
+                return $text;
+            }
+
+            return rtrim(mb_substr($text, 0, $limit, 'UTF-8')) . '…';
+        }
+
+        if (strlen($text) <= $limit) {
+            return $text;
+        }
+
+        return rtrim(substr($text, 0, $limit)) . '...';
+    }
+}
+
+if (!function_exists('sub_bab_images')) {
+    /**
+     * Ambil daftar src gambar yang benar-benar bisa ditampilkan (bukan data URI/base64).
+     * Gambar base64 biasanya sudah rusak karena terpotong batas kolom `deskripsi`.
+     */
+    function sub_bab_images($html)
+    {
+        $gambar = array();
+
+        if (empty($html) || !preg_match_all('/<img[^>]+src\s*=\s*["\']([^"\']+)["\']/i', $html, $match)) {
+            return $gambar;
+        }
+
+        foreach ($match[1] as $src) {
+            if (stripos($src, 'data:') === 0) {
+                continue;
+            }
+
+            $gambar[] = $src;
+        }
+
+        return $gambar;
+    }
+}
+
+if (!function_exists('sub_bab_prepare_html')) {
+    /**
+     * Siapkan HTML deskripsi untuk ditampilkan di card:
+     * gambar base64 (data URI) yang rusak diganti dengan penanda agar
+     * halaman tidak berat dan tampilan tetap rapi.
+     */
+    function sub_bab_prepare_html($html)
+    {
+        if (empty($html)) {
+            return '';
+        }
+
+        $penanda = '<span class="deskripsi-gambar-rusak">Gambar tidak dapat ditampilkan karena datanya tidak tersimpan penuh. Silakan unggah ulang gambar melalui menu Edit.</span>';
+
+        // Gambar base64 (data URI) yang strukturnya masih utuh
+        $html = preg_replace('/<img[^>]+src\s*=\s*["\']\s*data:[^"\']*["\'][^>]*>/i', $penanda, $html);
+
+        // Gambar base64 yang terpotong kapasitas kolom (tag-nya tidak tertutup)
+        $html = preg_replace('/<img[^>]*src\s*=\s*["\']?\s*data:[^>]*$/is', $penanda, $html);
+
+        // Sisa tag yang terpotong (mis. heading/paragraf yang tidak selesai)
+        $html = preg_replace('/<[a-zA-Z\/!][^>]*$/s', '', $html);
+
+        return trim($html);
+    }
+}
+?>
+
 <div class="max-w-5xl mx-auto px-6 py-8">
     <!-- Page Header with Gradient -->
     <div
@@ -80,13 +182,15 @@
         <?php 
             $palette = $color_palettes[$no % count($color_palettes)];
             $no++;
-            $icons = ['file-text', 'file-spreadsheet', 'notebook', 'notebook-text', 'scroll', 'book-audio'];
+            // Catatan: hanya gunakan nama ikon yang tersedia di lucide 0.263 (dipakai di header_tailwind.php),
+            // agar badge ikon tidak kosong karena ikon gagal dirender.
+            $icons = ['file-text', 'file-spreadsheet', 'book-open', 'library', 'scroll', 'clipboard-list'];
             $icon = $icons[$no % count($icons)];
             $is_locked = isset($bab_unlocked[$val->uuid]) && !$bab_unlocked[$val->uuid];
             $has_ujian = isset($bab_has_ujian[$val->uuid]) && $bab_has_ujian[$val->uuid];
         ?>
         <div
-            class="bg-white rounded-2xl border-2 <?= $palette['border'] ?> <?= $palette['hover'] ?> hover:shadow-lg <?= $palette['shadow'] ?> transition-all duration-200 p-5 relative <?= $is_locked ? 'opacity-60' : '' ?>">
+            class="bg-white rounded-2xl border-2 <?= $palette['border'] ?> <?= $palette['hover'] ?> hover:shadow-lg <?= $palette['shadow'] ?> transition-all duration-200 p-5 relative overflow-hidden <?= $is_locked ? 'opacity-60' : '' ?>">
             <?php if($is_locked): ?>
             <div
                 class="absolute inset-0 bg-gray-900/30 backdrop-blur-[1px] rounded-2xl flex items-center justify-center z-10">
@@ -105,28 +209,82 @@
                 </div>
             </div>
             <?php endif; ?>
-            <div class="flex items-center gap-4">
-                <!-- Number badge -->
-                <div class="w-12 h-12 rounded-xl <?= $palette['bg'] ?> flex items-center justify-center flex-shrink-0">
-                    <span
-                        class="font-bold text-lg <?= $palette['icon'] ?>"><?= str_pad($no, 2, '0', STR_PAD_LEFT) ?></span>
-                </div>
-
-                <!-- Icon -->
-                <div class="w-12 h-12 rounded-xl <?= $palette['bg'] ?> flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="<?= $icon ?>" class="w-6 h-6 <?= $palette['icon'] ?>"></i>
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+                <!-- Number & Icon badge -->
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <div class="w-11 h-11 rounded-xl <?= $palette['bg'] ?> flex items-center justify-center">
+                        <span
+                            class="font-bold text-base <?= $palette['icon'] ?>"><?= str_pad($no, 2, '0', STR_PAD_LEFT) ?></span>
+                    </div>
+                    <div class="w-11 h-11 rounded-xl <?= $palette['bg'] ?> flex items-center justify-center">
+                        <i data-lucide="<?= $icon ?>" class="w-5 h-5 <?= $palette['icon'] ?>"></i>
+                    </div>
                 </div>
 
                 <!-- Title & Description -->
                 <div class="flex-1 min-w-0">
-                    <h3 class="font-semibold text-gray-900 text-lg mb-1"><?= $val->judul ?></h3>
-                    <?php if (!empty($val->deskripsi)): ?>
-                    <p class="text-sm text-gray-600 line-clamp-2"><?= $val->deskripsi ?></p>
+                    <?php
+                        // Deskripsi berupa HTML (editor Quill) + gambar, jadi ditampilkan
+                        // sebagai ringkasan teks 2 baris + thumbnail agar card tetap rapi.
+                        $deskripsi_html = isset($val->deskripsi) ? (string) $val->deskripsi : '';
+                        $deskripsi_plain = sub_bab_plain_text($deskripsi_html);
+                        $deskripsi_preview = sub_bab_trim_text($deskripsi_plain, 220);
+                        $deskripsi_gambar_list = sub_bab_images($deskripsi_html);
+                        $deskripsi_img = !empty($deskripsi_gambar_list) ? $deskripsi_gambar_list[0] : '';
+                        $deskripsi_img_total = (int) preg_match_all('/<img/i', $deskripsi_html);
+                        $deskripsi_isi = sub_bab_prepare_html($deskripsi_html);
+                        $deskripsi_is_long = ($deskripsi_preview !== $deskripsi_plain) || ($deskripsi_img_total > 0);
+                        $deskripsi_ada_isi = ($deskripsi_preview !== '') || ($deskripsi_img_total > 0);
+                        $deskripsi_id = 'deskripsi-bab-' . $no;
+                        $deskripsi_label = $deskripsi_preview !== '' ? 'Selengkapnya' : 'Lihat gambar';
+                    ?>
+                    <h3 class="font-semibold text-gray-900 text-base sm:text-lg leading-snug line-clamp-2 break-words">
+                        <?= $val->judul ?></h3>
+
+                    <?php if ($deskripsi_ada_isi): ?>
+                    <div class="mt-2 flex items-start gap-3">
+                        <?php if ($deskripsi_img !== ''): ?>
+                        <button type="button" data-src="<?= htmlspecialchars($deskripsi_img, ENT_QUOTES, 'UTF-8') ?>"
+                            class="js-preview-image relative w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden border <?= $palette['border'] ?> bg-gray-50 flex-shrink-0 group"
+                            title="Lihat gambar">
+                            <img src="<?= htmlspecialchars($deskripsi_img, ENT_QUOTES, 'UTF-8') ?>"
+                                alt="Gambar sub bab"
+                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                loading="lazy" decoding="async">
+                            <?php if ($deskripsi_img_total > 1): ?>
+                            <span
+                                class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-black/60 text-white text-[10px] font-medium">
+                                +<?= $deskripsi_img_total - 1 ?>
+                            </span>
+                            <?php endif; ?>
+                        </button>
+                        <?php endif; ?>
+
+                        <div class="flex-1 min-w-0">
+                            <?php if ($deskripsi_preview !== ''): ?>
+                            <p class="text-sm text-gray-600 leading-relaxed line-clamp-2 break-words"><?= htmlspecialchars($deskripsi_preview, ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
+
+                            <?php if ($deskripsi_is_long): ?>
+                            <button type="button" onclick="toggleDeskripsi('<?= $deskripsi_id ?>', this)"
+                                data-label-collapsed="<?= $deskripsi_label ?>"
+                                class="mt-1 inline-flex items-center gap-1 text-xs font-semibold <?= $palette['icon'] ?> hover:underline">
+                                <span><?= $deskripsi_label ?></span>
+                                <i data-lucide="chevron-down" class="js-chevron w-3.5 h-3.5"></i>
+                            </button>
+
+                            <div id="<?= $deskripsi_id ?>"
+                                class="deskripsi-html hidden mt-3 max-h-60 overflow-y-auto pr-1 text-sm text-gray-600 leading-relaxed">
+                                <?= $deskripsi_isi ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                     <?php endif; ?>
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex items-center gap-2 flex-shrink-0">
+                <div class="flex items-center gap-2 flex-shrink-0 self-end sm:self-start">
                     <?php if($can_manage): ?>
                     <a href="<?= base_url('sub_bab/edit/' . $val->uuid) ?>"
                         class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-all">
@@ -241,7 +399,7 @@
                     </div>
 
                     <?php if(isset($ujian_per_bab[$val->uuid]) && !empty($ujian_per_bab[$val->uuid])): ?>
-                    <div class="space-y-1.5">
+                    <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                         <?php foreach($ujian_per_bab[$val->uuid] as $u): ?>
                         <div
                             class="flex items-center justify-between gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
@@ -296,6 +454,135 @@
     <?php endif; ?>
 </div>
 
+<!-- Styling konten deskripsi (HTML dari editor) agar tetap rapi di dalam card -->
+<style>
+    .deskripsi-html>*:first-child {
+        margin-top: 0;
+    }
+
+    .deskripsi-html>*:last-child {
+        margin-bottom: 0;
+    }
+
+    .deskripsi-html p {
+        margin: 0 0 0.5rem;
+    }
+
+    .deskripsi-html ul,
+    .deskripsi-html ol {
+        margin: 0 0 0.5rem;
+        padding-left: 1.25rem;
+    }
+
+    .deskripsi-html ul {
+        list-style: disc;
+    }
+
+    .deskripsi-html ol {
+        list-style: decimal;
+    }
+
+    .deskripsi-html h1,
+    .deskripsi-html h2,
+    .deskripsi-html h3 {
+        font-weight: 600;
+        color: #111827;
+        margin: 0.5rem 0;
+    }
+
+    .deskripsi-html blockquote {
+        border-left: 3px solid #e5e7eb;
+        padding-left: 0.75rem;
+        margin: 0.5rem 0;
+        color: #6b7280;
+        font-style: italic;
+    }
+
+    .deskripsi-html a {
+        color: #7c3aed;
+        text-decoration: underline;
+    }
+
+    /* Format bawaan Quill (indent & perataan) agar tampilan tetap sama seperti di editor */
+    .deskripsi-html .ql-align-center {
+        text-align: center;
+    }
+
+    .deskripsi-html .ql-align-right {
+        text-align: right;
+    }
+
+    .deskripsi-html .ql-align-justify {
+        text-align: justify;
+    }
+
+    .deskripsi-html .ql-indent-1 {
+        padding-left: 1.5rem;
+    }
+
+    .deskripsi-html .ql-indent-2 {
+        padding-left: 3rem;
+    }
+
+    .deskripsi-html .ql-indent-3 {
+        padding-left: 4.5rem;
+    }
+
+    .deskripsi-html pre {
+        background: #f9fafb;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        margin: 0.5rem 0;
+        white-space: pre-wrap;
+        overflow-x: auto;
+    }
+
+    .deskripsi-html table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5rem 0;
+        font-size: 0.8125rem;
+    }
+
+    .deskripsi-html th,
+    .deskripsi-html td {
+        border: 1px solid #e5e7eb;
+        padding: 0.375rem 0.5rem;
+    }
+
+    /* Gambar/video dari editor tidak boleh melebihi lebar card */
+    .deskripsi-html img,
+    .deskripsi-html video,
+    .deskripsi-html iframe {
+        max-width: 100% !important;
+        height: auto !important;
+        border-radius: 0.75rem;
+        margin: 0.5rem 0;
+    }
+
+    .deskripsi-html img {
+        cursor: zoom-in;
+    }
+
+    /* Penanda untuk gambar lama yang datanya (base64) tidak tersimpan penuh */
+    .deskripsi-html .deskripsi-gambar-rusak {
+        display: block;
+        padding: 0.5rem 0.75rem;
+        margin: 0.5rem 0;
+        border: 1px dashed #fca5a5;
+        border-radius: 0.75rem;
+        background: #fef2f2;
+        color: #b91c1c;
+        font-size: 0.75rem;
+        line-height: 1.4;
+    }
+
+    .js-chevron {
+        transform-box: fill-box;
+        transform-origin: center;
+    }
+</style>
+
 <!-- PDF Modal -->
 <div id="pdfModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full max-h-screen overflow-hidden flex flex-col">
@@ -309,6 +596,16 @@
             <iframe id="pdfFrame" src="" class="w-full h-[600px] border-0 rounded-lg"></iframe>
         </div>
     </div>
+</div>
+
+<!-- Image Modal (pratinjau gambar deskripsi) -->
+<div id="imageModal" class="fixed inset-0 bg-black/70 hidden z-[60] flex items-center justify-center p-4">
+    <button type="button" onclick="closeImageModal()"
+        class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+    </button>
+    <img id="imageModalImg" src="" alt="Pratinjau gambar"
+        class="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl">
 </div>
 
 <script>
@@ -330,9 +627,80 @@ document.getElementById('pdfModal').addEventListener('click', function(e) {
     }
 });
 
+/* Toggle deskripsi lengkap pada card sub bab */
+function toggleDeskripsi(id, btn) {
+    var box = document.getElementById(id);
+    if (!box) {
+        return;
+    }
+
+    var label = btn.querySelector('span');
+    var chevron = btn.querySelector('.js-chevron');
+    var tersembunyi = box.classList.contains('hidden');
+
+    if (tersembunyi) {
+        box.classList.remove('hidden');
+        if (label) {
+            label.textContent = 'Sembunyikan';
+        }
+        if (chevron) {
+            chevron.classList.add('rotate-180');
+        }
+    } else {
+        box.classList.add('hidden');
+        if (label) {
+            label.textContent = btn.getAttribute('data-label-collapsed') || 'Selengkapnya';
+        }
+        if (chevron) {
+            chevron.classList.remove('rotate-180');
+        }
+    }
+}
+
+/* Lightbox gambar deskripsi */
+function openImageModal(url) {
+    if (!url) {
+        return;
+    }
+    document.getElementById('imageModalImg').src = url;
+    document.getElementById('imageModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').classList.add('hidden');
+    document.getElementById('imageModalImg').src = '';
+    document.body.style.overflow = 'auto';
+}
+
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
+
+/* Thumbnail gambar pada card */
+var thumbnailGambar = document.querySelectorAll('.js-preview-image');
+for (var i = 0; i < thumbnailGambar.length; i++) {
+    thumbnailGambar[i].addEventListener('click', function() {
+        openImageModal(this.getAttribute('data-src'));
+    });
+}
+
+/* Gambar di dalam deskripsi lengkap bisa diklik untuk diperbesar */
+var kotakDeskripsi = document.querySelectorAll('.deskripsi-html');
+for (var j = 0; j < kotakDeskripsi.length; j++) {
+    kotakDeskripsi[j].addEventListener('click', function(e) {
+        if (e.target && e.target.tagName === 'IMG') {
+            openImageModal(e.target.getAttribute('src'));
+        }
+    });
+}
+
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closePdfModal();
+        closeImageModal();
     }
 });
 </script>

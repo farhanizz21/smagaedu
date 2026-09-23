@@ -3,6 +3,9 @@
 <?php $this->load->view('partials/navbar', ['active_nav' => 'ujian']); ?>
 <?php endif; ?>
 
+<!-- Quill Editor CSS -->
+<link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
+
 <div class="max-w-5xl mx-auto px-6 py-8">
     <!-- Colorful Header -->
     <div
@@ -54,15 +57,16 @@
 
     <!-- Form Card -->
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow mb-8">
-        <form method="post" action="<?= base_url('ujian/tambah_soal/' . $ujian->uuid); ?>">
+        <form id="tambahSoalForm" method="post" action="<?= base_url('ujian/tambah_soal/' . $ujian->uuid); ?>">
             <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid ?>">
             <div class="space-y-6">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Soal <span
                             class="text-red-500">*</span></label>
-                    <textarea name="soal" id="addSoalEditor"
-                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm"
-                        placeholder="Masukkan soal ujian..."><?= set_value('soal'); ?></textarea>
+                    <div id="addSoalEditor" style="height: 200px;"><?= set_value('soal', '', FALSE); ?></div>
+                    <input type="hidden" name="soal" id="addSoalInput"
+                        value="<?= form_prep(set_value('soal', '', FALSE)); ?>">
+                    <small class="text-gray-400 text-xs mt-1 block">Gunakan toolbar di atas untuk formatting teks</small>
                     <div class="text-red-500 text-xs mt-1"><?= form_error('soal') ?></div>
                 </div>
 
@@ -673,9 +677,8 @@
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Soal <span
                         class="text-red-500">*</span></label>
-                <textarea name="soal" id="editSoalText" rows="3"
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
-                    placeholder="Masukkan soal..."></textarea>
+                <div id="editSoalEditor" style="height: 160px;"></div>
+                <input type="hidden" name="soal" id="editSoalInput">
                 <div class="text-red-500 text-xs mt-1" id="editSoalError"></div>
             </div>
             <div>
@@ -771,9 +774,275 @@
     </div>
 </div>
 
-<script src="https://cdn.ckeditor.com/ckeditor5/41.2.0/classic/ckeditor.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
 <script>
-var editSoalEditor = null;
+// Instance editor Quill untuk form tambah & modal edit soal
+var addSoalQuill = null;
+var editSoalQuill = null;
+
+// Endpoint upload gambar untuk editor soal (dilayani controller Ujian)
+var soalUploadUrl = '<?= base_url('ujian/upload_editor_file') ?>';
+
+// Kirim gambar ke server, lalu URL-nya yang disisipkan ke editor.
+// Default Quill menyimpan gambar sebagai base64 (data:image/...) sehingga
+// melebihi kapasitas kolom `ujian_soal`.`soal` (TEXT) dan gambar gagal tersimpan.
+function uploadGambarSoal(file) {
+    return new Promise(function(resolve, reject) {
+        var formData = new FormData();
+        formData.append('upload', file);
+
+        fetch(soalUploadUrl, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                var url = data && data.url;
+                // Endpoint mengembalikan format { uploaded: true, url: '...' }
+                var sukses = data && (data.success === true || data.uploaded === true);
+
+                if (sukses && url) {
+                    resolve(url);
+                    return;
+                }
+
+                var pesan = (data && data.message) ||
+                    (data && data.error && data.error.message) ||
+                    'Terjadi kesalahan pada server';
+                reject(new Error(pesan));
+            }, function() {
+                reject(new Error('Gagal terhubung ke server'));
+            });
+    });
+}
+
+function sisipkanGambarSoal(quill, file, range) {
+    if (!quill || !file) {
+        return;
+    }
+    if (file.type.indexOf('image/') !== 0) {
+        alert('File yang dipilih bukan gambar.');
+        return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        alert('Ukuran gambar maksimal 10MB.');
+        return;
+    }
+
+    var index = (range && typeof range.index === 'number') ? range.index : quill.getLength();
+
+    uploadGambarSoal(file)
+        .then(function(url) {
+            quill.insertEmbed(index, 'image', url);
+            quill.setSelection(index + 1, 0);
+        })
+        .catch(function(error) {
+            alert('Gagal mengunggah gambar: ' + error.message);
+        });
+}
+
+function pilihGambarSoal(quill) {
+    var input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.addEventListener('change', function() {
+        var file = input.files && input.files[0];
+        if (file) {
+            sisipkanGambarSoal(quill, file, quill.getSelection(true));
+        }
+    });
+}
+
+function buatEditorSoal(selector, placeholder) {
+    var quill = new Quill(selector, {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{
+                    'header': [1, 2, 3, false]
+                }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{
+                    'color': []
+                }, {
+                    'background': []
+                }],
+                [{
+                    'list': 'ordered'
+                }, {
+                    'list': 'bullet'
+                }],
+                [{
+                    'indent': '-1'
+                }, {
+                    'indent': '+1'
+                }],
+                ['link', 'image'],
+                ['clean']
+            ],
+            uploader: {
+                mimetypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
+                handler: function(range, files) {
+                    sisipkanGambarSoal(quill, files && files[0], range);
+                }
+            }
+        },
+        placeholder: placeholder
+    });
+
+    // Timpa handler bawaan tombol gambar supaya gambar diunggah ke server
+    quill.getModule('toolbar').addHandler('image', function() {
+        pilihGambarSoal(quill);
+    });
+
+    return quill;
+}
+
+/**
+ * Isi editor dengan konten soal dari server.
+ * Konten dapat berupa HTML (hasil editor) atau teks biasa (mis. hasil import Excel).
+ */
+function isiKontenSoal(quill, konten) {
+    if (!quill) {
+        return;
+    }
+
+    if (!konten) {
+        quill.setText('\n');
+        return;
+    }
+
+    if (/<\/?[a-z][^>]*>/i.test(konten)) {
+        quill.clipboard.dangerouslyPasteHTML(konten);
+    } else {
+        quill.setText(String(konten).trim() + '\n');
+    }
+}
+
+/**
+ * Ambil isi editor sebagai HTML. Editor kosong dikembalikan sebagai '' agar
+ * validasi "required" di sisi server tetap berjalan.
+ */
+function ambilKontenSoal(quill) {
+    if (!quill) {
+        return '';
+    }
+
+    if (quill.getText().trim() === '' && quill.root.querySelectorAll('img').length === 0) {
+        return '';
+    }
+
+    return quill.root.innerHTML;
+}
+
+// Ubah gambar base64 (mis. hasil paste HTML / gambar lama) menjadi file yang diunggah ke server
+function dataUriKeFile(src, nama) {
+    var bagian = /^data:([^;]+);base64,(.*)$/.exec(src);
+    if (!bagian) {
+        return null;
+    }
+
+    try {
+        var biner = window.atob(bagian[2]);
+    } catch (e) {
+        return null;
+    }
+
+    var bytes = new Uint8Array(biner.length);
+    for (var i = 0; i < biner.length; i++) {
+        bytes[i] = biner.charCodeAt(i);
+    }
+    var ekstensi = (bagian[1].split('/')[1] || 'png').replace('jpeg', 'jpg');
+
+    return new File([bytes], nama + '.' + ekstensi, {
+        type: bagian[1]
+    });
+}
+
+function unggahGambarBase64Soal(quill) {
+    var gambar = Array.prototype.slice.call(quill.root.querySelectorAll('img')).filter(function(img) {
+        return (img.getAttribute('src') || '').indexOf('data:image') === 0;
+    });
+
+    if (gambar.length === 0) {
+        return Promise.resolve({
+            dibuang: 0
+        });
+    }
+
+    var dibuang = 0;
+
+    return gambar.reduce(function(rantai, img, urutan) {
+        return rantai.then(function() {
+            var file = dataUriKeFile(img.getAttribute('src'), 'gambar-' + (urutan + 1));
+
+            if (!file) {
+                // Base64 tidak valid / gambar lama yang sudah terpotong
+                img.parentNode.removeChild(img);
+                dibuang++;
+                return;
+            }
+
+            return uploadGambarSoal(file).then(function(url) {
+                img.setAttribute('src', url);
+            });
+        });
+    }, Promise.resolve()).then(function() {
+        return {
+            dibuang: dibuang
+        };
+    });
+}
+
+/**
+ * Sinkronkan isi editor ke input hidden saat form dikirim, dan unggah gambar
+ * base64 yang masih tersisa agar tidak terpotong kapasitas kolom `soal` (TEXT).
+ */
+function siapkanFormSoal(form, quill, inputId) {
+    if (!form || !quill) {
+        return;
+    }
+
+    var input = document.getElementById(inputId);
+    var sedangKirim = false;
+
+    form.addEventListener('submit', function(e) {
+        input.value = ambilKontenSoal(quill);
+
+        if (sedangKirim || input.value.indexOf('data:image') === -1) {
+            return;
+        }
+
+        // Masih ada gambar base64: unggah dulu agar tidak terpotong saat disimpan
+        var pengirim = e.submitter;
+        e.preventDefault();
+
+        unggahGambarBase64Soal(quill)
+            .then(function(hasil) {
+                if (hasil.dibuang > 0) {
+                    alert(hasil.dibuang + ' gambar lama yang rusak telah dihapus dari soal karena tidak dapat disimpan. Silakan masukkan kembali gambar tersebut.');
+                }
+                input.value = ambilKontenSoal(quill);
+                sedangKirim = true;
+                if (pengirim && typeof pengirim.click === 'function') {
+                    pengirim.click();
+                } else if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+            })
+            .catch(function(error) {
+                alert('Gambar gagal disimpan: ' + error.message + '. Silakan coba simpan lagi.');
+            });
+    });
+}
+
 
 function toggleAccordion(header) {
     var content = header.nextElementSibling;
@@ -799,10 +1068,10 @@ function openEditModal(uuid) {
         })
         .then(function(data) {
             if (data.status === 'success') {
-                if (editSoalEditor) {
-                    editSoalEditor.setData(data.data.soal);
+                if (editSoalQuill) {
+                    isiKontenSoal(editSoalQuill, data.data.soal);
                 } else {
-                    document.getElementById('editSoalText').value = data.data.soal;
+                    document.getElementById('editSoalInput').value = data.data.soal;
                 }
                 document.getElementById('editSoalJenis').value = data.data.jenis_soal;
 
@@ -972,31 +1241,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     lucide.createIcons();
 
-    // Inisialisasi CKEditor untuk bidang "soal"
-    var ckeditorUploadUrl = '<?= base_url('ujian/upload_editor_file') ?>';
-    var ckeditorConfig = {
-        placeholder: 'Masukkan soal ujian...',
-        ckfinder: {
-            uploadUrl: ckeditorUploadUrl
-        }
-    };
-    var editCkeditorConfig = {
-        placeholder: 'Masukkan soal...',
-        ckfinder: {
-            uploadUrl: ckeditorUploadUrl
-        }
-    };
-    var addSoalEditorEl = document.getElementById('addSoalEditor');
-    var editSoalTextareaEl = document.getElementById('editSoalText');
-    if (window.ClassicEditor) {
+    // Inisialisasi editor Quill untuk bidang "soal" (form tambah & modal edit)
+    if (window.Quill) {
+        var addSoalEditorEl = document.getElementById('addSoalEditor');
         if (addSoalEditorEl) {
-            ClassicEditor.create(addSoalEditorEl, ckeditorConfig)
-                .catch(function(err) { console.error('CKEditor add soal error:', err); });
+            addSoalQuill = buatEditorSoal('#addSoalEditor', 'Masukkan soal ujian...');
+            siapkanFormSoal(document.getElementById('tambahSoalForm'), addSoalQuill, 'addSoalInput');
         }
-        if (editSoalTextareaEl) {
-            ClassicEditor.create(editSoalTextareaEl, editCkeditorConfig)
-                .then(function(editor) { editSoalEditor = editor; })
-                .catch(function(err) { console.error('CKEditor edit soal error:', err); });
+
+        var editSoalEditorEl = document.getElementById('editSoalEditor');
+        if (editSoalEditorEl) {
+            editSoalQuill = buatEditorSoal('#editSoalEditor', 'Masukkan soal...');
+            siapkanFormSoal(document.getElementById('editSoalForm'), editSoalQuill, 'editSoalInput');
         }
     }
 

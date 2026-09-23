@@ -97,3 +97,4 @@ $route['sub_bab/tambah/(:any)'] = 'bab/tambah/$1';
 $route['sub_bab/tambah_ujian/(:any)'] = 'bab/tambah_ujian/$1';
 $route['sub_bab/edit/(:any)'] = 'bab/edit/$1';
 $route['sub_bab/hapus/(:any)'] = 'bab/hapus/$1';
+$route['sub_bab/upload_gambar'] = 'bab/upload_gambar';

@@ -211,6 +211,28 @@
             border-radius: 10px;
             padding: 10px 12px;
         }
+
+        /* ===== Penyesuaian HP portrait (<=575px) — desktop di atas 575px tidak berubah ===== */
+        @media (max-width: 575px) {
+            .exam-topbar-inner { padding: 10px 14px; gap: 10px; }
+            .exam-topbar-inner > div:first-child { min-width: 0; flex: 1 1 auto; }
+            .exam-title {
+                font-size: 14px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .exam-subtitle { font-size: 11px; }
+            .timer-box { flex-shrink: 0; font-size: 15px; padding: 6px 10px; gap: 6px; }
+            .timer-box svg { width: 15px; height: 15px; }
+            .exam-layout { padding: 14px; gap: 14px; }
+            .question-card { padding: 16px; }
+            .side-card { padding: 16px; }
+            .question-nav-buttons .btn { min-height: 44px; }
+            .nav-btn { min-width: 44px; min-height: 44px; }
+            #btnSubmit { min-height: 44px; }
+            #fullscreenOverlay > div { padding: 24px; }
+        }
     </style>
 </head>
 
