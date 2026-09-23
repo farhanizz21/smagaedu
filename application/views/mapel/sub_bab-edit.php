@@ -47,7 +47,7 @@
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Deskripsi</label>
                 <div id="editor" style="height: 200px;"><?= set_value('deskripsi', $bab->deskripsi, FALSE); ?></div>
                 <input type="hidden" name="deskripsi" id="deskripsi"
-                    value="<?= set_value('deskripsi', $bab->deskripsi, FALSE); ?>">
+                    value="<?= form_prep(set_value('deskripsi', $bab->deskripsi, FALSE)); ?>">
                 <small class="text-gray-400 text-xs mt-1 block">Gunakan toolbar di atas untuk formatting teks</small>
             </div>
 
@@ -93,6 +93,77 @@
 
 <script src="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.js"></script>
 <script>
+// Endpoint upload gambar deskripsi
+var quillUploadUrl = '<?= base_url('sub_bab/upload_gambar') ?>';
+
+// Kirim gambar ke server, lalu URL-nya yang disisipkan ke editor.
+// Default Quill menyimpan gambar sebagai base64 (data:image/...) sehingga
+// melebihi kapasitas kolom `deskripsi` (TEXT) dan gambar gagal tersimpan.
+function uploadGambarDeskripsi(file) {
+    return new Promise(function(resolve, reject) {
+        var formData = new FormData();
+        formData.append('upload', file);
+
+        fetch(quillUploadUrl, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data && data.success && data.url) {
+                    resolve(data.url);
+                } else {
+                    reject(new Error((data && data.message) ? data.message : 'Terjadi kesalahan pada server'));
+                }
+            })
+            .catch(function() {
+                reject(new Error('Gagal terhubung ke server'));
+            });
+    });
+}
+
+function sisipkanGambarDeskripsi(file, range) {
+    if (!file) {
+        return;
+    }
+    if (file.type.indexOf('image/') !== 0) {
+        alert('File yang dipilih bukan gambar.');
+        return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        alert('Ukuran gambar maksimal 10MB.');
+        return;
+    }
+
+    var index = (range && typeof range.index === 'number') ? range.index : quill.getLength();
+
+    uploadGambarDeskripsi(file)
+        .then(function(url) {
+            quill.insertEmbed(index, 'image', url);
+            quill.setSelection(index + 1, 0);
+        })
+        .catch(function(error) {
+            alert('Gagal mengunggah gambar: ' + error.message);
+        });
+}
+
+function pilihGambarDeskripsi() {
+    var input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.addEventListener('change', function() {
+        var file = input.files && input.files[0];
+        if (file) {
+            sisipkanGambarDeskripsi(file, quill.getSelection(true));
+        }
+    });
+}
+
 var quill = new Quill('#editor', {
     theme: 'snow',
     modules: {
@@ -118,14 +189,110 @@ var quill = new Quill('#editor', {
             }],
             ['link', 'image'],
             ['clean']
-        ]
+        ],
+        uploader: {
+            mimetypes: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'],
+            handler: function(range, files) {
+                sisipkanGambarDeskripsi(files && files[0], range);
+            }
+        }
     },
     placeholder: 'Masukkan deskripsi bab...'
 });
 
-// Update hidden input before form submit
-document.querySelector('form').addEventListener('submit', function() {
-    document.getElementById('deskripsi').value = quill.root.innerHTML;
+// Timpa handler bawaan tombol gambar supaya gambar diunggah ke server
+quill.getModule('toolbar').addHandler('image', pilihGambarDeskripsi);
+
+// Ubah gambar base64 (mis. hasil paste HTML / gambar lama) menjadi file yang diunggah ke server
+function dataUriKeFile(src, nama) {
+    var bagian = /^data:([^;]+);base64,(.*)$/.exec(src);
+    if (!bagian) {
+        return null;
+    }
+
+    try {
+        var biner = window.atob(bagian[2]);
+    } catch (e) {
+        return null;
+    }
+
+    var bytes = new Uint8Array(biner.length);
+    for (var i = 0; i < biner.length; i++) {
+        bytes[i] = biner.charCodeAt(i);
+    }
+    var ekstensi = (bagian[1].split('/')[1] || 'png').replace('jpeg', 'jpg');
+
+    return new File([bytes], nama + '.' + ekstensi, {
+        type: bagian[1]
+    });
+}
+
+function unggahGambarBase64() {
+    var gambar = Array.prototype.slice.call(quill.root.querySelectorAll('img')).filter(function(img) {
+        return (img.getAttribute('src') || '').indexOf('data:image') === 0;
+    });
+
+    if (gambar.length === 0) {
+        return Promise.resolve({
+            dibuang: 0
+        });
+    }
+
+    var dibuang = 0;
+
+    return gambar.reduce(function(rantai, img, urutan) {
+        return rantai.then(function() {
+            var file = dataUriKeFile(img.getAttribute('src'), 'gambar-' + (urutan + 1));
+
+            if (!file) {
+                // Base64 tidak valid / gambar lama yang sudah terpotong
+                img.parentNode.removeChild(img);
+                dibuang++;
+                return;
+            }
+
+            return uploadGambarDeskripsi(file).then(function(url) {
+                img.setAttribute('src', url);
+            });
+        });
+    }, Promise.resolve()).then(function() {
+        return {
+            dibuang: dibuang
+        };
+    });
+}
+
+var formDeskripsi = document.querySelector('form');
+var deskripsiInput = document.getElementById('deskripsi');
+var sedangKirim = false;
+
+formDeskripsi.addEventListener('submit', function(e) {
+    deskripsiInput.value = quill.root.innerHTML;
+
+    if (sedangKirim || deskripsiInput.value.indexOf('data:image') === -1) {
+        return;
+    }
+
+    // Masih ada gambar base64: unggah dulu agar tidak terpotong saat disimpan
+    var pengirim = e.submitter;
+    e.preventDefault();
+
+    unggahGambarBase64()
+        .then(function(hasil) {
+            if (hasil.dibuang > 0) {
+                alert(hasil.dibuang + ' gambar lama yang rusak telah dihapus dari deskripsi karena tidak dapat disimpan. Silakan masukkan kembali gambar tersebut.');
+            }
+            deskripsiInput.value = quill.root.innerHTML;
+            sedangKirim = true;
+            if (pengirim && typeof pengirim.click === 'function') {
+                pengirim.click();
+            } else {
+                formDeskripsi.submit();
+            }
+        })
+        .catch(function(error) {
+            alert('Gambar gagal disimpan: ' + error.message + '. Silakan coba simpan lagi.');
+        });
 });
 </script>
 
