@@ -49,6 +49,20 @@
         display: block;
     }
 
+    /* Dukungan tap (touchscreen) — tanpa mengubah perilaku hover desktop */
+    .nav-dropdown.open .nav-dropdown-menu {
+        display: block;
+    }
+
+    /* Tap target lebih besar hanya di layar kecil, desktop (>767px) tetap sama */
+    @media (max-width: 767.98px) {
+        .nav-dropdown-menu a {
+            min-height: 44px;
+            padding-top: 12px;
+            padding-bottom: 12px;
+        }
+    }
+
     .table-shadow {
         box-shadow: 0 25px 60px -12px rgba(37, 99, 235, 0.15);
     }
