@@ -28,6 +28,9 @@ class soal_model extends CI_Model {
 		$user = $this->session->userdata('uuid');
 
 		$jenis_soal = $this->input->post('jenis_soal');
+		$jenis_jawaban_essay = $jenis_soal === 'essay'
+			? ($this->input->post('jenis_jawaban_essay') === 'file' ? 'file' : 'teks')
+			: null;
 		$jawaban_benar = $this->input->post('jawaban_benar');
 		// Handle array (multiple answer) by encoding to JSON
 		if (is_array($jawaban_benar)) {
@@ -39,6 +42,7 @@ class soal_model extends CI_Model {
 			'ujian_uuid' => $ujian_uuid,
 			'soal' => $soal,
 			'jenis_soal' => $jenis_soal,
+			'jenis_jawaban_essay' => $jenis_jawaban_essay,
 			'jawaban_a' => $this->input->post('jawaban_a'),
 			'jawaban_b' => $this->input->post('jawaban_b'),
 			'jawaban_c' => $this->input->post('jawaban_c'),
@@ -98,7 +102,7 @@ class soal_model extends CI_Model {
 	
 	public function get_by_ujian_uuid($ujian_uuid)
 	{
-		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
+		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, jenis_jawaban_essay, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
 		$this->db->where('ujian_uuid', $ujian_uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
 		$data = $this->db->get('ujian_soal');
@@ -108,7 +112,7 @@ class soal_model extends CI_Model {
 
 	public function get_by_uuid($uuid)
 	{
-		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, ujian_uuid, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
+		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, jenis_jawaban_essay, ujian_uuid, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
 		$this->db->where('uuid', $uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
 		$data = $this->db->get('ujian_soal');
@@ -120,6 +124,9 @@ class soal_model extends CI_Model {
 	{
 		$soal = $this->input->post('soal');
 		$jenis_soal = $this->input->post('jenis_soal');
+		$jenis_jawaban_essay = $jenis_soal === 'essay'
+			? ($this->input->post('jenis_jawaban_essay') === 'file' ? 'file' : 'teks')
+			: null;
 		$jawaban_benar = $this->input->post('jawaban_benar');
 
 		if (is_array($jawaban_benar)) {
@@ -129,6 +136,7 @@ class soal_model extends CI_Model {
 		$data = array(
 			'soal' => $soal,
 			'jenis_soal' => $jenis_soal,
+			'jenis_jawaban_essay' => $jenis_jawaban_essay,
 			'jawaban_a' => $this->input->post('jawaban_a'),
 			'jawaban_b' => $this->input->post('jawaban_b'),
 			'jawaban_c' => $this->input->post('jawaban_c'),

@@ -19,6 +19,36 @@ public function insert()
     {
         $ujian_uuid = $this->input->post('ujian_uuid');
         $jawaban = $this->input->post('jawaban');
+		$jawaban = is_array($jawaban) ? $jawaban : [];
+		$jawaban_file = $_FILES['jawaban_file'] ?? [];
+
+		$upload_config = [
+			'upload_path' => './uploads/jawaban_ujian/',
+			'allowed_types' => 'pdf|doc|docx|xls|xlsx|ppt|pptx|jpg|jpeg|png',
+			'max_size' => 10240,
+			'encrypt_name' => TRUE
+		];
+		$this->load->library('upload', $upload_config);
+		if (!is_dir('./uploads/jawaban_ujian/')) {
+			mkdir('./uploads/jawaban_ujian/', 0777, TRUE);
+		}
+
+		$file_soal_uuids = array_keys($jawaban_file['name'] ?? []);
+		foreach ($file_soal_uuids as $soal_uuid) {
+			if (empty($jawaban_file['name'][$soal_uuid])) {
+				continue;
+			}
+			$_FILES['jawaban_upload'] = [
+				'name' => $jawaban_file['name'][$soal_uuid],
+				'type' => $jawaban_file['type'][$soal_uuid],
+				'tmp_name' => $jawaban_file['tmp_name'][$soal_uuid],
+				'error' => $jawaban_file['error'][$soal_uuid],
+				'size' => $jawaban_file['size'][$soal_uuid]
+			];
+			if ($this->upload->do_upload('jawaban_upload')) {
+				$jawaban[$soal_uuid] = $this->upload->data('file_name');
+			}
+		}
 
         foreach ($jawaban as $soal_uuid => $jawaban_siswa) {
             if (is_array($jawaban_siswa)) {

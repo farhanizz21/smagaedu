@@ -1045,7 +1045,14 @@ class Ujian extends MY_Controller {
                     $display = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ' . $badge_class . '">' . htmlspecialchars(ucfirst($jawaban_siswa)) . '</span>';
                     break;
                 case 'essay':
-                    $display = nl2br(htmlspecialchars($jawaban_siswa));
+					if (($soal_obj->jenis_jawaban_essay ?? 'teks') === 'file') {
+						$filename = basename($jawaban_siswa);
+						$file_url = base_url('uploads/jawaban_ujian/' . rawurlencode($filename));
+						$display = '<a href="' . htmlspecialchars($file_url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline">'
+							. '<i data-lucide="external-link" class="w-4 h-4"></i> Buka file jawaban</a>';
+					} else {
+						$display = nl2br(htmlspecialchars($jawaban_siswa));
+					}
                     break;
                 default:
                     $display = htmlspecialchars($jawaban_siswa);
