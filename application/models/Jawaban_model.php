@@ -45,6 +45,66 @@ public function insert()
 		return $data->result();
 	}
 
+	public function get_auto_nilai($ujian_uuid, $siswa_uuid)
+	{
+		$soal = $this->db
+			->select('uuid, jenis_soal, jawaban_benar')
+			->where('ujian_uuid', $ujian_uuid)
+			->where('deleted_at', NULL, FALSE)
+			->get('ujian_soal')
+			->result();
+
+		$jumlah_soal = count($soal);
+		if ($jumlah_soal === 0) {
+			return null;
+		}
+
+		$jawaban = $this->db
+			->select('soal_uuid, jawaban_siswa')
+			->where('ujian_uuid', $ujian_uuid)
+			->where('created_by', $siswa_uuid)
+			->where('deleted_at', NULL, FALSE)
+			->get('ujian_jawaban')
+			->result();
+		if (empty($jawaban)) {
+			return null;
+		}
+
+		$jawaban_by_soal = [];
+		foreach ($jawaban as $item) {
+			$jawaban_by_soal[$item->soal_uuid] = $item->jawaban_siswa;
+		}
+
+		$jumlah_benar = 0;
+		foreach ($soal as $item) {
+			if (!isset($jawaban_by_soal[$item->uuid]) || $item->jawaban_benar === null) {
+				continue;
+			}
+
+			$jawaban_siswa = $jawaban_by_soal[$item->uuid];
+			$kunci = $item->jawaban_benar;
+			if ($item->jenis_soal === 'pilihan_ganda_kompleks') {
+				$jawaban_siswa = json_decode($jawaban_siswa, true);
+				$kunci = json_decode($kunci, true);
+				if (!is_array($jawaban_siswa) || !is_array($kunci)) {
+					continue;
+				}
+				sort($jawaban_siswa);
+				sort($kunci);
+				if ($jawaban_siswa === $kunci) {
+					$jumlah_benar++;
+				}
+				continue;
+			}
+
+			if (strtolower(trim((string) $jawaban_siswa)) === strtolower(trim((string) $kunci))) {
+				$jumlah_benar++;
+			}
+		}
+
+		return round(($jumlah_benar * 100) / $jumlah_soal, 2);
+	}
+
 	public function insert_nilai($ujian_uuid, $siswa_uuid)
 	{
 		$nilai_data = $this->input->post('nilai');

@@ -128,12 +128,13 @@
                         $no = 1;
                         foreach($peserta as $val) {
                             $waktu_pengumpulan = !empty($val->pengumpulan) ? date('d M Y H:i', strtotime($val->pengumpulan)) : '-';
-                            $nilai = !empty($val->nilai_ujian) ? $val->nilai_ujian : '-';
+                            $ada_nilai = $val->nilai_ujian !== null && $val->nilai_ujian !== '';
+                            $nilai = $ada_nilai ? $val->nilai_ujian : '-';
                             $kelas_nama = !empty($val->kelas_nama) ? htmlspecialchars($val->kelas_nama) : '-';
                     ?>
                     <tr class="table-row-hover transition-colors" data-kelas="<?= $kelas_nama ?>"
                         data-pengumpulan="<?= !empty($val->pengumpulan) ? 'sudah_mengerjakan' : 'belum_mengerjakan' ?>"
-                        data-nilai="<?= !empty($val->nilai_ujian) ? 'sudah_dinilai' : 'belum_dinilai' ?>">
+                        data-nilai="<?= $ada_nilai ? 'sudah_dinilai' : 'belum_dinilai' ?>">
                         <td class="px-6 py-4 text-gray-500 text-center"><?= $no ; ?></td>
                         <td class="px-6 py-4 font-medium text-gray-900"><?= htmlspecialchars($val->nama); ?></td>
                         <td class="px-6 py-4 text-gray-600 kelas-col"><?= $kelas_nama; ?></td>
@@ -149,7 +150,7 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-center font-semibold">
-                            <?php if(!empty($val->nilai_ujian)): ?>
+                            <?php if($ada_nilai): ?>
                             <span
                                 class="inline-flex items-center justify-center px-2.5 py-1 rounded-lg text-xs font-bold 
                                 <?= ($val->nilai_ujian >= 70) ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200' ?>">

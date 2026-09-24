@@ -746,8 +746,9 @@ class Ujian extends MY_Controller {
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
 			
-			// Ambil nilai siswa jika sudah dinilai
-			$p->nilai_ujian = !empty($p->ujian_nilai) ? $p->ujian_nilai : null;
+			$p->nilai_ujian = $p->ujian_nilai !== null && $p->ujian_nilai !== ''
+				? $p->ujian_nilai
+				: $this->jawaban_model->get_auto_nilai($ujian_uuid, $p->siswa_uuid);
 		}
 		
 		// Ambil daftar kelas yang terdaftar sebagai peserta untuk filter
@@ -806,7 +807,9 @@ class Ujian extends MY_Controller {
 		foreach ($peserta as $p) {
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
-			$p->nilai_ujian = !empty($p->ujian_nilai) ? $p->ujian_nilai : null;
+			$p->nilai_ujian = $p->ujian_nilai !== null && $p->ujian_nilai !== ''
+				? $p->ujian_nilai
+				: $this->jawaban_model->get_auto_nilai($ujian_uuid, $p->siswa_uuid);
 		}
 
 		// Filter berdasarkan kelas jika parameter diberikan
