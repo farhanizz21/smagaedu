@@ -80,6 +80,28 @@ class ujian_model extends CI_Model {
 		
 		return $this->db->get()->result();
 	}
+
+	/**
+	 * Daftar ujian yang sudah didaftarkan untuk siswa sebagai peserta.
+	 *
+	 * @param string $siswa_uuid UUID siswa
+	 * @return array Daftar ujian dengan relasi peserta aktif
+	 */
+	public function get_all_by_siswa_uuid($siswa_uuid)
+	{
+		$this->db->select("u.*, m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
+		$this->db->from('ujian_siswa us');
+		$this->db->join('ujian u', 'u.uuid = us.ujian_uuid', 'inner');
+		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
+		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
+		$this->db->join('bab b', 'b.uuid = u.bab_uuid', 'left');
+		$this->db->where('us.siswa_uuid', $siswa_uuid);
+		$this->db->where('us.deleted_at', NULL, FALSE);
+		$this->db->where('u.deleted_at', NULL, FALSE);
+		$this->db->order_by('u.modified_at', 'DESC');
+
+		return $this->db->get()->result();
+	}
 	
     public function insert()
 	{

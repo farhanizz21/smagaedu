@@ -253,8 +253,8 @@ class mapel_model extends CI_Model {
 					continue;
 				}
 				$kelas_list = isset($item['kelas_list']) ? $item['kelas_list'] : [];
-				// Jika tidak ada kelas_list (kosong), anggap diampu untuk semua kelas
-				if (empty($kelas_list) || in_array($kelas_uuid, $kelas_list)) {
+				// Format baru wajib memiliki kelas yang diberikan akses.
+				if (in_array($kelas_uuid, $kelas_list)) {
 					$mapel_uuids[$item['mapel_uuid']] = true;
 				}
 			}

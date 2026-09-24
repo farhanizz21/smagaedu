@@ -24,6 +24,9 @@ class Bab extends MY_Controller {
  		if (empty($materi)) {
  			show_404();
  		}
+			if (has_role(['siswa']) && !$this->bab_model->is_materi_unlocked_for_student($materi_uuid, $this->session->userdata('uuid'))) {
+				show_error('Bab terkunci. Selesaikan bab sebelumnya terlebih dahulu.', 403);
+			}
  
  		$mapel = $this->mapel_model->get_by_uuid($materi->mapel_uuid);
  		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
@@ -35,6 +38,9 @@ class Bab extends MY_Controller {
   		$ujian_per_sub = [];
   		$ujian_per_bab = [];
   		$bab_unlocked = [];
+	$bab_completed = [];
+	$bab_activity_count = [];
+	$bab_completed_count = [];
   		$bab_has_ujian = [];
 
   		// Untuk siswa: cek apakah ujian sub bab sebelumnya sudah dikerjakan
@@ -45,7 +51,7 @@ class Bab extends MY_Controller {
   		// Urutkan bab berdasarkan urutan (modified_at ASC)
   		$bab_sorted = $bab;
 
-  		$prev_unlocked = true;
+		$progress = $all_unlocked ? [] : $this->bab_model->get_progress_for_materi($materi_uuid, $user_login);
   		foreach ($bab_sorted as $b) {
   			$komentar = $this->komentar_model->get_by_bab_uuid($b->uuid);
   			foreach ($komentar as $kom) {
@@ -73,29 +79,23 @@ class Bab extends MY_Controller {
   			// Load ujian yang terhubung langsung dengan bab (dari form Tambah Sub Bab)
   			$ujian_per_bab[$b->uuid] = $this->ujian_model->get_by_bab($b->uuid);
 
-  			// Cek apakah bab ini memiliki ujian
-  			$has_ujian = !empty($ujian_per_bab[$b->uuid]);
-  			$bab_has_ujian[$b->uuid] = $has_ujian;
-
-  			// Bab saat ini terbuka jika bab sebelumnya terbuka (atau ini bab pertama)
-  			$bab_unlocked[$b->uuid] = $prev_unlocked;
-
-  			// Untuk siswa: jika bab ini terbuka dan memiliki ujian,
-  			// cek apakah siswa sudah mengerjakan ujian.
-  			// Jika belum selesai, bab berikutnya akan terkunci.
-  			if (!$all_unlocked && $has_ujian && $bab_unlocked[$b->uuid]) {
-  				$completed = false;
-  				foreach ($ujian_per_bab[$b->uuid] as $u) {
-  					$peserta = $this->siswa_model->get_by_ujian($u->uuid);
-  					foreach ($peserta as $p) {
-  						if ($p->siswa_uuid == $user_login && $this->ujian_model->get_pengumpulan_siswa($u->uuid, $user_login) !== NULL) {
-  							$completed = true;
-  							break 2;
-  						}
-  					}
-  				}
-  				$prev_unlocked = $completed;
-  			}
+			// Status akses dihitung terpusat agar tampilan dan endpoint ujian konsisten.
+			$state = $all_unlocked ? [
+				'unlocked' => true,
+				'completed' => false,
+				'activity_count' => count($ujian_per_bab[$b->uuid]),
+				'completed_count' => 0
+			] : ($progress[$b->uuid] ?? [
+				'unlocked' => false,
+				'completed' => false,
+				'activity_count' => 0,
+				'completed_count' => 0
+			]);
+			$bab_unlocked[$b->uuid] = $state['unlocked'];
+			$bab_completed[$b->uuid] = $state['completed'];
+			$bab_activity_count[$b->uuid] = $state['activity_count'];
+			$bab_completed_count[$b->uuid] = $state['completed_count'];
+			$bab_has_ujian[$b->uuid] = $state['activity_count'] > 0;
   		}
   
   		$data = array(
@@ -107,6 +107,9 @@ class Bab extends MY_Controller {
   			'ujian_per_sub' => $ujian_per_sub,
   			'ujian_per_bab' => $ujian_per_bab,
   			'bab_unlocked' => $bab_unlocked,
+			'bab_completed' => $bab_completed,
+			'bab_activity_count' => $bab_activity_count,
+			'bab_completed_count' => $bab_completed_count,
   			'bab_has_ujian' => $bab_has_ujian,
   			'is_admin' => is_admin_or_superadmin(),
   			'can_manage' => $can_manage,

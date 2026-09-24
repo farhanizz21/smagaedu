@@ -485,6 +485,7 @@ CREATE TABLE `ujian_soal` (
   `ujian_uuid` varchar(100) NOT NULL,
   `soal` text NOT NULL,
   `jenis_soal` varchar(50) DEFAULT 'pilihan_ganda' COMMENT 'jenis soal: pilihan_ganda, pilihan_ganda_kompleks, menjodohkan, benar_salah, essay',
+  `jenis_jawaban_essay` varchar(10) DEFAULT 'teks' COMMENT 'jenis jawaban essay: teks atau file',
   `jawaban_a` text DEFAULT NULL COMMENT 'Jawaban A (untuk pilihan ganda) atau Soal/Kunci (untuk menjodohkan)',
   `jawaban_b` text DEFAULT NULL COMMENT 'Jawaban B (untuk pilihan ganda) atau Jawaban (untuk menjodohkan)',
   `jawaban_c` text DEFAULT NULL COMMENT 'Jawaban C (untuk pilihan ganda)',

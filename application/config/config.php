@@ -23,8 +23,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'http://10.83.229.132/smagaedu/';
-// $config['base_url'] = 'http://localhost/smagaedu/';
+// $config['base_url'] = 'http://10.83.229.132/smagaedu/';
+$config['base_url'] = 'http://localhost/smagaedu/';
 // $config['base_url'] = 'https://3b1ad8f77461.ngrok-free.app/smartedu/';
 /*
 |--------------------------------------------------------------------------

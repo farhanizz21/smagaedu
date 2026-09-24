@@ -16,6 +16,7 @@ class Ujian extends MY_Controller {
 		$this->load->model('siswa_model');
 		$this->load->model('kelas_model');
 		$this->load->model('ujian_model');
+		$this->load->model('bab_model');
 		$this->load->model('jawaban_model');
 		$this->load->model('soal_model');
 	}
@@ -25,12 +26,9 @@ class Ujian extends MY_Controller {
 		$user_login = $this->session->userdata('uuid'); 
 		$user_role = $this->session->userdata('role');
 
-		// Siswa hanya melihat ujian dari mata pelajaran sesuai kelasnya
+		// Siswa hanya melihat ujian yang sudah didaftarkan sebagai peserta
 		if ($user_role === 'siswa') {
-			$siswa = $this->siswa_model->get_by_uuid($user_login);
-			$kelas_uuid = $siswa->kelas_uuid ?? null;
-			$mapel_uuids = $this->mapel_model->get_mapel_uuids_by_kelas($kelas_uuid);
-			$ujian = $this->ujian_model->get_all_by_mapel_uuids($mapel_uuids);
+			$ujian = $this->ujian_model->get_all_by_siswa_uuid($user_login);
 		} elseif ($user_role === 'guru') {
 			// Guru hanya melihat ujian dari mata pelajaran yang dimiliki/diampu
 			$mapel_uuids = $this->guru_model->get_mapel_uuid_list($user_login);
@@ -746,8 +744,9 @@ class Ujian extends MY_Controller {
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
 			
-			// Ambil nilai siswa jika sudah dinilai
-			$p->nilai_ujian = !empty($p->ujian_nilai) ? $p->ujian_nilai : null;
+			$p->nilai_ujian = $p->ujian_nilai !== null && $p->ujian_nilai !== ''
+				? $p->ujian_nilai
+				: $this->jawaban_model->get_auto_nilai($ujian_uuid, $p->siswa_uuid);
 		}
 		
 		// Ambil daftar kelas yang terdaftar sebagai peserta untuk filter
@@ -806,7 +805,9 @@ class Ujian extends MY_Controller {
 		foreach ($peserta as $p) {
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
-			$p->nilai_ujian = !empty($p->ujian_nilai) ? $p->ujian_nilai : null;
+			$p->nilai_ujian = $p->ujian_nilai !== null && $p->ujian_nilai !== ''
+				? $p->ujian_nilai
+				: $this->jawaban_model->get_auto_nilai($ujian_uuid, $p->siswa_uuid);
 		}
 
 		// Filter berdasarkan kelas jika parameter diberikan
@@ -1044,7 +1045,14 @@ class Ujian extends MY_Controller {
                     $display = '<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ' . $badge_class . '">' . htmlspecialchars(ucfirst($jawaban_siswa)) . '</span>';
                     break;
                 case 'essay':
-                    $display = nl2br(htmlspecialchars($jawaban_siswa));
+					if (($soal_obj->jenis_jawaban_essay ?? 'teks') === 'file') {
+						$filename = basename($jawaban_siswa);
+						$file_url = base_url('uploads/jawaban_ujian/' . rawurlencode($filename));
+						$display = '<a href="' . htmlspecialchars($file_url, ENT_QUOTES, 'UTF-8') . '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 hover:underline">'
+							. '<i data-lucide="external-link" class="w-4 h-4"></i> Buka file jawaban</a>';
+					} else {
+						$display = nl2br(htmlspecialchars($jawaban_siswa));
+					}
                     break;
                 default:
                     $display = htmlspecialchars($jawaban_siswa);
@@ -1079,6 +1087,15 @@ class Ujian extends MY_Controller {
 
 		public function pengerjaan($ujian_uuid)
 	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+
+		if (has_role(['siswa']) && !$this->bab_model->is_exam_unlocked_for_student($ujian, $this->session->userdata('uuid'))) {
+			show_error('Ujian terkunci. Selesaikan sub bab sebelumnya terlebih dahulu.', 403);
+		}
+
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
             $insert = $this->jawaban_model->insert($ujian_uuid);
             if ($insert) {
@@ -1089,7 +1106,6 @@ class Ujian extends MY_Controller {
             redirect('ujian');
         }
 	
-		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
 		$soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
 
 		foreach ($soal as $s) {

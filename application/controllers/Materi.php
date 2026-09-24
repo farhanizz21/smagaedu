@@ -10,6 +10,7 @@ class Materi extends MY_Controller {
 		$this->load->model('materi_model');
 		$this->load->model('mapel_model');
 		$this->load->model('guru_model');
+		$this->load->model('bab_model');
 	}
 
 	public function index()
@@ -45,10 +46,24 @@ class Materi extends MY_Controller {
     
     public function detail($mapel_uuid)
 	{
+		if ($this->session->userdata('role') === 'siswa') {
+			$this->load->model('siswa_model');
+			$siswa = $this->siswa_model->get_by_uuid($this->session->userdata('uuid'));
+			$kelas_uuid = $siswa->kelas_uuid ?? null;
+			$allowed_mapel = $this->mapel_model->get_mapel_uuids_by_kelas($kelas_uuid);
+
+			if (!in_array($mapel_uuid, $allowed_mapel, true)) {
+				show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
+			}
+		}
+
 		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid);
 		$mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
 		$guru_uuid = $this->session->userdata('uuid');
 		$pengampu = $this->guru_model->get_mapel_pengampu($mapel_uuid, $guru_uuid);
+		$user_uuid = $this->session->userdata('uuid');
+		$is_student = $this->session->userdata('role') === 'siswa';
+		$materi_progress = $is_student ? $this->bab_model->get_progress_for_mapel($mapel_uuid, $user_uuid) : [];
 
 		if (!empty($materi)) { // Pastikan ada data dalam materi
 			foreach ($materi as $m) {
@@ -65,6 +80,7 @@ class Materi extends MY_Controller {
 			'materi' => $materi,
 			'mapel' => $mapel,
 			'pengampu' => $pengampu,
+			'materi_progress' => $materi_progress,
 			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);

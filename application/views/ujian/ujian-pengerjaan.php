@@ -253,7 +253,7 @@
                 fullscreen.</p>
         </div>
     </div>
-    <form id="ujianForm" method="post" action="<?= base_url('ujian/pengerjaan/'.$ujian->uuid); ?>">
+    <form id="ujianForm" method="post" enctype="multipart/form-data" action="<?= base_url('ujian/pengerjaan/'.$ujian->uuid); ?>">
         <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid; ?>">
         <div id="ujianContent" style="display:none;">
 
@@ -408,6 +408,10 @@
                                 Salah
                             </label>
                         </div>
+                        <?php elseif ($s->jenis_soal == 'essay' && ($s->jenis_jawaban_essay ?? 'teks') === 'file'): ?>
+                        <input type="file" name="jawaban_file[<?= $s->uuid; ?>]" class="form-control"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png">
+                        <div class="form-text">Upload file jawaban Anda.</div>
                         <?php elseif ($s->jenis_soal == 'essay'): ?>
                         <textarea name="jawaban[<?= $s->uuid; ?>]" rows="4" class="form-control"
                             placeholder="Masukkan jawaban Anda..."></textarea>
@@ -512,6 +516,11 @@ function isAnswered(uuid) {
     var checks = el.querySelectorAll('input[type="checkbox"]');
     for (var i = 0; i < checks.length; i++) {
         if (checks[i].checked) return true;
+    }
+
+    var files = el.querySelectorAll('input[type="file"]');
+    for (var i = 0; i < files.length; i++) {
+        if (files[i].files && files[i].files.length > 0) return true;
     }
 
     var selects = el.querySelectorAll('select');

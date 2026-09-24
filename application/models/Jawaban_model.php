@@ -19,6 +19,36 @@ public function insert()
     {
         $ujian_uuid = $this->input->post('ujian_uuid');
         $jawaban = $this->input->post('jawaban');
+		$jawaban = is_array($jawaban) ? $jawaban : [];
+		$jawaban_file = $_FILES['jawaban_file'] ?? [];
+
+		$upload_config = [
+			'upload_path' => './uploads/jawaban_ujian/',
+			'allowed_types' => 'pdf|doc|docx|xls|xlsx|ppt|pptx|jpg|jpeg|png',
+			'max_size' => 10240,
+			'encrypt_name' => TRUE
+		];
+		$this->load->library('upload', $upload_config);
+		if (!is_dir('./uploads/jawaban_ujian/')) {
+			mkdir('./uploads/jawaban_ujian/', 0777, TRUE);
+		}
+
+		$file_soal_uuids = array_keys($jawaban_file['name'] ?? []);
+		foreach ($file_soal_uuids as $soal_uuid) {
+			if (empty($jawaban_file['name'][$soal_uuid])) {
+				continue;
+			}
+			$_FILES['jawaban_upload'] = [
+				'name' => $jawaban_file['name'][$soal_uuid],
+				'type' => $jawaban_file['type'][$soal_uuid],
+				'tmp_name' => $jawaban_file['tmp_name'][$soal_uuid],
+				'error' => $jawaban_file['error'][$soal_uuid],
+				'size' => $jawaban_file['size'][$soal_uuid]
+			];
+			if ($this->upload->do_upload('jawaban_upload')) {
+				$jawaban[$soal_uuid] = $this->upload->data('file_name');
+			}
+		}
 
         foreach ($jawaban as $soal_uuid => $jawaban_siswa) {
             if (is_array($jawaban_siswa)) {
@@ -43,6 +73,66 @@ public function insert()
 		$data = $this->db->get('ujian_jawaban');
 
 		return $data->result();
+	}
+
+	public function get_auto_nilai($ujian_uuid, $siswa_uuid)
+	{
+		$soal = $this->db
+			->select('uuid, jenis_soal, jawaban_benar')
+			->where('ujian_uuid', $ujian_uuid)
+			->where('deleted_at', NULL, FALSE)
+			->get('ujian_soal')
+			->result();
+
+		$jumlah_soal = count($soal);
+		if ($jumlah_soal === 0) {
+			return null;
+		}
+
+		$jawaban = $this->db
+			->select('soal_uuid, jawaban_siswa')
+			->where('ujian_uuid', $ujian_uuid)
+			->where('created_by', $siswa_uuid)
+			->where('deleted_at', NULL, FALSE)
+			->get('ujian_jawaban')
+			->result();
+		if (empty($jawaban)) {
+			return null;
+		}
+
+		$jawaban_by_soal = [];
+		foreach ($jawaban as $item) {
+			$jawaban_by_soal[$item->soal_uuid] = $item->jawaban_siswa;
+		}
+
+		$jumlah_benar = 0;
+		foreach ($soal as $item) {
+			if (!isset($jawaban_by_soal[$item->uuid]) || $item->jawaban_benar === null) {
+				continue;
+			}
+
+			$jawaban_siswa = $jawaban_by_soal[$item->uuid];
+			$kunci = $item->jawaban_benar;
+			if ($item->jenis_soal === 'pilihan_ganda_kompleks') {
+				$jawaban_siswa = json_decode($jawaban_siswa, true);
+				$kunci = json_decode($kunci, true);
+				if (!is_array($jawaban_siswa) || !is_array($kunci)) {
+					continue;
+				}
+				sort($jawaban_siswa);
+				sort($kunci);
+				if ($jawaban_siswa === $kunci) {
+					$jumlah_benar++;
+				}
+				continue;
+			}
+
+			if (strtolower(trim((string) $jawaban_siswa)) === strtolower(trim((string) $kunci))) {
+				$jumlah_benar++;
+			}
+		}
+
+		return round(($jumlah_benar * 100) / $jumlah_soal, 2);
 	}
 
 	public function insert_nilai($ujian_uuid, $siswa_uuid)

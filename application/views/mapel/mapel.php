@@ -102,7 +102,7 @@
                     </div>
 
                     <!-- Decorative dots pattern -->
-                    <div class="absolute -bottom-6 -right-6 w-24 h-24 opacity-5">
+                    <div class="absolute -bottom-6 -right-6 w-24 h-24 opacity-5 pointer-events-none">
                         <div class="grid grid-cols-4 gap-2">
                             <?php for($d=0; $d<16; $d++): ?>
                             <div class="w-2 h-2 rounded-full bg-gray-800"></div>
