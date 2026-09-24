@@ -46,6 +46,17 @@ class Materi extends MY_Controller {
     
     public function detail($mapel_uuid)
 	{
+		if ($this->session->userdata('role') === 'siswa') {
+			$this->load->model('siswa_model');
+			$siswa = $this->siswa_model->get_by_uuid($this->session->userdata('uuid'));
+			$kelas_uuid = $siswa->kelas_uuid ?? null;
+			$allowed_mapel = $this->mapel_model->get_mapel_uuids_by_kelas($kelas_uuid);
+
+			if (!in_array($mapel_uuid, $allowed_mapel, true)) {
+				show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
+			}
+		}
+
 		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid);
 		$mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
 		$guru_uuid = $this->session->userdata('uuid');
