@@ -16,6 +16,7 @@ class Ujian extends MY_Controller {
 		$this->load->model('siswa_model');
 		$this->load->model('kelas_model');
 		$this->load->model('ujian_model');
+		$this->load->model('bab_model');
 		$this->load->model('jawaban_model');
 		$this->load->model('soal_model');
 	}
@@ -1082,6 +1083,15 @@ class Ujian extends MY_Controller {
 
 		public function pengerjaan($ujian_uuid)
 	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+
+		if (has_role(['siswa']) && !$this->bab_model->is_exam_unlocked_for_student($ujian, $this->session->userdata('uuid'))) {
+			show_error('Ujian terkunci. Selesaikan sub bab sebelumnya terlebih dahulu.', 403);
+		}
+
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
             $insert = $this->jawaban_model->insert($ujian_uuid);
             if ($insert) {
@@ -1092,7 +1102,6 @@ class Ujian extends MY_Controller {
             redirect('ujian');
         }
 	
-		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
 		$soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
 
 		foreach ($soal as $s) {

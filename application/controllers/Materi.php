@@ -10,6 +10,7 @@ class Materi extends MY_Controller {
 		$this->load->model('materi_model');
 		$this->load->model('mapel_model');
 		$this->load->model('guru_model');
+		$this->load->model('bab_model');
 	}
 
 	public function index()
@@ -49,6 +50,9 @@ class Materi extends MY_Controller {
 		$mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
 		$guru_uuid = $this->session->userdata('uuid');
 		$pengampu = $this->guru_model->get_mapel_pengampu($mapel_uuid, $guru_uuid);
+		$user_uuid = $this->session->userdata('uuid');
+		$is_student = $this->session->userdata('role') === 'siswa';
+		$materi_progress = $is_student ? $this->bab_model->get_progress_for_mapel($mapel_uuid, $user_uuid) : [];
 
 		if (!empty($materi)) { // Pastikan ada data dalam materi
 			foreach ($materi as $m) {
@@ -65,6 +69,7 @@ class Materi extends MY_Controller {
 			'materi' => $materi,
 			'mapel' => $mapel,
 			'pengampu' => $pengampu,
+			'materi_progress' => $materi_progress,
 			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);

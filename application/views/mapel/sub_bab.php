@@ -187,7 +187,10 @@ if (!function_exists('sub_bab_prepare_html')) {
             $icons = ['file-text', 'file-spreadsheet', 'book-open', 'library', 'scroll', 'clipboard-list'];
             $icon = $icons[$no % count($icons)];
             $is_locked = isset($bab_unlocked[$val->uuid]) && !$bab_unlocked[$val->uuid];
+            $is_completed = !empty($bab_completed[$val->uuid]);
             $has_ujian = isset($bab_has_ujian[$val->uuid]) && $bab_has_ujian[$val->uuid];
+            $activity_count = (int) ($bab_activity_count[$val->uuid] ?? 0);
+            $completed_count = (int) ($bab_completed_count[$val->uuid] ?? 0);
         ?>
         <div
             class="bg-white rounded-2xl border-2 <?= $palette['border'] ?> <?= $palette['hover'] ?> hover:shadow-lg <?= $palette['shadow'] ?> transition-all duration-200 p-5 relative overflow-hidden <?= $is_locked ? 'opacity-60' : '' ?>">
@@ -238,8 +241,24 @@ if (!function_exists('sub_bab_prepare_html')) {
                         $deskripsi_id = 'deskripsi-bab-' . $no;
                         $deskripsi_label = $deskripsi_preview !== '' ? 'Selengkapnya' : 'Lihat gambar';
                     ?>
-                    <h3 class="font-semibold text-gray-900 text-base sm:text-lg leading-snug line-clamp-2 break-words">
-                        <?= $val->judul ?></h3>
+                    <div class="flex flex-wrap items-start gap-2">
+                        <h3 class="font-semibold text-gray-900 text-base sm:text-lg leading-snug line-clamp-2 break-words flex-1 min-w-[12rem]">
+                            <?= $val->judul ?></h3>
+                        <?php if ($is_completed): ?>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold whitespace-nowrap">
+                            <i data-lucide="check-circle-2" class="w-3 h-3"></i> Selesai
+                        </span>
+                        <?php elseif (!$is_locked && $has_ujian): ?>
+                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-semibold whitespace-nowrap">
+                            <i data-lucide="play-circle" class="w-3 h-3"></i> Sedang dipelajari
+                        </span>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($has_ujian && !$is_locked): ?>
+                    <p class="mt-1 text-xs text-gray-400">
+                        Aktivitas selesai: <?= $completed_count ?>/<?= $activity_count ?>
+                    </p>
+                    <?php endif; ?>
 
                     <?php if ($deskripsi_ada_isi): ?>
                     <div class="mt-2 flex items-start gap-3">

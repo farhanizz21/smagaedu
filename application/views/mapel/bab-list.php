@@ -75,12 +75,26 @@
             $i++;
             $icons = ['book-open', 'book-marked', 'book-audio', 'file-text', 'notebook-text', 'scroll-text'];
             $icon = $icons[$i % count($icons)];
+            $materi_state = $materi_progress[$val->uuid] ?? ['unlocked' => true, 'completed' => false];
+            $is_locked = !$materi_state['unlocked'];
+            $is_completed = !empty($materi_state['completed']);
         ?>
         <div
-            class="card group relative bg-white rounded-2xl border-2 border-gray-100 <?= $palette['hover'] ?> hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col">
+            class="card group relative bg-white rounded-2xl border-2 border-gray-100 <?= $palette['hover'] ?> hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col <?= $is_locked ? 'opacity-60' : '' ?>">
             <!-- Colorful top accent bar -->
             <div class="h-2 w-full bg-gradient-to-r <?= $palette['from'] ?> <?= $palette['to'] ?>"></div>
 
+            <?php if ($is_locked): ?>
+            <div class="absolute inset-0 bg-gray-900/25 backdrop-blur-[1px] rounded-2xl flex items-center justify-center z-10">
+                <div class="text-center text-white px-4">
+                    <div class="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-2">
+                        <i data-lucide="lock" class="w-6 h-6 text-gray-400"></i>
+                    </div>
+                    <p class="text-sm font-semibold">Bab terkunci</p>
+                    <p class="text-xs opacity-85 mt-1">Selesaikan bab sebelumnya terlebih dahulu</p>
+                </div>
+            </div>
+            <?php endif; ?>
             <a href="<?= base_url('sub_bab/index/' . $val->uuid) ?>" class="block group flex-1">
                 <?php if (!empty($val->thumbnail)): ?>
                 <div class="relative overflow-hidden">
@@ -94,9 +108,14 @@
                 </div>
                 <?php endif; ?>
                 <div class="p-5 flex flex-col gap-3 flex-1">
+                    <div class="flex items-start justify-between gap-2">
                     <h5
                         class="font-bold text-gray-900 text-base leading-snug group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r <?= $palette['from'] ?> <?= $palette['to'] ?> transition-all duration-300">
                         <?= $val->judul ?></h5>
+                    <?php if ($is_completed): ?>
+                    <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0" title="Selesai"></i>
+                    <?php endif; ?>
+                    </div>
                     <p class="text-sm text-gray-500 flex items-center gap-1.5">
                         <i data-lucide="user" class="w-4 h-4"></i>
                         <?= $val->nama ?>
