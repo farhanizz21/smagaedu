@@ -306,7 +306,9 @@ var deskripsiInput = document.getElementById('deskripsi');
 var sedangKirim = false;
 
 formDeskripsi.addEventListener('submit', function(e) {
-    deskripsiInput.value = quill.root.innerHTML;
+    // Quill 2.x: pakai getSemanticHTML() agar heading (<h1>-<h3>) dan format
+    // lain diekspor sebagai HTML semantik yang valid, bukan markup DOM internal Quill.
+    deskripsiInput.value = quill.getSemanticHTML();
 
     if (sedangKirim || deskripsiInput.value.indexOf('data:image') === -1) {
         return;
@@ -321,7 +323,8 @@ formDeskripsi.addEventListener('submit', function(e) {
             if (hasil.dibuang > 0) {
                 alert(hasil.dibuang + ' gambar lama yang rusak telah dihapus dari deskripsi karena tidak dapat disimpan. Silakan masukkan kembali gambar tersebut.');
             }
-            deskripsiInput.value = quill.root.innerHTML;
+            // Ekspor HTML semantik setelah gambar base64 selesai di-upload
+            deskripsiInput.value = quill.getSemanticHTML();
             sedangKirim = true;
             if (pengirim && typeof pengirim.click === 'function') {
                 pengirim.click();
