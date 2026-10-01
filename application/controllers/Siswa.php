@@ -19,10 +19,89 @@ class Siswa extends MY_Controller {
 
 	public function index()
 	{
-		$siswa = $this->siswa_model->get_all();
+		// ----- Pencarian & filter (query string) -----
+		$filters = array(
+			'q'             => trim((string) $this->input->get('q')),
+			'kelas'         => trim((string) $this->input->get('kelas')),
+			'jenis_kelamin' => trim((string) $this->input->get('jenis_kelamin')),
+		);
+
+		// ----- Jumlah data per halaman -----
+		$per_page_options = array(10, 25, 50, 100);
+		$per_page = (int) $this->input->get('per_page');
+		if ( ! in_array($per_page, $per_page_options, TRUE)) {
+			$per_page = 10;
+		}
+
+		// ----- Halaman aktif -----
+		$page = (int) $this->input->get('page');
+		if ($page < 1) {
+			$page = 1;
+		}
+
+		$total_rows  = $this->siswa_model->count_filtered($filters);
+		$total_pages = (int) ceil($total_rows / $per_page);
+		if ($total_pages < 1) {
+			$total_pages = 1;
+		}
+		if ($page > $total_pages) {
+			$page = $total_pages;
+		}
+
+		$offset = ($page - 1) * $per_page;
+
+		$siswa = $this->siswa_model->get_all($filters, $per_page, $offset);
+
+		// ----- Konfigurasi pagination (library CI3, mode query string) -----
+		$this->load->library('pagination');
+
+		$this->pagination->initialize(array(
+			'base_url'             => base_url('siswa'),
+			'total_rows'           => $total_rows,
+			'per_page'             => $per_page,
+			'use_page_numbers'     => TRUE,
+			'page_query_string'    => TRUE,
+			'query_string_segment' => 'page',
+			'reuse_query_string'   => TRUE,
+			'cur_page'             => $page,
+			'num_links'            => 2,
+			'first_link'           => '&laquo;',
+			'prev_link'            => '&lsaquo;',
+			'next_link'            => '&rsaquo;',
+			'last_link'            => '&raquo;',
+			'full_tag_open'        => '<nav aria-label="Navigasi halaman"><ul class="flex flex-wrap items-center justify-center gap-1 list-none p-0 m-0">',
+			'full_tag_close'       => '</ul></nav>',
+			'num_tag_open'         => '<li>',
+			'num_tag_close'        => '</li>',
+			'cur_tag_open'         => '<li><span class="min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold text-white bg-blue-600 border border-blue-600">',
+			'cur_tag_close'        => '</span></li>',
+			'first_tag_open'       => '<li>',
+			'first_tag_close'      => '</li>',
+			'prev_tag_open'        => '<li>',
+			'prev_tag_close'       => '</li>',
+			'next_tag_open'        => '<li>',
+			'next_tag_close'       => '</li>',
+			'last_tag_open'        => '<li>',
+			'last_tag_close'       => '</li>',
+			'attributes'           => array(
+				'class' => 'min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors',
+			),
+		));
+
+		// ----- Rentang data yang sedang ditampilkan -----
+		$start_no = ($total_rows > 0) ? $offset + 1 : 0;
+		$end_no   = min($offset + $per_page, $total_rows);
 
 		$data = array(
-			'siswa' => $siswa,
+			'siswa'            => $siswa,
+			'daftar_kelas'     => $this->kelas_model->get_all(),
+			'filters'          => $filters,
+			'per_page'         => $per_page,
+			'per_page_options' => $per_page_options,
+			'total_rows'       => $total_rows,
+			'start_no'         => $start_no,
+			'end_no'           => $end_no,
+			'pagination_links' => $this->pagination->create_links(),
 		);
 
         $this->load->view('partials/header_tailwind', ['title' => 'Data Siswa']);

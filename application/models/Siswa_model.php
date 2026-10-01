@@ -195,12 +195,25 @@ class siswa_model extends CI_Model {
 		}
 	}
 
-	public function get_all()
+	/**
+	 * Daftar siswa dengan dukungan pencarian, filter, dan pagination.
+	 *
+	 * @param array $filters filter: q (nis/nama/username), kelas (uuid), jenis_kelamin (1/2)
+	 * @param int|null $limit jumlah baris per halaman (NULL = tanpa limit, kompatibel pemakaian lama)
+	 * @param int $offset offset baris
+	 * @return array
+	 */
+	public function get_all($filters = array(), $limit = NULL, $offset = 0)
 	{
 		$this->db->select("siswa.*, DATE_FORMAT(siswa.tgl_lahir, '%d-%m-%Y') as tgl_lahir_formatted, kelas.nama as kelas_nama", FALSE);
 		$this->db->join('kelas', 'siswa.kelas_uuid = kelas.uuid', 'left');
-		$this->db->where('siswa.deleted_at IS NULL', NULL, FALSE);
+		$this->_apply_filters($filters);
 		$this->db->order_by('siswa.id', 'DESC');
+
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
+
 		$data = $this->db->get('siswa')->result();
 
 		foreach ($data as $key) {
@@ -208,6 +221,52 @@ class siswa_model extends CI_Model {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Hitung jumlah siswa berdasarkan filter yang sama dengan get_all().
+	 *
+	 * @param array $filters
+	 * @return int
+	 */
+	public function count_filtered($filters = array())
+	{
+		$this->db->join('kelas', 'siswa.kelas_uuid = kelas.uuid', 'left');
+		$this->_apply_filters($filters);
+
+		return $this->db->count_all_results('siswa');
+	}
+
+	/**
+	 * Terapkan kondisi WHERE bersama untuk pencarian & filter data siswa aktif.
+	 * Data yang sudah soft delete (deleted_at terisi) tidak diikutsertakan.
+	 *
+	 * @param array $filters
+	 * @return void
+	 */
+	private function _apply_filters($filters = array())
+	{
+		$this->db->where('siswa.deleted_at IS NULL', NULL, FALSE);
+
+		// Pencarian bebas: cocokkan NIS, nama, atau username.
+		if ( ! empty($filters['q'])) {
+			$q = $filters['q'];
+			$this->db->group_start();
+			$this->db->like('siswa.nama', $q);
+			$this->db->or_like('siswa.nis', $q);
+			$this->db->or_like('siswa.username', $q);
+			$this->db->group_end();
+		}
+
+		// Filter kelas (uuid).
+		if ( ! empty($filters['kelas'])) {
+			$this->db->where('siswa.kelas_uuid', $filters['kelas']);
+		}
+
+		// Filter jenis kelamin (1 = Laki-laki, 2 = Perempuan).
+		if ( ! empty($filters['jenis_kelamin'])) {
+			$this->db->where('siswa.jenis_kelamin', $filters['jenis_kelamin']);
+		}
 	}
 
 		/**
