@@ -129,7 +129,8 @@
                         <div class="flex-1 min-w-0">
                             <p class="font-semibold text-gray-900 text-sm truncate"><?= $bg->nama ?></p>
                             <p class="text-xs text-gray-500">
-                                <?= $bg->bab_count ?> bab • <?= $bg->ujian_count ?> ujian
+                                <?= $bg->materi_count ?> bab • <?= $bg->bab_count ?> sub bab • <?= $bg->ujian_count ?>
+                                ujian
                                 <?php if ($bg->last_update): ?>
                                 • Update <?= date('d M Y', strtotime($bg->last_update)) ?>
                                 <?php endif; ?>
@@ -328,7 +329,7 @@
                                     <?php if ($val->materi_count > 0): ?>
                                     <span
                                         class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100"
-                                        title="Materi">
+                                        title="Bab">
                                         <i data-lucide="file-text"
                                             class="w-2.5 h-2.5 mr-0.5"></i><?= $val->materi_count ?>
                                     </span>
@@ -336,7 +337,7 @@
                                     <?php if ($val->bab_count > 0): ?>
                                     <span
                                         class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100"
-                                        title="Bab / Sub Bab">
+                                        title="Sub Bab">
                                         <i data-lucide="book" class="w-2.5 h-2.5 mr-0.5"></i><?= $val->bab_count ?>
                                     </span>
                                     <?php endif; ?>

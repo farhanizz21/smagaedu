@@ -70,13 +70,13 @@
                     class="rounded-xl bg-blue-50 border border-blue-100 p-4 text-center hover:shadow-md transition-all">
                     <i data-lucide="file-text" class="w-6 h-6 text-blue-600 mx-auto mb-2"></i>
                     <p class="text-2xl font-bold text-gray-900"><?= $guru->materi_count ?></p>
-                    <p class="text-xs text-gray-500 mt-1">Materi</p>
+                    <p class="text-xs text-gray-500 mt-1">Bab</p>
                 </div>
                 <div
                     class="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center hover:shadow-md transition-all">
                     <i data-lucide="book" class="w-6 h-6 text-amber-600 mx-auto mb-2"></i>
                     <p class="text-2xl font-bold text-gray-900"><?= $guru->bab_count ?></p>
-                    <p class="text-xs text-gray-500 mt-1">Bab / Sub Bab</p>
+                    <p class="text-xs text-gray-500 mt-1">Sub Bab</p>
                 </div>
                 <div
                     class="rounded-xl bg-purple-50 border border-purple-100 p-4 text-center hover:shadow-md transition-all">
