@@ -29,7 +29,7 @@ class mapel_model extends CI_Model {
 	 * @param int $offset offset baris
 	 * @return array
 	 */
-	public function get_all($filters = array(), $limit = NULL, $offset = 0)
+	public function get_all($filters = array(), $limit = NULL, $offset = 0, $admin_scope = TRUE)
 	{
 		// Kompatibilitas pemanggilan lama: get_all($created_by_uuid).
 		if ( ! is_array($filters)) {
@@ -40,6 +40,9 @@ class mapel_model extends CI_Model {
 
 		if ( ! empty($filters['created_by'])) {
 			$this->db->where('created_by', $filters['created_by']);
+		}
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
 		}
 
 		$this->_apply_search($filters);
@@ -58,7 +61,7 @@ class mapel_model extends CI_Model {
 	 * @param array|string $filters
 	 * @return int
 	 */
-	public function count_filtered($filters = array())
+	public function count_filtered($filters = array(), $admin_scope = TRUE)
 	{
 		if ( ! is_array($filters)) {
 			$filters = array('created_by' => $filters);
@@ -69,10 +72,86 @@ class mapel_model extends CI_Model {
 		if ( ! empty($filters['created_by'])) {
 			$this->db->where('created_by', $filters['created_by']);
 		}
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
 
 		$this->_apply_search($filters);
 
 		return $this->db->count_all_results('mapel');
+	}
+
+	public function get_all_by_admin_relation($admin_uuid)
+	{
+		$mapel_uuids = $this->_get_admin_related_mapel_uuids($admin_uuid);
+		if (empty($mapel_uuids)) {
+			return array();
+		}
+
+		$this->db->where_in('uuid', $mapel_uuids);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->order_by('modified_at', 'DESC');
+		return $this->db->get('mapel')->result();
+	}
+
+	public function is_related_to_admin($mapel_uuid, $admin_uuid)
+	{
+		if (!in_array($mapel_uuid, $this->_get_admin_related_mapel_uuids($admin_uuid), TRUE)) {
+			return FALSE;
+		}
+
+		$this->db->where('uuid', $mapel_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		return $this->db->count_all_results('mapel') > 0;
+	}
+
+	private function _get_admin_related_mapel_uuids($admin_uuid)
+	{
+		if (empty($admin_uuid)) {
+			return array();
+		}
+
+		$this->db->select('uuid');
+		$this->db->where('role_id', 3);
+		$this->db->where('created_by', $admin_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$teachers = $this->db->get('users')->result();
+		$teacher_uuids = array_map(function ($teacher) {
+			return $teacher->uuid;
+		}, $teachers);
+		$creator_uuids = array_merge(array($admin_uuid), $teacher_uuids);
+
+		$this->db->select('uuid');
+		$this->db->where_in('created_by', $creator_uuids);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$mapel_uuids = array_map(function ($mapel) {
+			return $mapel->uuid;
+		}, $this->db->get('mapel')->result());
+
+		if (!empty($teacher_uuids)) {
+			$this->db->select('user_profiles.mapel_uuid');
+			$this->db->from('user_profiles');
+			$this->db->join('users', 'users.id = user_profiles.user_id', 'inner');
+			$this->db->where('users.role_id', 3);
+			$this->db->where_in('users.uuid', $teacher_uuids);
+			$this->db->where('users.deleted_at', NULL, FALSE);
+			foreach ($this->db->get()->result() as $profile) {
+				$assigned = json_decode($profile->mapel_uuid, TRUE);
+				if (!is_array($assigned)) {
+					continue;
+				}
+
+				foreach ($assigned as $item) {
+					if (is_string($item)) {
+						$mapel_uuids[] = $item;
+					} elseif (is_array($item) && !empty($item['mapel_uuid'])) {
+						$mapel_uuids[] = $item['mapel_uuid'];
+					}
+				}
+			}
+		}
+
+		return array_values(array_unique($mapel_uuids));
 	}
 
 	/**
@@ -109,30 +188,42 @@ class mapel_model extends CI_Model {
 		}
 	}
 
-	public function update($uuid)
+	public function update($uuid, $admin_scope = TRUE)
 	{
 		$namaMapel = $this->input->post('namaMapel');
 		$data = array(
 			'nama' => $namaMapel,
 			'modified_at' => date("Y-m-d H:i:s")
 		);
-		$this->db->update('mapel', $data, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
+		$this->db->update('mapel', $data);
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
 
-	public function get_by_uuid($uuid)
+	public function get_by_uuid($uuid, $admin_scope = TRUE)
 	{
-		$data = $this->db->get_where('mapel', array('uuid' => $uuid))->row();
+		$this->db->where('uuid', $uuid);
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
+		$data = $this->db->get('mapel')->row();
 		return $data;
 	}
 	
 
-	public function delete_by_uuid($uuid)
+	public function delete_by_uuid($uuid, $admin_scope = TRUE)
 	{
 		$data = array(
 			'deleted_at' => date("Y-m-d H:i:s")
 		);
-		$this->db->update('mapel', $data, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
+		$this->db->update('mapel', $data);
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
 
@@ -143,7 +234,7 @@ class mapel_model extends CI_Model {
 	 * @param array $uuids
 	 * @return int jumlah baris yang terhapus
 	 */
-	public function delete_batch_by_uuid($uuids)
+	public function delete_batch_by_uuid($uuids, $admin_scope = TRUE)
 	{
 		if (!is_array($uuids) || empty($uuids)) {
 			return 0;
@@ -151,6 +242,9 @@ class mapel_model extends CI_Model {
 
 		$this->db->where_in('uuid', $uuids);
 		$this->db->where('deleted_at', NULL);
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
 		$this->db->update('mapel', array(
 			'deleted_at' => date("Y-m-d H:i:s")
 		));

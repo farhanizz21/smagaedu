@@ -36,7 +36,8 @@ class panduan_model extends CI_Model {
 			'uuid' => $uuid,
 			'judul' => $judul,
 			'berkas' => $berkas,
-			'tujuan' => $tujuan_json
+			'tujuan' => $tujuan_json,
+			'created_by' => $this->session->userdata('uuid')
 		);
 
 		$this->db->insert('panduan', $data);
@@ -53,6 +54,7 @@ class panduan_model extends CI_Model {
 	public function get_all($user_role = null)
 	{
 		$this->db->where('deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('created_by');
 		$this->db->order_by('modified_at', 'DESC');
 		$data = $this->db->get('panduan')->result();
 
@@ -89,6 +91,7 @@ class panduan_model extends CI_Model {
 	{
 		$this->db->where('uuid', $uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('created_by');
 		return $this->db->get('panduan')->row();
 	}
 
@@ -121,6 +124,7 @@ class panduan_model extends CI_Model {
 		}
 
 		$this->db->where('uuid', $uuid);
+		apply_admin_creator_scope('created_by');
 		$this->db->update('panduan', $data);
 
 		return $this->db->affected_rows() > 0;
@@ -129,6 +133,7 @@ class panduan_model extends CI_Model {
 	public function delete_by_uuid($uuid)
 	{
 		$this->db->where('uuid', $uuid);
+		apply_admin_creator_scope('created_by');
 		return $this->db->delete('panduan');
 	}
 }

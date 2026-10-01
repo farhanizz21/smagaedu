@@ -42,11 +42,13 @@ class Proyek extends MY_Controller {
 			$py->pengerjaan = $pengerjaan;
 			
 			if($py->mapel_uuid != NULL){
-				$mapel = $this->mapel_model->get_by_uuid($py->mapel_uuid);
-				$py->mapel = $mapel->nama;
+				$mapel = $this->mapel_model->get_by_uuid($py->mapel_uuid, FALSE);
+				$py->mapel = $mapel ? $mapel->nama : '-';
+			} else {
+				$py->mapel = '-';
 			}
 			$guru = $this->guru_model->get_by_uuid($py->created_by);
-			$py->guru = $guru->nama;
+			$py->guru = $guru ? $guru->nama : '-';
 		}
 		
 		$data = array(
@@ -68,6 +70,10 @@ class Proyek extends MY_Controller {
 		$rules = $this->proyek_model->rules();
 		$this->form_validation->set_rules($rules);
 		if ($this->form_validation->run() == TRUE) {
+			if (in_array(user_role(), ['admin', 'superadmin'], true)
+				&& !$this->mapel_model->get_by_uuid($this->input->post('namaMapel'))) {
+				show_error('Mata pelajaran tidak ditemukan atau di luar cakupan admin ini.', 403);
+			}
 			$this->load->library('upload');
 
 		$config = array(
@@ -101,10 +107,12 @@ class Proyek extends MY_Controller {
 			}
 		}
 		
-		$guru_uuid = $this->session->userdata('uuid');
-		$guru = $this->guru_model->get_by_uuid($guru_uuid);
-		$mapel_list = $guru->mapel_list ?? [];
-		$mapel = $this->mapel_model->get_many_mapel_by_uuid($mapel_list);
+		if (in_array($this->session->userdata('role'), ['admin', 'superadmin'], true)) {
+			$mapel = $this->mapel_model->get_all();
+		} else {
+			$guru = $this->guru_model->get_by_uuid($this->session->userdata('uuid'));
+			$mapel = $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? []);
+		}
 		
 		$data = array(
 			'mapel' => $mapel,
@@ -161,8 +169,10 @@ class Proyek extends MY_Controller {
 		
 		// Ambil nama mata pelajaran
 		if($proyek->mapel_uuid != NULL){
-			$mapel = $this->mapel_model->get_by_uuid($proyek->mapel_uuid);
-			$proyek->mapel = $mapel->nama;
+			$mapel = $this->mapel_model->get_by_uuid($proyek->mapel_uuid, FALSE);
+			$proyek->mapel = $mapel ? $mapel->nama : '-';
+		} else {
+			$proyek->mapel = '-';
 		}
 		
 		$pengerjaan = false;
@@ -207,7 +217,7 @@ class Proyek extends MY_Controller {
 			'kelompok' => $kelompok,
 			'komentar' => $komentar,
 			'jawaban' =>$this->jawaban_model->get_by_proyek_uuid($proyek->uuid),
-			'guru' =>$this->guru_model->get_by_uuid($proyek->created_by),
+			'guru' => $this->guru_model->get_by_uuid($proyek->created_by),
 			'active_nav' => 'proyek'
 		);
 
@@ -344,6 +354,13 @@ class Proyek extends MY_Controller {
 
 	public function hapus_jawaban_proyek($uuid){
 		{
+			if (user_role() === 'admin') {
+				$jawaban = $this->db->get_where('proyek_jawaban', array('uuid' => $uuid))->row();
+				$proyek = $jawaban ? $this->proyek_model->get_by_uuid($jawaban->proyek_uuid) : NULL;
+				if (!$proyek) {
+					show_404();
+				}
+			}
 			$result = $this->jawaban_model->delete_jawaban_proyek_by_uuid($uuid);
 			if ($result) {
 				$this->session->set_flashdata('success_msg', 'Data jawaban proyek berhasil dihapus');
@@ -356,6 +373,13 @@ class Proyek extends MY_Controller {
 
 	public function nilai_jawaban_proyek($jawaban_uuid){
 		{
+			if (user_role() === 'admin') {
+				$jawaban = $this->db->get_where('proyek_jawaban', array('uuid' => $jawaban_uuid))->row();
+				$proyek = $jawaban ? $this->proyek_model->get_by_uuid($jawaban->proyek_uuid) : NULL;
+				if (!$proyek) {
+					show_404();
+				}
+			}
 			$nilai = $this->input->post('nilai_kelompok');
 			
 			$result = $this->jawaban_model->insert_nilai_jawaban_proyek_by_uuid($jawaban_uuid);

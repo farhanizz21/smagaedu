@@ -120,7 +120,7 @@
     </form>
 
     <!-- Table Card -->
-    <form id="bulkDeleteForm" method="POST" action="<?= base_url('guru/bulk_hapus') ?>">
+    <form id="bulkDeleteForm" method="POST" action="<?= base_url('guru/bulk_hapus') ?>"></form>
     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
         <!-- Bulk action bar -->
         <div id="bulkActionBar" class="hidden items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
@@ -151,7 +151,7 @@
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Mata Pelajaran & Kelas</th>
                         <th
-                            class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-28">
+                            class="text-center px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider <?= is_superadmin() ? 'w-40' : 'w-28' ?>">
                             Aksi</th>
                     </tr>
                 </thead>
@@ -162,7 +162,7 @@
                     ?>
                     <tr class="table-row-hover transition-colors" data-uuid="<?= $val->uuid ?>">
                         <td class="px-6 py-4 text-center">
-                            <input type="checkbox" name="guru_uuids[]" value="<?= $val->uuid ?>"
+                            <input type="checkbox" form="bulkDeleteForm" name="guru_uuids[]" value="<?= $val->uuid ?>"
                                 class="guru-checkbox w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
                         </td>
                         <td class="px-6 py-4 font-medium text-gray-900"><?= $val->nama; ?></td>
@@ -194,23 +194,33 @@
                             </div>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="flex items-center justify-center gap-2">
+                            <div class="flex items-center justify-center gap-1.5">
+                                <?php if(is_superadmin()): ?>
+                                <button type="button" data-assign-admin
+                                    data-guru-uuid="<?= html_escape($val->uuid); ?>"
+                                    data-guru-name="<?= html_escape($val->nama); ?>"
+                                    data-admin-uuid="<?= html_escape($val->created_by ?? ''); ?>"
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                                    title="Atur admin pengelola" aria-label="Atur admin pengelola untuk <?= html_escape($val->nama); ?>">
+                                    <i data-lucide="user-cog" class="h-4 w-4"></i>
+                                </button>
+                                <?php endif; ?>
                                 <a href="<?=base_url('guru/edit/'.$val->uuid)?>"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors">
-                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
-                                    Edit
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+                                    title="Edit guru" aria-label="Edit <?= html_escape($val->nama); ?>">
+                                    <i data-lucide="pencil" class="w-4 h-4"></i>
                                 </a>
                                 <a href="<?=base_url('auth/reset_password/'.$val->uuid)?>"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors"
-                                    onclick="return confirm('Reset password untuk <?= $val->nama; ?>? Password baru akan menjadi: edu12345')">
-                                    <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
-                                    Reset Password
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors"
+                                    title="Reset password" aria-label="Reset password <?= html_escape($val->nama); ?>"
+                                    onclick="return confirm('Reset password untuk <?= html_escape($val->nama); ?>? Password baru akan menjadi: edu12345')">
+                                    <i data-lucide="key-round" class="w-4 h-4"></i>
                                 </a>
                                 <a href="<?=base_url('guru/hapus/'.$val->uuid)?>"
-                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
-                                    onclick="return confirm('Apakah Anda yakin ingin menghapus data <?= $val->nama; ?>?')">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                    Hapus
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                                    title="Hapus guru" aria-label="Hapus <?= html_escape($val->nama); ?>"
+                                    onclick="return confirm('Apakah Anda yakin ingin menghapus data <?= html_escape($val->nama); ?>?')">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </a>
                             </div>
                         </td>
@@ -231,7 +241,6 @@
         </div>
         <?php endif; ?>
     </div>
-    </form>
 
     <!-- Info & Pagination -->
     <?php if($total_rows > 0): ?>
@@ -249,6 +258,40 @@
     <?php endif; ?>
 </div>
 
+<?php if(is_superadmin()): ?>
+<dialog id="assignAdminDialog" class="w-[min(28rem,calc(100%-2rem))] rounded-xl border border-gray-200 p-0 shadow-2xl backdrop:bg-gray-900/40">
+    <?= form_open('guru/assign_admin', array('id' => 'assignAdminForm')); ?>
+    <input type="hidden" name="guru_uuid" id="assignGuruUuid">
+    <div class="border-b border-gray-100 px-5 py-4">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900">Admin Pengelola</h2>
+                <p id="assignGuruName" class="mt-1 text-sm text-gray-500"></p>
+            </div>
+            <button type="button" id="closeAssignAdmin" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100" title="Tutup" aria-label="Tutup dialog">
+                <i data-lucide="x" class="h-4 w-4"></i>
+            </button>
+        </div>
+    </div>
+    <div class="px-5 py-5">
+        <label for="assignAdminUuid" class="mb-2 block text-sm font-medium text-gray-700">Pilih admin</label>
+        <select name="admin_uuid" id="assignAdminUuid" class="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+            <option value="">Belum ditugaskan</option>
+            <?php foreach($admins as $admin): ?>
+            <option value="<?= html_escape($admin->uuid); ?>"><?= html_escape($admin->nama . ' (' . $admin->username . ')'); ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4">
+        <button type="button" id="cancelAssignAdmin" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
+        <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <i data-lucide="save" class="h-4 w-4"></i> Simpan
+        </button>
+    </div>
+    <?= form_close(); ?>
+</dialog>
+<?php endif; ?>
+
 <?php if(!isset($from_controller)): ?>
 <?php $this->load->view('partials/footer_tailwind'); ?>
 <?php endif; ?>
@@ -261,6 +304,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var selectedCountEl = document.getElementById('selectedCount');
     var bulkHapusBtn = document.getElementById('bulkHapusBtn');
     var bulkDeleteForm = document.getElementById('bulkDeleteForm');
+    var assignAdminDialog = document.getElementById('assignAdminDialog');
+
+    document.querySelectorAll('[data-assign-admin]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            document.getElementById('assignGuruUuid').value = button.dataset.guruUuid;
+            document.getElementById('assignGuruName').textContent = button.dataset.guruName;
+            document.getElementById('assignAdminUuid').value = button.dataset.adminUuid;
+            assignAdminDialog.showModal();
+        });
+    });
+
+    ['closeAssignAdmin', 'cancelAssignAdmin'].forEach(function (id) {
+        var button = document.getElementById(id);
+        if (button) {
+            button.addEventListener('click', function () {
+                assignAdminDialog.close();
+            });
+        }
+    });
 
     function getSelected() {
         return Array.from(document.querySelectorAll('.guru-checkbox:checked'));

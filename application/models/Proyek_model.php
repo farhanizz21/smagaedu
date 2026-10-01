@@ -37,12 +37,21 @@ class proyek_model extends CI_Model {
 
 	public function get_all($created_by = null)
 	{
-		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->select('p.*');
+		$this->db->from('proyek p');
+		$this->db->join('users AS creator', 'creator.uuid = p.created_by AND creator.role_id = 3', 'left');
+		$this->db->where('p.deleted_at', NULL, FALSE);
 		if ($created_by !== null) {
-			$this->db->where('created_by', $created_by);
+			$this->db->where('p.created_by', $created_by);
+		} elseif (user_role() === 'admin') {
+			$admin_uuid = $this->session->userdata('uuid');
+			$this->db->group_start();
+			$this->db->where('p.created_by', $admin_uuid);
+			$this->db->or_where('creator.created_by', $admin_uuid);
+			$this->db->group_end();
 		}
-		$this->db->order_by('modified_at', 'DESC');
-		$data = $this->db->get('proyek')->result();
+		$this->db->order_by('p.modified_at', 'DESC');
+		$data = $this->db->get()->result();
 
 		return $data;
 	} 
@@ -104,6 +113,7 @@ class proyek_model extends CI_Model {
 	public function get_by_uuid($uuid)
 	{
 		$this->db->where('uuid', $uuid);
+		apply_admin_creator_scope('created_by');
 		$data = $this->db->get('proyek')->row();
 
 		return $data;
@@ -122,7 +132,9 @@ class proyek_model extends CI_Model {
 		$data = array(
 			'deleted_at' => date("Y-m-d H:i:s")
 		);
-		$this->db->update('proyek', $data, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		apply_admin_creator_scope('created_by');
+		$this->db->update('proyek', $data);
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
 

@@ -13,7 +13,7 @@ class Kelas extends MY_Controller {
 	public function index()
 	{
 		$data = array(
-			'kelas' => $this->kelas_model->get_all(),
+			'kelas' => $this->kelas_model->get_all(FALSE),
 			'active_nav' => 'kelas'
 		);
 
@@ -49,6 +49,10 @@ class Kelas extends MY_Controller {
 	}
 
 	public function edit($uuid){
+		$kelas = $this->kelas_model->get_by_uuid($uuid, FALSE);
+		if (!$kelas) {
+			show_404();
+		}
 		$rules = [
 			[
 				'field' => 'namaKelas',
@@ -59,7 +63,7 @@ class Kelas extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
-			$update = $this->kelas_model->update($uuid);
+			$update = $this->kelas_model->update($uuid, FALSE);
 			if ($update) {
 				$this->session->set_flashdata('success_msg', 'Data kelas berhasil di Update');
 				redirect('kelas');
@@ -70,7 +74,7 @@ class Kelas extends MY_Controller {
 		}
 
 		$data = array(
-			'kelas' => $this->kelas_model->get_by_uuid($uuid),
+			'kelas' => $kelas,
 			'active_nav' => 'kelas'
 		);
 
@@ -82,7 +86,7 @@ class Kelas extends MY_Controller {
 
 	public function hapus($uuid){
 		{
-			$result = $this->kelas_model->delete_by_uuid($uuid);
+			$result = $this->kelas_model->delete_by_uuid($uuid, FALSE);
 			if ($result) {
 				$this->session->set_flashdata('success_msg', 'Data kelas berhasil dihapus');
 			} else {

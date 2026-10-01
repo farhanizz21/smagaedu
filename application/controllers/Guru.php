@@ -62,6 +62,15 @@ class Guru extends MY_Controller {
 
 		// Data guru (sudah dilengkapi mapel_nama, mapel_data, kelas_per_mapel).
 		$guru = $this->guru_model->get_all($filters, $per_page, $offset);
+		$admins = array();
+		if (is_superadmin()) {
+			$this->db->select('uuid, nama, username');
+			$this->db->where('role_id', 2);
+			$this->db->where('deleted_at', NULL);
+			$this->db->where('status', 'aktif');
+			$this->db->order_by('nama', 'ASC');
+			$admins = $this->db->get('users')->result();
+		}
 
 		// ----- Konfigurasi pagination (library CI3, mode query string) -----
 		$this->load->library('pagination');
@@ -105,7 +114,8 @@ class Guru extends MY_Controller {
 
 		$data = array(
 			'guru'             => $guru,
-			'daftar_mapel'     => $this->mapel_model->get_all(),
+			'admins'           => $admins,
+			'daftar_mapel'     => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
 			'filters'          => $filters,
 			'per_page'         => $per_page,
 			'per_page_options' => $per_page_options,
@@ -122,12 +132,42 @@ class Guru extends MY_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
 
+	public function assign_admin()
+	{
+		$this->require_superadmin();
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_error('Metode permintaan tidak diizinkan.', 405);
+		}
+
+		$guru_uuid = trim((string) $this->input->post('guru_uuid'));
+		$admin_uuid = trim((string) $this->input->post('admin_uuid'));
+		$guru = $this->db->get_where('users', array('uuid' => $guru_uuid, 'role_id' => 3, 'deleted_at' => NULL))->row();
+		$admin = $admin_uuid === '' ? NULL : $this->db->get_where('users', array('uuid' => $admin_uuid, 'role_id' => 2, 'status' => 'aktif', 'deleted_at' => NULL))->row();
+
+		if (!$guru || ($admin_uuid !== '' && !$admin)) {
+			$this->session->set_flashdata('error_msg', 'Guru atau admin yang dipilih tidak valid.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->where('uuid', $guru_uuid);
+		$this->db->where('role_id', 3);
+		$this->db->update('users', array(
+			'created_by' => $admin_uuid === '' ? NULL : $admin_uuid,
+			'modified_at' => date('Y-m-d H:i:s')
+		));
+
+		$this->session->set_flashdata('success_msg', 'Penanggung jawab guru berhasil diperbarui.');
+		redirect('guru');
+	}
+
 	public function tambah()
 	{
         $rules = $this->guru_model->rules();
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			$this->_validate_admin_teacher_assignments();
 			$insert = $this->guru_model->insert();
 			if ($insert) {
 				$this->session->set_flashdata('success_msg', 'Data guru berhasil di simpan');
@@ -139,8 +179,8 @@ class Guru extends MY_Controller {
 		}
 
 		$data = array(
-			'mapel' => $this->mapel_model->get_all(),
-			'kelas' => $this->kelas_model->get_all(),
+			'mapel' => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
+			'kelas' => $this->kelas_model->get_all(FALSE),
 			'active_nav' => 'guru'
 		);
 
@@ -151,6 +191,10 @@ class Guru extends MY_Controller {
 	}
 
 	public function edit($uuid){
+		$guru = $this->guru_model->get_by_uuid($uuid);
+		if (!$guru) {
+			show_404();
+		}
 		$rules = [
 			[
 				'field' => 'namaLengkap',
@@ -173,6 +217,7 @@ class Guru extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			$this->_validate_admin_teacher_assignments();
 			$update = $this->guru_model->update($uuid);
 			if ($update) {
 				$this->session->set_flashdata('success_msg', 'Data Guru berhasil di Update');
@@ -183,14 +228,12 @@ class Guru extends MY_Controller {
 			}
 		}
 
-		$guru = $this->guru_model->get_by_uuid($uuid);
-
 		$data = array(
 			'guru' => $guru,
 			'mapel_list' => $guru->mapel_list ?? [],
 			'kelas_map' => $guru->kelas_map ?? [],
-			'mapel' => $this->mapel_model->get_all(),
-			'kelas' => $this->kelas_model->get_all(),
+			'mapel' => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
+			'kelas' => $this->kelas_model->get_all(FALSE),
 			'active_nav' => 'guru'
 		);
 
@@ -212,6 +255,29 @@ class Guru extends MY_Controller {
 		}
 
 		return true;
+	}
+
+	private function _validate_admin_teacher_assignments()
+	{
+		if (user_role() !== 'admin') {
+			return;
+		}
+
+		$mapel_uuids = (array) $this->input->post('namaMapel');
+		foreach ($mapel_uuids as $mapel_uuid) {
+			if (!$this->mapel_model->get_by_uuid($mapel_uuid, FALSE)) {
+				show_error('Mata pelajaran tidak ditemukan.', 404);
+			}
+		}
+
+		$kelas_map = (array) $this->input->post('kelasMapel');
+		foreach ($kelas_map as $kelas_uuids) {
+			foreach ((array) $kelas_uuids as $kelas_uuid) {
+				if (!$this->kelas_model->get_by_uuid($kelas_uuid, FALSE)) {
+					show_error('Kelas tidak ditemukan.', 404);
+				}
+			}
+		}
 	}
 
 
@@ -279,8 +345,8 @@ class Guru extends MY_Controller {
 		$this->load->view('partials/header_tailwind', ['title' => 'Import Data Guru']);
 		$this->load->view('partials/navbar', ['active_nav' => 'guru']);
 		$this->load->view('master/guru/guru-import', array(
-			'daftar_mapel' => $this->mapel_model->get_all(),
-			'daftar_kelas' => $this->kelas_model->get_all(),
+			'daftar_mapel' => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
+			'daftar_kelas' => $this->kelas_model->get_all(FALSE),
 			'from_controller' => true
 		));
 		$this->load->view('partials/footer_tailwind');
@@ -331,12 +397,12 @@ class Guru extends MY_Controller {
 
 			// Peta mata pelajaran & kelas: nama (dinormalisasi) => data
 			$mapel_map = array();
-			foreach ($this->mapel_model->get_all() as $mapel) {
+			foreach ($this->mapel_model->get_all(array(), NULL, 0, FALSE) as $mapel) {
 				$mapel_map[$this->_normalize_key($mapel->nama)] = $mapel;
 			}
 
 			$kelas_map = array();
-			foreach ($this->kelas_model->get_all() as $kelas) {
+			foreach ($this->kelas_model->get_all(FALSE) as $kelas) {
 				$kelas_map[$this->_normalize_key($kelas->nama)] = $kelas;
 			}
 
@@ -554,8 +620,8 @@ class Guru extends MY_Controller {
 	 */
 	public function download_template_guru()
 	{
-		$daftar_mapel = $this->mapel_model->get_all();
-		$daftar_kelas = $this->kelas_model->get_all();
+		$daftar_mapel = $this->mapel_model->get_all(array(), NULL, 0, FALSE);
+		$daftar_kelas = $this->kelas_model->get_all(FALSE);
 		$jumlah_mapel = count($daftar_mapel);
 		$jumlah_kelas = count($daftar_kelas);
 

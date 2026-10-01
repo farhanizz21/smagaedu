@@ -207,6 +207,9 @@ class guru_model extends CI_Model {
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
 		$this->_apply_filters($filters);
+		if (user_role() === 'admin') {
+			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+		}
 		$this->db->order_by('users.nama', 'ASC');
 
 		if ($limit !== NULL) {
@@ -248,6 +251,9 @@ class guru_model extends CI_Model {
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
 		$this->_apply_filters($filters);
+		if (user_role() === 'admin') {
+			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+		}
 
 		return $this->db->count_all_results();
 	}
@@ -476,6 +482,10 @@ class guru_model extends CI_Model {
 		$this->db->select('uuid');
 		$this->db->where_in('uuid', $uuids);
 		$this->db->where('deleted_at', NULL);
+		$this->db->where('role_id', 3);
+		if (user_role() === 'admin') {
+			$this->db->where('created_by', $this->session->userdata('uuid'));
+		}
 		$targets = $this->db->get('users')->result();
 
 		if (empty($targets)) {
@@ -495,6 +505,10 @@ class guru_model extends CI_Model {
 		// Pastikan akun masih aktif sebelum dihapus
 		$this->db->where('uuid', $uuid);
 		$this->db->where('deleted_at', NULL);
+		$this->db->where('role_id', 3);
+		if (user_role() === 'admin') {
+			$this->db->where('created_by', $this->session->userdata('uuid'));
+		}
 		if ($this->db->count_all_results('users') === 0) {
 			return false;
 		}
@@ -512,6 +526,9 @@ class guru_model extends CI_Model {
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
 		$this->db->where('users.uuid', $uuid);
 		$this->db->where('users.role_id', 3);
+		if (user_role() === 'admin') {
+			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+		}
 		$data = $this->db->get()->row();
 
 		if ($data) {

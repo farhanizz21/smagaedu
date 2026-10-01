@@ -38,6 +38,7 @@ class ujian_model extends CI_Model {
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
 		$this->db->where('u.sub_materi_uuid', $sub_materi_uuid);
 		$this->db->where('u.deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('u.created_by');
 		$this->db->order_by('u.modified_at', 'DESC');
 		
 		return $this->db->get()->result();
@@ -51,6 +52,7 @@ class ujian_model extends CI_Model {
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
 		$this->db->join('bab b', 'b.uuid = u.bab_uuid', 'left');
 		$this->db->where('u.deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('u.created_by');
 		$this->db->order_by('u.modified_at', 'DESC');
 		
 		return $this->db->get()->result();
@@ -218,7 +220,9 @@ class ujian_model extends CI_Model {
 			'modified_at'     => date('Y-m-d H:i:s')
 		);
 
-		$this->db->update('ujian', $data, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		apply_admin_creator_scope('created_by');
+		$this->db->update('ujian', $data);
 		return $this->db->affected_rows() > 0;
 	}
 
@@ -251,6 +255,7 @@ class ujian_model extends CI_Model {
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
 		$this->db->where('u.bab_uuid', $bab_uuid);
 		$this->db->where('u.deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('u.created_by');
 		$this->db->order_by('u.modified_at', 'DESC');
 		
 		return $this->db->get()->result();
@@ -261,7 +266,9 @@ class ujian_model extends CI_Model {
 		$data = array(
 			'deleted_at' => date("Y-m-d H:i:s")
 		);
-		$this->db->update('ujian', $data, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		apply_admin_creator_scope('created_by');
+		$this->db->update('ujian', $data);
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
 
@@ -275,6 +282,7 @@ class ujian_model extends CI_Model {
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
 		$this->db->where('u.deleted_at', NULL, FALSE);
 		$this->db->where('u.uuid', $uuid);
+		apply_admin_creator_scope('u.created_by');
 		$this->db->order_by('u.modified_at', 'DESC');
 		
 		return $this->db->get()->row();

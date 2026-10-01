@@ -39,7 +39,7 @@ class Siswa extends MY_Controller {
 			$page = 1;
 		}
 
-		$total_rows  = $this->siswa_model->count_filtered($filters);
+		$total_rows  = $this->siswa_model->count_filtered($filters, FALSE);
 		$total_pages = (int) ceil($total_rows / $per_page);
 		if ($total_pages < 1) {
 			$total_pages = 1;
@@ -50,7 +50,7 @@ class Siswa extends MY_Controller {
 
 		$offset = ($page - 1) * $per_page;
 
-		$siswa = $this->siswa_model->get_all($filters, $per_page, $offset);
+		$siswa = $this->siswa_model->get_all($filters, $per_page, $offset, FALSE);
 
 		// ----- Konfigurasi pagination (library CI3, mode query string) -----
 		$this->load->library('pagination');
@@ -94,7 +94,7 @@ class Siswa extends MY_Controller {
 
 		$data = array(
 			'siswa'            => $siswa,
-			'daftar_kelas'     => $this->kelas_model->get_all(),
+			'daftar_kelas'     => $this->kelas_model->get_all(FALSE),
 			'filters'          => $filters,
 			'per_page'         => $per_page,
 			'per_page_options' => $per_page_options,
@@ -116,6 +116,9 @@ class Siswa extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			if (!$this->kelas_model->get_by_uuid($this->input->post('kelas'), FALSE)) {
+				show_error('Kelas tidak ditemukan.', 404);
+			}
 			$insert = $this->siswa_model->insert();
 			if ($insert) {
 				$this->session->set_flashdata('success_msg', 'Data Siswa berhasil di simpan');
@@ -127,7 +130,7 @@ class Siswa extends MY_Controller {
 		}
 
 		$data = array(
-			'daftar_kelas' => $this->kelas_model->get_all(),
+				'daftar_kelas' => $this->kelas_model->get_all(FALSE),
 			'active_nav' => 'siswa'
 		);
 
@@ -138,6 +141,10 @@ class Siswa extends MY_Controller {
 	}
 
 	public function edit($uuid){
+		$siswa = $this->siswa_model->get_by_uuid($uuid, FALSE);
+		if (!$siswa) {
+			show_404();
+		}
 		$rules = [
 			[
 				'field' => 'namaLengkap',
@@ -164,7 +171,7 @@ class Siswa extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
-			$update = $this->siswa_model->update($uuid);
+			$update = $this->siswa_model->update($uuid, FALSE);
 			if ($update) {
 				$this->session->set_flashdata('success_msg', 'Data Siswa berhasil di Update');
 				redirect('siswa');
@@ -175,8 +182,8 @@ class Siswa extends MY_Controller {
 		}
 
 		$data = array(
-			'siswa' => $this->siswa_model->get_by_uuid($uuid),
-			'daftar_kelas' => $this->kelas_model->get_all(),
+			'siswa' => $siswa,
+			'daftar_kelas' => $this->kelas_model->get_all(FALSE),
 		);
 
 		$this->load->view('partials/header_tailwind', ['title' => 'Edit Siswa']);
@@ -213,7 +220,7 @@ class Siswa extends MY_Controller {
 
 	public function hapus($uuid){
 		{
-			$result = $this->siswa_model->delete_by_uuid($uuid);
+			$result = $this->siswa_model->delete_by_uuid($uuid, FALSE);
 			if ($result) {
 				$this->session->set_flashdata('success_msg', 'Data siswa berhasil dihapus');
 			} else {
@@ -249,7 +256,7 @@ class Siswa extends MY_Controller {
 			redirect('siswa');
 		}
 
-		$deleted = $this->siswa_model->delete_batch_by_uuid($uuids);
+		$deleted = $this->siswa_model->delete_batch_by_uuid($uuids, FALSE);
 
 		if ($deleted > 0) {
 			$this->session->set_flashdata('success_msg', $deleted . ' data siswa berhasil dihapus');
@@ -273,7 +280,7 @@ class Siswa extends MY_Controller {
 		$this->load->view('partials/header_tailwind', ['title' => 'Import Data Siswa']);
 		$this->load->view('partials/navbar', ['active_nav' => 'siswa']);
 		$this->load->view('master/siswa/siswa-import', array(
-			'daftar_kelas' => $this->kelas_model->get_all(),
+			'daftar_kelas' => $this->kelas_model->get_all(FALSE),
 			'from_controller' => true
 		));
 		$this->load->view('partials/footer_tailwind');
@@ -324,7 +331,7 @@ class Siswa extends MY_Controller {
 
 			// Peta kelas: nama kelas (dinormalisasi) => data kelas
 			$kelas_map = array();
-			foreach ($this->kelas_model->get_all() as $kelas) {
+			foreach ($this->kelas_model->get_all(FALSE) as $kelas) {
 				$kelas_map[$this->_normalize_key($kelas->nama)] = $kelas;
 			}
 
@@ -600,7 +607,7 @@ class Siswa extends MY_Controller {
 	 */
 	public function download_template_siswa()
 	{
-		$daftar_kelas = $this->kelas_model->get_all();
+		$daftar_kelas = $this->kelas_model->get_all(FALSE);
 		$jumlah_kelas = count($daftar_kelas);
 
 		$spreadsheet = new Spreadsheet();

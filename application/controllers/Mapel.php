@@ -73,7 +73,7 @@ class Mapel extends MY_Controller {
 		if ($is_guru) {
 			$total_rows = $this->mapel_model->count_by_guru_relation($user_uuid, $assigned_uuids, $filters);
 		} else {
-			$total_rows = $this->mapel_model->count_filtered($filters);
+			$total_rows = $this->mapel_model->count_filtered($filters, FALSE);
 		}
 
 		$total_pages = (int) ceil($total_rows / $per_page);
@@ -89,7 +89,7 @@ class Mapel extends MY_Controller {
 		if ($is_guru) {
 			$mapel = $this->mapel_model->get_all_by_guru_relation($user_uuid, $assigned_uuids, $filters, $per_page, $offset);
 		} else {
-			$mapel = $this->mapel_model->get_all($filters, $per_page, $offset);
+			$mapel = $this->mapel_model->get_all($filters, $per_page, $offset, FALSE);
 		}
 
 		// ----- Konfigurasi pagination (library CI3, mode query string) -----
@@ -177,7 +177,7 @@ class Mapel extends MY_Controller {
 
 	public function edit($uuid){
 		// Cek kepemilikan/relasi data untuk guru
-		$mapel = $this->mapel_model->get_by_uuid($uuid);
+		$mapel = $this->mapel_model->get_by_uuid($uuid, FALSE);
 		if (!$mapel) {
 			show_error('Data mata pelajaran tidak ditemukan.', 404);
 		}
@@ -205,7 +205,7 @@ class Mapel extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
-			$update = $this->mapel_model->update($uuid);
+			$update = $this->mapel_model->update($uuid, FALSE);
 			if ($update) {
 				$this->session->set_flashdata('success_msg', 'Data Mata Pelajaran berhasil di Update');
 				redirect('mapel');
@@ -229,7 +229,7 @@ class Mapel extends MY_Controller {
 	public function hapus($uuid){
 		{
 			// Cek kepemilikan/relasi data untuk guru
-			$mapel = $this->mapel_model->get_by_uuid($uuid);
+			$mapel = $this->mapel_model->get_by_uuid($uuid, FALSE);
 			if (!$mapel) {
 				show_error('Data mata pelajaran tidak ditemukan.', 404);
 			}
@@ -246,7 +246,7 @@ class Mapel extends MY_Controller {
 					show_error('Anda tidak memiliki akses untuk menghapus data ini.', 403);
 				}
 			}			
-			$result = $this->mapel_model->delete_by_uuid($uuid);
+			$result = $this->mapel_model->delete_by_uuid($uuid, FALSE);
 			if ($result) {
 				$this->session->set_flashdata('success_msg', 'Data mata pelajaran berhasil dihapus');
 			} else {
@@ -286,7 +286,7 @@ class Mapel extends MY_Controller {
 			redirect('mapel');
 		}
 
-		$deleted = $this->mapel_model->delete_batch_by_uuid($uuids);
+		$deleted = $this->mapel_model->delete_batch_by_uuid($uuids, FALSE);
 
 		if ($deleted > 0) {
 			$this->session->set_flashdata('success_msg', $deleted . ' data mata pelajaran berhasil dihapus');

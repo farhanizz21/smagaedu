@@ -32,6 +32,8 @@ class Materi extends MY_Controller {
 			$siswa = $this->siswa_model->get_by_uuid($user_uuid);
 			$kelas_uuid = $siswa->kelas_uuid ?? null;
 			$mapel = $this->mapel_model->get_all_by_kelas($kelas_uuid);
+		} elseif ($user_role === 'admin') {
+			$mapel = $this->mapel_model->get_all_by_admin_relation($user_uuid);
 		} else {
 			$mapel = $this->mapel_model->get_all();
 		}
@@ -50,6 +52,10 @@ class Materi extends MY_Controller {
     
     public function detail($mapel_uuid)
 	{
+		if (user_role() === 'admin' && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
+			show_404();
+		}
+
 		if ($this->session->userdata('role') === 'siswa') {
 			$this->load->model('siswa_model');
 			$siswa = $this->siswa_model->get_by_uuid($this->session->userdata('uuid'));
@@ -61,8 +67,11 @@ class Materi extends MY_Controller {
 			}
 		}
 
+		$mapel = $this->mapel_model->get_by_uuid($mapel_uuid, FALSE);
+		if (!$mapel) {
+			show_404();
+		}
 		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid);
-		$mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
 		$guru_uuid = $this->session->userdata('uuid');
 		$pengampu = $this->guru_model->get_mapel_pengampu($mapel_uuid, $guru_uuid);
 		$user_uuid = $this->session->userdata('uuid');
@@ -72,7 +81,7 @@ class Materi extends MY_Controller {
 		if (!empty($materi)) { // Pastikan ada data dalam materi
 			foreach ($materi as $m) {
 				if (!empty($m->mapel_uuid)) { // Cek apakah mapel_uuid ada
-					$mapel = $this->mapel_model->get_by_uuid($m->mapel_uuid);
+					$mapel = $this->mapel_model->get_by_uuid($m->mapel_uuid, FALSE);
 					$m->mapel = (!empty($mapel)) ? $mapel->nama : 'Tidak ditemukan'; // Hindari error jika null
 				} else {
 					$m->mapel = '-';
@@ -97,6 +106,12 @@ class Materi extends MY_Controller {
 
     public function tambah($mapel_uuid)
 	{
+		$mapel_valid = user_role() === 'admin'
+			? $this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))
+			: (bool) $this->mapel_model->get_by_uuid($mapel_uuid);
+		if (!$mapel_valid) {
+			show_404();
+		}
 		// Superadmin and admin have full access, guru needs permission
 		$this->require_permission('manage_materi');
 		
@@ -125,7 +140,7 @@ class Materi extends MY_Controller {
 				}
 			}
 
-			$insert = $this->materi_model->insert($thumbnail);
+			$insert = $this->materi_model->insert($thumbnail, $mapel_uuid);
 			if ($insert) {
 				$this->session->set_flashdata('success_msg', 'Data Materi berhasil disimpan');
 			} else {
@@ -156,9 +171,7 @@ class Materi extends MY_Controller {
 			show_404();
 		}
 
-		$is_admin = is_admin_or_superadmin();
-		// Admin bebas edit; guru hanya untuk materi miliknya; superadmin bisa semua
-		if (!$is_admin && !is_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
+		if (!admin_can_access_creator($materi->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengubah materi ini.', 403);
 		}
 
@@ -219,8 +232,7 @@ class Materi extends MY_Controller {
 		if (empty($materi)) {
 			show_404();
 		}
-		// Superadmin, admin, atau pembuat materi yang boleh hapus
-		if (!is_admin_or_superadmin() && !is_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
+		if (!admin_can_access_creator($materi->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menghapus materi ini.', 403);
 		}
 

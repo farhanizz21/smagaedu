@@ -20,10 +20,10 @@ class materi_model extends CI_Model {
         ];
 	}
 
-	public function insert($thumbnail) {
+	public function insert($thumbnail, $mapel_uuid = NULL) {
 		$uuid = Uuid::uuid4()->toString();
 		$judul = $this->input->post('judul');
-		$mapel_uuid = $this->input->post('namaMapel');
+		$mapel_uuid = $mapel_uuid ?: $this->input->post('namaMapel');
 
 		$data = array(
 			'uuid'      => $uuid,
@@ -41,6 +41,7 @@ class materi_model extends CI_Model {
 		$this->db->select('m.*, g.nama, m.uuid AS materi_uuid, m.created_by AS materi_created_by');
 		$this->db->join('guru g', 'm.created_by = g.uuid', 'left');
 		$this->db->where('m.deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('m.created_by');
 		$this->db->order_by('m.modified_at', 'DESC');
 		$data = $this->db->get('materi m')->result();
 
@@ -53,6 +54,7 @@ class materi_model extends CI_Model {
 		$this->db->join('guru g', 'm.created_by = g.uuid', 'left');
 		$this->db->where('m.mapel_uuid', $mapel_uuid);
 		$this->db->where('m.deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('m.created_by');
 		$this->db->order_by('m.modified_at', 'DESC');
 		$data = $this->db->get('materi m')->result();
 
@@ -65,6 +67,7 @@ class materi_model extends CI_Model {
 		$this->db->join('guru g', 'm.created_by = g.uuid', 'left');
 		$this->db->where('m.uuid', $uuid);
 		$this->db->where('m.deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('m.created_by');
 		return $this->db->get('materi m')->row();
 	}
 
@@ -75,7 +78,9 @@ class materi_model extends CI_Model {
 			'thumbnail'  => $thumbnail,
 			'modified_at'=> date("Y-m-d H:i:s")
 		);
-		$this->db->update('materi', $data, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		apply_admin_creator_scope('created_by');
+		$this->db->update('materi', $data);
 		return ($this->db->affected_rows() > 0);
 	}
 
@@ -84,7 +89,9 @@ class materi_model extends CI_Model {
 		$data = array(
 			'deleted_at' => date("Y-m-d H:i:s")
 		);
-		$this->db->update('materi', $data, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		apply_admin_creator_scope('created_by');
+		$this->db->update('materi', $data);
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
 
