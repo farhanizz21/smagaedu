@@ -92,6 +92,26 @@
                             </div>
                         </div>
 
+                        <!-- Kelas yang diampu per mata pelajaran (khusus guru) -->
+                        <?php $kelas_diampu = isset($kelas_per_mapel[$val->uuid]) ? $kelas_per_mapel[$val->uuid] : []; ?>
+                        <?php if (!empty($kelas_diampu)) : ?>
+                        <div class="mb-5">
+                            <div class="flex items-center gap-1.5 mb-2">
+                                <i data-lucide="users" class="w-3.5 h-3.5 text-gray-400"></i>
+                                <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Kelas
+                                    Diampu</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1.5 kelas-nama">
+                                <?php foreach ($kelas_diampu as $kelas_obj) : ?>
+                                <span
+                                    class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-white text-gray-700 border border-gray-200 shadow-sm">
+                                    <?= $kelas_obj->nama ?>
+                                </span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <!-- Action Button with gradient -->
                         <a href="<?= base_url('mata_pelajaran/detail/' . $val->uuid) ?>"
                             class="inline-flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl font-semibold text-white bg-gradient-to-r <?= $palette['from'] ?> <?= $palette['to'] ?> shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 text-sm group/btn">
@@ -239,7 +259,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
 <script>
 var options = {
-    valueNames: ['name'],
+    valueNames: ['name', 'kelas-nama'],
     page: 6,
     pagination: true
 };

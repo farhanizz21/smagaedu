@@ -463,6 +463,55 @@ class guru_model extends CI_Model {
 	}
 
 	/**
+	 * Ubah relasi mapel-kelas guru (mapel_uuid => [kelas_uuid, ...]) menjadi
+	 * daftar kelas lengkap (objek kelas) untuk tiap mata pelajaran.
+	 *
+	 * @param array $kelas_map hasil parse user_profiles.mapel_uuid
+	 * @return array [mapel_uuid => [objek kelas]]
+	 */
+	public function resolve_kelas_per_mapel($kelas_map = [])
+	{
+		if (empty($kelas_map) || !is_array($kelas_map)) {
+			return [];
+		}
+
+		// Kumpulkan seluruh kelas uuid agar cukup satu kali query
+		$all_uuids = [];
+		foreach ($kelas_map as $kelas_uuids) {
+			if (is_array($kelas_uuids)) {
+				$all_uuids = array_merge($all_uuids, $kelas_uuids);
+			}
+		}
+		$all_uuids = array_values(array_unique($all_uuids));
+
+		if (empty($all_uuids)) {
+			return [];
+		}
+
+		// Index data kelas berdasarkan uuid
+		$kelas_by_uuid = [];
+		foreach ($this->get_kelas_names($all_uuids) as $kelas) {
+			$kelas_by_uuid[$kelas->uuid] = $kelas;
+		}
+
+		// Susun kembali per mata pelajaran (lewati kelas yang sudah dihapus/kosong)
+		$result = [];
+		foreach ($kelas_map as $mapel_uuid => $kelas_uuids) {
+			$result[$mapel_uuid] = [];
+			if (!is_array($kelas_uuids)) {
+				continue;
+			}
+			foreach ($kelas_uuids as $kelas_uuid) {
+				if (isset($kelas_by_uuid[$kelas_uuid])) {
+					$result[$mapel_uuid][] = $kelas_by_uuid[$kelas_uuid];
+				}
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Get mapel objects by array of UUIDs
 	 */
 	private function get_mapel_names($uuids = [])

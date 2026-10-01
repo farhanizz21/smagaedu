@@ -17,12 +17,15 @@ class Materi extends MY_Controller {
 	{
 		$user_role = $this->session->userdata('role');
 		$user_uuid = $this->session->userdata('uuid');
+		$kelas_per_mapel = [];
 		
 		// Jika guru, tampilkan mata pelajaran yang dibuat sendiri + yang diampu
 		if ($user_role === 'guru') {
 			$guru = $this->guru_model->get_by_uuid($user_uuid);
 			$assigned_uuids = $guru->mapel_list ?? [];
 			$mapel = $this->mapel_model->get_all_by_guru_relation($user_uuid, $assigned_uuids);
+			// Kelas yang diampu per mata pelajaran untuk guru yang sedang login
+			$kelas_per_mapel = $this->guru_model->resolve_kelas_per_mapel($guru->kelas_map ?? []);
 		} elseif ($user_role === 'siswa') {
 			// Siswa hanya bisa melihat mata pelajaran sesuai kelasnya
 			$this->load->model('siswa_model');
@@ -35,6 +38,7 @@ class Materi extends MY_Controller {
 
 		$data = array(
 			'mapel' => $mapel,
+			'kelas_per_mapel' => $kelas_per_mapel,
 			'active_nav' => 'materi'
 		);
 
