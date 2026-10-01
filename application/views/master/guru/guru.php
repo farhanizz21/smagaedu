@@ -51,6 +51,74 @@
     </div>
     <?php endif; ?>
 
+    <?php
+        $has_filter = !empty($filters['q']) || !empty($filters['mapel']) || !empty($filters['jenis_kelamin']);
+    ?>
+
+    <!-- Filter & Pencarian -->
+    <form method="get" action="<?= base_url('guru') ?>"
+        class="bg-white rounded-2xl border border-gray-200 p-4 mb-6 table-shadow">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <!-- Pencarian -->
+            <div class="md:col-span-5 relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                </span>
+                <input type="text" name="q" value="<?= html_escape($filters['q']) ?>"
+                    placeholder="Cari nama, username, atau NIP..."
+                    class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400">
+            </div>
+
+            <!-- Filter Mata Pelajaran -->
+            <div class="md:col-span-3">
+                <select name="mapel" onchange="this.form.submit()"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                    <option value="">Semua Mapel</option>
+                    <?php foreach($daftar_mapel as $m): ?>
+                    <option value="<?= $m->uuid ?>" <?= ($filters['mapel'] === $m->uuid) ? 'selected' : '' ?>>
+                        <?= $m->nama ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <!-- Filter Jenis Kelamin -->
+            <div class="md:col-span-2">
+                <select name="jenis_kelamin" onchange="this.form.submit()"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                    <option value="">Semua Gender</option>
+                    <option value="L" <?= ($filters['jenis_kelamin'] === 'L') ? 'selected' : '' ?>>Laki-Laki</option>
+                    <option value="P" <?= ($filters['jenis_kelamin'] === 'P') ? 'selected' : '' ?>>Perempuan</option>
+                </select>
+            </div>
+
+            <!-- Jumlah per halaman -->
+            <div class="md:col-span-2">
+                <select name="per_page" onchange="this.form.submit()"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                    <?php foreach($per_page_options as $opt): ?>
+                    <option value="<?= $opt ?>" <?= ($per_page == $opt) ? 'selected' : '' ?>><?= $opt ?> / halaman</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 mt-3">
+            <?php if($has_filter): ?>
+            <span class="mr-auto text-xs text-gray-400 hidden sm:inline">Filter aktif</span>
+            <?php endif; ?>
+            <a href="<?= base_url('guru') ?>"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                Reset
+            </a>
+            <button type="submit"
+                class="inline-flex items-center gap-2 px-5 py-2 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
+                <i data-lucide="search" class="w-4 h-4"></i>
+                Cari
+            </button>
+        </div>
+    </form>
+
     <!-- Table Card -->
     <form id="bulkDeleteForm" method="POST" action="<?= base_url('guru/bulk_hapus') ?>">
     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
@@ -89,7 +157,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     <?php 
-                        $no = 1;
+                        $no = isset($start_no) ? $start_no : 1;
                         foreach($guru as $val) {
                     ?>
                     <tr class="table-row-hover transition-colors" data-uuid="<?= $val->uuid ?>">
@@ -157,11 +225,28 @@
         <?php if(empty($guru)): ?>
         <div class="text-center py-12 text-gray-400">
             <i data-lucide="users" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
-            <p class="text-sm">Belum ada data guru</p>
+            <p class="text-sm">
+                <?= $has_filter ? 'Tidak ada data guru yang cocok dengan pencarian/filter.' : 'Belum ada data guru' ?>
+            </p>
         </div>
         <?php endif; ?>
     </div>
     </form>
+
+    <!-- Info & Pagination -->
+    <?php if($total_rows > 0): ?>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
+        <p class="text-sm text-gray-500">
+            Menampilkan
+            <span class="font-semibold text-gray-700"><?= $start_no ?></span>&ndash;<span
+                class="font-semibold text-gray-700"><?= $end_no ?></span>
+            dari <span class="font-semibold text-gray-700"><?= $total_rows ?></span> data
+        </p>
+        <?php if(!empty($pagination_links)): ?>
+        <div><?= $pagination_links ?></div>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php if(!isset($from_controller)): ?>

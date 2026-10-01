@@ -193,14 +193,26 @@ class guru_model extends CI_Model {
 		];
 	}
 
-	public function get_all()
+	/**
+	 * Daftar guru dengan dukungan pencarian, filter, dan pagination.
+	 *
+	 * @param array $filters filter: q (nama/username/nip), mapel (uuid), jenis_kelamin (L/P)
+	 * @param int|null $limit jumlah baris per halaman (NULL = tanpa limit, kompatibel pemakaian lama)
+	 * @param int $offset offset baris
+	 * @return array
+	 */
+	public function get_all($filters = array(), $limit = NULL, $offset = 0)
 	{
 		$this->db->select('users.*, user_profiles.mapel_uuid, user_profiles.jenis_kelamin');
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
-		$this->db->where('users.role_id', 3);
-		$this->db->where('users.deleted_at', NULL, FALSE);
+		$this->_apply_filters($filters);
 		$this->db->order_by('users.nama', 'ASC');
+
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
+
 		$data = $this->db->get()->result();
 
 		// Enrich data with mapel and kelas names
@@ -223,6 +235,55 @@ class guru_model extends CI_Model {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Hitung jumlah guru berdasarkan filter yang sama dengan get_all().
+	 *
+	 * @param array $filters
+	 * @return int
+	 */
+	public function count_filtered($filters = array())
+	{
+		$this->db->from('users');
+		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
+		$this->_apply_filters($filters);
+
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * Terapkan kondisi WHERE bersama untuk pencarian & filter guru aktif.
+	 * Guru yang sudah soft delete (deleted_at terisi) tidak diikutsertakan.
+	 *
+	 * @param array $filters
+	 * @return void
+	 */
+	private function _apply_filters($filters = array())
+	{
+		$this->db->where('users.role_id', 3);
+		$this->db->where('users.deleted_at', NULL, FALSE);
+
+		// Pencarian bebas: cocokkan nama, username, atau NIP.
+		if ( ! empty($filters['q'])) {
+			$q = $filters['q'];
+			$this->db->group_start();
+			$this->db->like('users.nama', $q);
+			$this->db->or_like('users.username', $q);
+			$this->db->or_like('user_profiles.nip', $q);
+			$this->db->group_end();
+		}
+
+		// Filter mata pelajaran. Relasi mapel disimpan sebagai JSON di
+		// user_profiles.mapel_uuid, sehingga dicocokkan via LIKE terhadap uuid.
+		if ( ! empty($filters['mapel'])) {
+			$this->db->like('user_profiles.mapel_uuid', $filters['mapel']);
+		}
+
+		// Filter jenis kelamin (L = Laki-laki, P = Perempuan).
+		if ( ! empty($filters['jenis_kelamin'])) {
+			$this->db->where('user_profiles.jenis_kelamin', $filters['jenis_kelamin']);
+		}
 	}
 
 	/**
