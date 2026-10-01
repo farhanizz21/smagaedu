@@ -20,16 +20,73 @@ class mapel_model extends CI_Model {
 		];
 	}
 
-    public function get_all($created_by = null)
+	/**
+	 * Daftar mata pelajaran dengan dukungan pencarian, filter, dan pagination.
+	 *
+	 * @param array|string $filters filter: q (nama). Untuk kompatibilitas,
+	 *                              argumen string diperlakukan sebagai created_by.
+	 * @param int|null $limit jumlah baris per halaman (NULL = tanpa limit)
+	 * @param int $offset offset baris
+	 * @return array
+	 */
+	public function get_all($filters = array(), $limit = NULL, $offset = 0)
 	{
-		$this->db->where('deleted_at', NULL, FALSE);
-		if ($created_by !== null) {
-			$this->db->where('created_by', $created_by);
+		// Kompatibilitas pemanggilan lama: get_all($created_by_uuid).
+		if ( ! is_array($filters)) {
+			$filters = array('created_by' => $filters);
 		}
-		$this->db->order_by('modified_at', 'DESC');
-		$data = $this->db->get('mapel')->result();
 
-		return $data;
+		$this->db->where('deleted_at', NULL, FALSE);
+
+		if ( ! empty($filters['created_by'])) {
+			$this->db->where('created_by', $filters['created_by']);
+		}
+
+		$this->_apply_search($filters);
+		$this->db->order_by('modified_at', 'DESC');
+
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
+
+		return $this->db->get('mapel')->result();
+	}
+
+	/**
+	 * Hitung jumlah mata pelajaran berdasarkan filter yang sama dengan get_all().
+	 *
+	 * @param array|string $filters
+	 * @return int
+	 */
+	public function count_filtered($filters = array())
+	{
+		if ( ! is_array($filters)) {
+			$filters = array('created_by' => $filters);
+		}
+
+		$this->db->where('deleted_at', NULL, FALSE);
+
+		if ( ! empty($filters['created_by'])) {
+			$this->db->where('created_by', $filters['created_by']);
+		}
+
+		$this->_apply_search($filters);
+
+		return $this->db->count_all_results('mapel');
+	}
+
+	/**
+	 * Terapkan pencarian nama mata pelajaran (dibandingkan tanpa membedakan
+	 * huruf besar/kecil karena kolom nama memakai collation utf8mb4_general_ci).
+	 *
+	 * @param array $filters
+	 * @return void
+	 */
+	private function _apply_search($filters = array())
+	{
+		if ( ! empty($filters['q'])) {
+			$this->db->like('nama', $filters['q']);
+		}
 	}
 
     public function insert()
@@ -195,7 +252,45 @@ class mapel_model extends CI_Model {
 	 * - Subjects created by the guru
 	 * - Subjects assigned to the guru (via mapel_uuid in user_profiles)
 	 */
-	public function get_all_by_guru_relation($guru_uuid, $assigned_mapel_uuids = [])
+	public function get_all_by_guru_relation($guru_uuid, $assigned_mapel_uuids = [], $filters = array(), $limit = NULL, $offset = 0)
+	{
+		$this->_apply_guru_relation($guru_uuid, $assigned_mapel_uuids);
+		$this->_apply_search($filters);
+		$this->db->order_by('modified_at', 'DESC');
+
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
+
+		return $this->db->get('mapel')->result();
+	}
+
+	/**
+	 * Hitung jumlah mata pelajaran yang berelasi dengan guru (dibuat sendiri
+	 * atau diampu) berdasarkan filter yang sama dengan get_all_by_guru_relation().
+	 *
+	 * @param string $guru_uuid
+	 * @param array $assigned_mapel_uuids
+	 * @param array $filters
+	 * @return int
+	 */
+	public function count_by_guru_relation($guru_uuid, $assigned_mapel_uuids = [], $filters = array())
+	{
+		$this->_apply_guru_relation($guru_uuid, $assigned_mapel_uuids);
+		$this->_apply_search($filters);
+
+		return $this->db->count_all_results('mapel');
+	}
+
+	/**
+	 * Kondisi WHERE bersama untuk mata pelajaran yang berelasi dengan guru:
+	 * mapel yang dibuat guru tersebut, atau yang diampu (assigned).
+	 *
+	 * @param string $guru_uuid
+	 * @param array $assigned_mapel_uuids
+	 * @return void
+	 */
+	private function _apply_guru_relation($guru_uuid, $assigned_mapel_uuids = [])
 	{
 		$this->db->where('deleted_at', NULL, FALSE);
 		$this->db->group_start();
@@ -204,8 +299,6 @@ class mapel_model extends CI_Model {
 			$this->db->or_where_in('uuid', $assigned_mapel_uuids);
 		}
 		$this->db->group_end();
-		$this->db->order_by('modified_at', 'DESC');
-		return $this->db->get('mapel')->result();
 	}
 
 	/**
