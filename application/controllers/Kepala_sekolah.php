@@ -315,6 +315,39 @@ class Kepala_sekolah extends MY_Controller {
 		// Since there's no direct kelas-guru relationship, we'll show all classes
 		$kelas = $this->kelas_model->get_all();
 
+		// Kumpulkan UUID mapel yang diampu untuk menyaring bab (materi)
+		$mapel_uuids = [];
+		foreach ($mapel_list as $m) {
+			$mapel_uuids[] = $m->uuid;
+		}
+
+		// Hitung jumlah bab (materi) yang dibuat guru untuk tiap mata pelajaran
+		foreach ($mapel_list as $m) {
+			$this->db->where('mapel_uuid', $m->uuid);
+			$this->db->where('created_by', $guru_uuid);
+			$this->db->where('deleted_at', NULL, FALSE);
+			$m->bab_count = $this->db->count_all_results('materi');
+		}
+
+		// Ambil daftar bab (materi) beserta nama mapel dan jumlah sub bab
+		$bab = [];
+		if (!empty($mapel_uuids)) {
+			$this->db->select('mt.*, mp.nama AS mapel_nama');
+			$this->db->from('materi mt');
+			$this->db->join('mapel mp', 'mp.uuid = mt.mapel_uuid', 'left');
+			$this->db->where('mt.created_by', $guru_uuid);
+			$this->db->where('mt.deleted_at', NULL, FALSE);
+			$this->db->where_in('mt.mapel_uuid', $mapel_uuids);
+			$this->db->order_by('mt.modified_at', 'DESC');
+			$bab = $this->db->get()->result();
+
+			foreach ($bab as $b) {
+				$this->db->where('materi_uuid', $b->uuid);
+				$this->db->where('deleted_at', NULL, FALSE);
+				$b->sub_bab_count = $this->db->count_all_results('bab');
+			}
+		}
+
 		$data = array(
 			'guru' => $guru,
 			'jadwal' => $jadwal,
@@ -323,6 +356,7 @@ class Kepala_sekolah extends MY_Controller {
 			'proyek' => $proyek,
 			'ujian' => $ujian,
 			'kelas' => $kelas,
+			'bab' => $bab,
 			'active_nav' => 'kepala_sekolah'
 		);
 

@@ -190,25 +190,107 @@
                 </div>
                 <div class="p-6">
                     <?php if (!empty($mapel_list)): ?>
-                    <div class="space-y-3">
-                        <?php foreach ($mapel_list as $m): ?>
-                        <div
-                            class="flex items-center gap-4 p-3 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors">
-                            <div
-                                class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm">
-                                <?= strtoupper(substr($m->nama, 0, 1)) ?>
+                    <div id="mapelList">
+                        <div class="relative mb-4">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
                             </div>
-                            <div>
-                                <p class="font-semibold text-gray-900 text-sm"><?= $m->nama ?></p>
-                                <p class="text-xs text-gray-400">UUID: <?= substr($m->uuid, 0, 8) ?>...</p>
-                            </div>
+                            <input
+                                class="search w-full pl-9 pr-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 outline-none transition-all text-sm placeholder:text-gray-400 bg-white"
+                                placeholder="Cari mata pelajaran..." />
                         </div>
-                        <?php endforeach; ?>
+                        <div class="list space-y-3">
+                            <?php foreach ($mapel_list as $m): ?>
+                            <a href="<?= base_url('mata_pelajaran/detail/'.$m->uuid) ?>"
+                                class="item flex items-center gap-4 p-3 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors group">
+                                <div
+                                    class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                    <?= strtoupper(substr($m->nama, 0, 1)) ?>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="name font-semibold text-gray-900 text-sm truncate"><?= $m->nama ?></p>
+                                    <p class="text-xs text-gray-400">
+                                        <i data-lucide="book-marked" class="w-3 h-3 inline"></i>
+                                        <?= isset($m->bab_count) ? $m->bab_count : 0 ?> bab
+                                    </p>
+                                </div>
+                                <i data-lucide="chevron-right"
+                                    class="w-4 h-4 text-gray-300 group-hover:text-blue-500 transition-colors flex-shrink-0"></i>
+                            </a>
+                            <?php endforeach; ?>
+                        </div>
+                        <ul class="pagination flex flex-wrap justify-center items-center gap-2 mt-6"></ul>
                     </div>
                     <?php else: ?>
                     <div class="text-center py-8 text-gray-400">
                         <i data-lucide="book-x" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
                         <p class="text-sm">Tidak ada mata pelajaran</p>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- Bab Section -->
+            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-blue-50">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                            <i data-lucide="book-marked" class="w-5 h-5 text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">Bab</h3>
+                            <p class="text-xs text-gray-500"><?= count($bab) ?> bab telah dibuat</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <?php if (!empty($bab)): ?>
+                    <div id="babList">
+                        <div class="relative mb-4">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <input
+                                class="search w-full pl-9 pr-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm placeholder:text-gray-400 bg-white"
+                                placeholder="Cari bab..." />
+                        </div>
+                        <div class="list space-y-3">
+                            <?php foreach ($bab as $b): ?>
+                            <a href="<?= base_url('sub_bab/index/'.$b->uuid) ?>"
+                                class="item flex items-start gap-4 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 transition-colors group">
+                                <div
+                                    class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
+                                    <i data-lucide="file-text" class="w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <p class="name font-semibold text-gray-900 text-sm truncate"><?= $b->judul ?></p>
+                                        <?php if (!empty($b->mapel_nama)): ?>
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-600 flex-shrink-0">
+                                            <?= $b->mapel_nama ?>
+                                        </span>
+                                        <?php endif; ?>
+                                    </div>
+                                    <p class="text-xs text-gray-400">
+                                        <i data-lucide="layers" class="w-3 h-3 inline"></i>
+                                        <?= isset($b->sub_bab_count) ? $b->sub_bab_count : 0 ?> sub bab
+                                        <span class="mx-1">&bull;</span>
+                                        <i data-lucide="clock" class="w-3 h-3 inline"></i>
+                                        <?= date('d M Y', strtotime($b->modified_at)) ?>
+                                    </p>
+                                </div>
+                                <i data-lucide="chevron-right"
+                                    class="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-colors flex-shrink-0 mt-1"></i>
+                            </a>
+                            <?php endforeach; ?>
+                        </div>
+                        <ul class="pagination flex flex-wrap justify-center items-center gap-2 mt-6"></ul>
+                    </div>
+                    <?php else: ?>
+                    <div class="text-center py-8 text-gray-400">
+                        <i data-lucide="file-x" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                        <p class="text-sm">Belum ada bab yang dibuat</p>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -229,14 +311,31 @@
                 </div>
                 <div class="p-6">
                     <?php if (!empty($kelas)): ?>
-                    <div class="flex flex-wrap gap-2">
-                        <?php foreach ($kelas as $k): ?>
-                        <span
-                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-br from-green-50 to-emerald-50 text-green-700 border border-green-200 hover:shadow-md transition-all">
-                            <i data-lucide="users" class="w-4 h-4"></i>
-                            <?= $k->nama ?>
-                        </span>
-                        <?php endforeach; ?>
+                    <div id="kelasList">
+                        <div class="relative mb-4">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+                            </div>
+                            <input
+                                class="search w-full pl-9 pr-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-green-400 focus:ring-4 focus:ring-green-100 outline-none transition-all text-sm placeholder:text-gray-400 bg-white"
+                                placeholder="Cari kelas..." />
+                        </div>
+                        <div class="list grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <?php foreach ($kelas as $k): ?>
+                            <div
+                                class="item flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 hover:shadow-md hover:border-green-200 transition-all">
+                                <div
+                                    class="w-9 h-9 rounded-lg bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                                    <i data-lucide="users" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="name font-semibold text-gray-900 text-sm truncate"><?= $k->nama ?></p>
+                                    <p class="text-[11px] text-gray-400">Kelas / Rombel</p>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <ul class="pagination flex flex-wrap justify-center items-center gap-2 mt-6"></ul>
                     </div>
                     <?php else: ?>
                     <div class="text-center py-8 text-gray-400">
@@ -424,6 +523,93 @@
         </div>
     </div>
 </div>
+
+<style>
+#mapelList .pagination li,
+#babList .pagination li,
+#kelasList .pagination li {
+    display: inline-block;
+}
+
+#mapelList .pagination li a,
+#babList .pagination li a,
+#kelasList .pagination li a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    color: #374151;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+#mapelList .pagination li a:hover,
+#babList .pagination li a:hover,
+#kelasList .pagination li a:hover {
+    border-color: #818cf8;
+    background-color: #eef2ff;
+    color: #6366f1;
+    transform: translateY(-1px);
+}
+
+#mapelList .pagination li.active a,
+#babList .pagination li.active a,
+#kelasList .pagination li.active a {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border-color: transparent;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+#mapelList .pagination li.disabled a,
+#babList .pagination li.disabled a,
+#kelasList .pagination li.disabled a {
+    color: #cbd5e1;
+    pointer-events: none;
+    opacity: 0.6;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof List === 'undefined') {
+        return;
+    }
+
+    // Catatan: template pagination bawaan List.js adalah
+    // "<li><a class='page' href='#'></a></li>". Atribut href="#" inilah yang
+    // membuat halaman melompat ke paling atas saat pagination diklik.
+    // Karena klik sudah ditangani lewat event delegation oleh List.js, href
+    // tidak diperlukan sehingga kita hilangkan agar tidak terjadi scroll.
+    var paginationOptions = {
+        item: "<li><a class='page'></a></li>"
+    };
+
+    var setupList = function (id, pageSize) {
+        if (!document.getElementById(id)) {
+            return;
+        }
+
+        new List(id, {
+            valueNames: ['name'],
+            page: pageSize,
+            pagination: paginationOptions
+        });
+    };
+
+    setupList('mapelList', 5);
+    setupList('babList', 5);
+    setupList('kelasList', 8);
+});
+</script>
+
 
 <?php if(!isset($from_controller)): ?>
 <?php $this->load->view('partials/footer_tailwind'); ?>
