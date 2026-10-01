@@ -77,6 +77,21 @@ if (!function_exists('sub_bab_images')) {
     }
 }
 
+if (!function_exists('sub_bab_pembuka')) {
+    /**
+     * Kalimat pembuka yang ditampilkan di setiap card sub bab.
+     * Dipisah agar mudah diubah/dimatikan dari satu tempat.
+     */
+    function sub_bab_pembuka()
+    {
+        return array(
+            'Selamat datang di SMAGAEDU!',
+            'Mari ikuti pembelajaran dengan aktif, semangat, dan mandiri. Pelajari setiap materi, ikuti aktivitas, dan kerjakan evaluasi yang tersedia.',
+            'Selamat belajar dan semoga sukses!',
+        );
+    }
+}
+
 if (!function_exists('sub_bab_prepare_html')) {
     /**
      * Siapkan HTML deskripsi untuk ditampilkan di card:
@@ -259,6 +274,15 @@ if (!function_exists('sub_bab_prepare_html')) {
                         Aktivitas selesai: <?= $completed_count ?>/<?= $activity_count ?>
                     </p>
                     <?php endif; ?>
+
+                    <!-- Kalimat pembuka -->
+                    <?php $pembuka = sub_bab_pembuka(); ?>
+                    <div
+                        class="mt-2 rounded-xl <?= $palette['bg'] ?> border <?= $palette['border'] ?> px-3 py-2.5">
+                        <p class="text-sm font-semibold <?= $palette['icon'] ?>"><?= $pembuka[0] ?></p>
+                        <p class="text-xs text-gray-600 leading-relaxed mt-0.5"><?= $pembuka[1] ?></p>
+                        <p class="text-xs font-medium <?= $palette['icon'] ?> mt-1"><?= $pembuka[2] ?></p>
+                    </div>
 
                     <?php if ($deskripsi_ada_isi): ?>
                     <div class="mt-2 flex items-start gap-3">
