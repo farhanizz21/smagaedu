@@ -117,8 +117,13 @@
                             <i data-lucide="lock" class="w-5 h-5 text-gray-400"></i>
                         </div>
                         <input type="password" name="password" id="password"
-                            class="input-field w-full pl-11 pr-4 py-3 rounded-2xl border-2 border-gray-200 bg-white/80 text-sm font-medium text-gray-900 placeholder:text-gray-400 outline-none <?= form_error('password') ? 'border-red-300 bg-red-50' : '' ?>"
+                            class="input-field w-full pl-11 pr-12 py-3 rounded-2xl border-2 border-gray-200 bg-white/80 text-sm font-medium text-gray-900 placeholder:text-gray-400 outline-none <?= form_error('password') ? 'border-red-300 bg-red-50' : '' ?>"
                             value="<?= set_value('password'); ?>" placeholder="Masukkan password">
+                        <button type="button" id="toggle-password" aria-label="Tampilkan password" aria-pressed="false"
+                            class="absolute inset-y-0 right-0 px-3.5 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-r-2xl">
+                            <i data-lucide="eye" class="w-5 h-5"></i>
+                            <i data-lucide="eye-off" class="w-5 h-5 hidden"></i>
+                        </button>
                     </div>
                     <?php if(form_error('password')): ?>
                     <p class="mt-1.5 text-xs font-medium text-red-600 flex items-center gap-1">
@@ -160,6 +165,21 @@
     })
 
     lucide.createIcons();
+
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('toggle-password');
+    const eyeIcon = togglePassword.querySelector('[data-lucide="eye"]');
+    const eyeOffIcon = togglePassword.querySelector('[data-lucide="eye-off"]');
+
+    togglePassword.addEventListener('click', function() {
+        const isPasswordVisible = passwordInput.type === 'password';
+        passwordInput.type = isPasswordVisible ? 'text' : 'password';
+        eyeIcon.classList.toggle('hidden', isPasswordVisible);
+        eyeOffIcon.classList.toggle('hidden', !isPasswordVisible);
+        togglePassword.setAttribute('aria-label', isPasswordVisible ? 'Sembunyikan password' :
+            'Tampilkan password');
+        togglePassword.setAttribute('aria-pressed', String(isPasswordVisible));
+    });
     </script>
 
 </body>

@@ -523,7 +523,7 @@ CREATE TABLE `ujian_jawaban` (
   `uuid` varchar(100) NOT NULL,
   `ujian_uuid` varchar(100) NOT NULL,
   `soal_uuid` varchar(100) NOT NULL,
-  `jawaban_siswa` varchar(100) NOT NULL,
+  `jawaban_siswa` text NOT NULL COMMENT 'Jawaban siswa: teks essay, JSON (pilihan ganda kompleks/menjodohkan), atau nama file',
   `nilai` int(100) DEFAULT NULL,
   `created_by` varchar(100) NOT NULL,
   `modified_at` datetime NOT NULL DEFAULT current_timestamp(),

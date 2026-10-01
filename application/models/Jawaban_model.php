@@ -15,9 +15,9 @@ class jawaban_model extends CI_Model {
 	// 	];
 	// }
 
-public function insert()
+public function insert($ujian_uuid = null)
     {
-        $ujian_uuid = $this->input->post('ujian_uuid');
+        $ujian_uuid = $ujian_uuid ?: $this->input->post('ujian_uuid');
         $jawaban = $this->input->post('jawaban');
 		$jawaban = is_array($jawaban) ? $jawaban : [];
 		$jawaban_file = $_FILES['jawaban_file'] ?? [];
@@ -50,9 +50,17 @@ public function insert()
 			}
 		}
 
+        $tersimpan = 0;
+        $gagal = 0;
         foreach ($jawaban as $soal_uuid => $jawaban_siswa) {
             if (is_array($jawaban_siswa)) {
                 $jawaban_siswa = json_encode($jawaban_siswa);
+            }
+            // Jawaban kosong tidak disimpan, jika tidak akan dianggap
+            // "sudah dijawab" padahal isinya tidak ada.
+            $jawaban_siswa = trim((string) $jawaban_siswa);
+            if ($jawaban_siswa === '') {
+                continue;
             }
             $data = [
                 'ujian_uuid' => $ujian_uuid,
@@ -61,8 +69,24 @@ public function insert()
                 'created_by' => $this->session->userdata('uuid')
             ];
             $this->db->insert('ujian_jawaban', $data);
+            // Cek hasil insert supaya jawaban yg gagal simpan (mis. kolom
+            // terlalu panjang / error DB) tidak hilang tanpa jejak.
+            if ($this->db->affected_rows() > 0) {
+                $tersimpan++;
+            } else {
+                $gagal++;
+                log_message('error', 'Gagal menyimpan jawaban ujian. soal_uuid: ' . $soal_uuid);
+            }
         }
-        redirect('ujian');
+
+        if ($gagal > 0) {
+            $this->session->set_flashdata(
+                'error_msg',
+                $gagal . ' jawaban gagal disimpan. Silakan coba kirim ulang.'
+            );
+        }
+
+        return $tersimpan > 0;
     }
 
 	public function get_by_soal_uuid($soal_uuid, $siswa_uuid)
