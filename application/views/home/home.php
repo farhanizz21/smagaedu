@@ -158,7 +158,7 @@
 
 <!-- Footer -->
 <footer class="w-full py-8 border-t border-gray-100 bg-gray-50">
-    <p class="text-center text-sm text-gray-400">© <?= date('Y'); ?> SMAGAEDU. All rights reserved.</p>
+    <p class="text-center text-sm text-gray-400">© <?= date('Y'); ?> V1.3 | SMAGAEDU. All rights reserved.</p>
 </footer>
 
 <script>
