@@ -34,6 +34,7 @@ class Guru extends MY_Controller {
 			'q'             => trim((string) $this->input->get('q')),
 			'mapel'         => trim((string) $this->input->get('mapel')),
 			'jenis_kelamin' => trim((string) $this->input->get('jenis_kelamin')),
+			'admin_uuid'    => is_superadmin() ? trim((string) $this->input->get('admin_uuid')) : '',
 		);
 
 		// ----- Jumlah data per halaman -----
@@ -158,6 +159,50 @@ class Guru extends MY_Controller {
 		));
 
 		$this->session->set_flashdata('success_msg', 'Penanggung jawab guru berhasil diperbarui.');
+		redirect('guru');
+	}
+
+	public function bulk_assign_admin()
+	{
+		$this->require_superadmin();
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_error('Metode permintaan tidak diizinkan.', 405);
+		}
+
+		$guru_uuids = array_values(array_unique(array_filter(array_map('trim', (array) $this->input->post('guru_uuids')))));
+		$admin_uuid = trim((string) $this->input->post('admin_uuid'));
+		$admin = $admin_uuid === '' ? NULL : $this->db->get_where('users', array('uuid' => $admin_uuid, 'role_id' => 2, 'status' => 'aktif', 'deleted_at' => NULL))->row();
+
+		if (empty($guru_uuids) || ($admin_uuid !== '' && !$admin)) {
+			$this->session->set_flashdata('error_msg', 'Guru atau admin yang dipilih tidak valid.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->where_in('uuid', $guru_uuids);
+		$this->db->where('role_id', 3);
+		$this->db->where('deleted_at', NULL);
+		if ($this->db->count_all_results('users') !== count($guru_uuids)) {
+			$this->session->set_flashdata('error_msg', 'Sebagian data guru yang dipilih tidak valid. Tidak ada perubahan yang disimpan.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->trans_start();
+		$this->db->where_in('uuid', $guru_uuids);
+		$this->db->where('role_id', 3);
+		$this->db->where('deleted_at', NULL);
+		$this->db->update('users', array(
+			'created_by' => $admin_uuid === '' ? NULL : $admin_uuid,
+			'modified_at' => date('Y-m-d H:i:s')
+		));
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			$this->session->set_flashdata('error_msg', 'Penugasan admin gagal disimpan.');
+		} else {
+			$this->session->set_flashdata('success_msg', 'Admin pengelola berhasil ditetapkan untuk ' . count($guru_uuids) . ' guru.');
+		}
 		redirect('guru');
 	}
 

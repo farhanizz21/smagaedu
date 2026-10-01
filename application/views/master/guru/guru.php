@@ -52,15 +52,15 @@
     <?php endif; ?>
 
     <?php
-        $has_filter = !empty($filters['q']) || !empty($filters['mapel']) || !empty($filters['jenis_kelamin']);
+        $has_filter = !empty($filters['q']) || !empty($filters['mapel']) || !empty($filters['jenis_kelamin']) || !empty($filters['admin_uuid']);
     ?>
 
     <!-- Filter & Pencarian -->
     <form method="get" action="<?= base_url('guru') ?>"
         class="bg-white rounded-2xl border border-gray-200 p-4 mb-6 table-shadow">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-3">
             <!-- Pencarian -->
-            <div class="md:col-span-5 relative">
+            <div class="xl:col-span-4 relative">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
                     <i data-lucide="search" class="w-4 h-4"></i>
                 </span>
@@ -70,7 +70,7 @@
             </div>
 
             <!-- Filter Mata Pelajaran -->
-            <div class="md:col-span-3">
+            <div class="xl:col-span-2">
                 <select name="mapel" onchange="this.form.submit()"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
                     <option value="">Semua Mapel</option>
@@ -81,8 +81,21 @@
                 </select>
             </div>
 
+            <?php if(is_superadmin()): ?>
+            <div class="xl:col-span-2">
+                <select name="admin_uuid" onchange="this.form.submit()"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
+                    <option value="">Semua Admin</option>
+                    <option value="__unassigned__" <?= ($filters['admin_uuid'] === '__unassigned__') ? 'selected' : '' ?>>Belum ditugaskan</option>
+                    <?php foreach($admins as $admin): ?>
+                    <option value="<?= html_escape($admin->uuid) ?>" <?= ($filters['admin_uuid'] === $admin->uuid) ? 'selected' : '' ?>><?= html_escape($admin->nama) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <?php endif; ?>
+
             <!-- Filter Jenis Kelamin -->
-            <div class="md:col-span-2">
+            <div class="xl:col-span-2">
                 <select name="jenis_kelamin" onchange="this.form.submit()"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
                     <option value="">Semua Gender</option>
@@ -92,7 +105,7 @@
             </div>
 
             <!-- Jumlah per halaman -->
-            <div class="md:col-span-2">
+            <div class="xl:col-span-2">
                 <select name="per_page" onchange="this.form.submit()"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
                     <?php foreach($per_page_options as $opt): ?>
@@ -128,6 +141,12 @@
                 <span id="selectedCount" class="text-sm font-medium text-gray-700">0 data dipilih</span>
             </div>
             <div>
+                <?php if(is_superadmin()): ?>
+                <button type="button" id="bulkAssignAdminBtn"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-all text-sm">
+                    <i data-lucide="user-cog" class="w-4 h-4"></i> Tugaskan Admin
+                </button>
+                <?php endif; ?>
                 <button type="button" id="bulkHapusBtn"
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-white bg-red-600 hover:bg-red-700 transition-all text-sm disabled:opacity-50"
                     disabled>
@@ -148,6 +167,8 @@
                             Nama</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Username</th>
+                        <th class="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-56">
+                            Admin / Pembuat</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Mata Pelajaran & Kelas</th>
                         <th
@@ -167,6 +188,11 @@
                         </td>
                         <td class="px-6 py-4 font-medium text-gray-900"><?= $val->nama; ?></td>
                         <td class="px-6 py-4 text-gray-600"><?= $val->username; ?></td>
+                        <td class="px-4 py-4">
+                            <span class="block max-w-56 truncate text-gray-600" title="<?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>">
+                                <?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>
+                            </span>
+                        </td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1.5">
                                 <?php if (!empty($val->mapel_nama)) : ?>
@@ -259,6 +285,37 @@
 </div>
 
 <?php if(is_superadmin()): ?>
+<dialog id="bulkAssignAdminDialog" class="w-[min(28rem,calc(100%-2rem))] rounded-xl border border-gray-200 p-0 shadow-2xl backdrop:bg-gray-900/40">
+    <?= form_open('guru/bulk_assign_admin', array('id' => 'bulkAssignAdminForm')); ?>
+    <div id="bulkAssignGuruUuids"></div>
+    <div class="border-b border-gray-100 px-5 py-4">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900">Tugaskan Admin</h2>
+                <p id="bulkAssignGuruCount" class="mt-1 text-sm text-gray-500"></p>
+            </div>
+            <button type="button" id="closeBulkAssignAdmin" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100" title="Tutup" aria-label="Tutup dialog">
+                <i data-lucide="x" class="h-4 w-4"></i>
+            </button>
+        </div>
+    </div>
+    <div class="px-5 py-5">
+        <label for="bulkAssignAdminUuid" class="mb-2 block text-sm font-medium text-gray-700">Pilih admin</label>
+        <select name="admin_uuid" id="bulkAssignAdminUuid" class="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+            <option value="">Belum ditugaskan</option>
+            <?php foreach($admins as $admin): ?>
+            <option value="<?= html_escape($admin->uuid); ?>"><?= html_escape($admin->nama . ' (' . $admin->username . ')'); ?></option>
+            <?php endforeach; ?>
+        </select>
+    </div>
+    <div class="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4">
+        <button type="button" id="cancelBulkAssignAdmin" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
+        <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <i data-lucide="save" class="h-4 w-4"></i> Simpan
+        </button>
+    </div>
+    <?= form_close(); ?>
+</dialog>
 <dialog id="assignAdminDialog" class="w-[min(28rem,calc(100%-2rem))] rounded-xl border border-gray-200 p-0 shadow-2xl backdrop:bg-gray-900/40">
     <?= form_open('guru/assign_admin', array('id' => 'assignAdminForm')); ?>
     <input type="hidden" name="guru_uuid" id="assignGuruUuid">
@@ -305,6 +362,35 @@ document.addEventListener('DOMContentLoaded', function () {
     var bulkHapusBtn = document.getElementById('bulkHapusBtn');
     var bulkDeleteForm = document.getElementById('bulkDeleteForm');
     var assignAdminDialog = document.getElementById('assignAdminDialog');
+    var bulkAssignAdminDialog = document.getElementById('bulkAssignAdminDialog');
+
+    var bulkAssignAdminBtn = document.getElementById('bulkAssignAdminBtn');
+    if (bulkAssignAdminBtn) {
+        bulkAssignAdminBtn.addEventListener('click', function () {
+            var selected = getSelected();
+            if (selected.length === 0) return;
+            var target = document.getElementById('bulkAssignGuruUuids');
+            target.innerHTML = '';
+            selected.forEach(function (checkbox) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'guru_uuids[]';
+                input.value = checkbox.value;
+                target.appendChild(input);
+            });
+            document.getElementById('bulkAssignGuruCount').textContent = selected.length + ' guru dipilih';
+            bulkAssignAdminDialog.showModal();
+        });
+    }
+
+    ['closeBulkAssignAdmin', 'cancelBulkAssignAdmin'].forEach(function (id) {
+        var button = document.getElementById(id);
+        if (button) {
+            button.addEventListener('click', function () {
+                bulkAssignAdminDialog.close();
+            });
+        }
+    });
 
     document.querySelectorAll('[data-assign-admin]').forEach(function (button) {
         button.addEventListener('click', function () {

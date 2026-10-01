@@ -159,7 +159,11 @@ class Kepala_sekolah extends MY_Controller {
 
 	public function index()
 	{
-		$guru = $this->guru_model->get_all();
+		$admin_filter_enabled = has_role(['superadmin', 'kepala_sekolah']);
+		$filters = array(
+			'admin_uuid' => $admin_filter_enabled ? trim((string) $this->input->get('admin_uuid')) : ''
+		);
+		$guru = $this->guru_model->get_all($filters);
 		foreach ($guru as $val) {
 			// mapel_nama and mapel_data are already set in get_all() method
 			
@@ -198,8 +202,21 @@ class Kepala_sekolah extends MY_Controller {
 		$best_guru = array_slice($guru, 0, min(3, count($guru)));
 		$worst_guru = array_slice($guru, max(0, count($guru) - 3));
 
+		$admins = array();
+		if ($admin_filter_enabled) {
+			$this->db->select('uuid, nama, username');
+			$this->db->where('role_id', 2);
+			$this->db->where('deleted_at', NULL);
+			$this->db->where('status', 'aktif');
+			$this->db->order_by('nama', 'ASC');
+			$admins = $this->db->get('users')->result();
+		}
+
 		$data = array(
 			'guru' => $guru,
+			'admins' => $admins,
+			'filters' => $filters,
+			'admin_filter_enabled' => $admin_filter_enabled,
 			'best_guru' => $best_guru,
 			'worst_guru' => $worst_guru,
 			'active_nav' => 'kepala_sekolah'

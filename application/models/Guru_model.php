@@ -203,9 +203,10 @@ class guru_model extends CI_Model {
 	 */
 	public function get_all($filters = array(), $limit = NULL, $offset = 0)
 	{
-		$this->db->select('users.*, user_profiles.mapel_uuid, user_profiles.jenis_kelamin');
+		$this->db->select('users.*, user_profiles.mapel_uuid, user_profiles.jenis_kelamin, guru_creator.nama AS admin_nama');
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
+		$this->db->join('users AS guru_creator', 'users.created_by = guru_creator.uuid', 'left');
 		$this->_apply_filters($filters);
 		if (user_role() === 'admin') {
 			$this->db->where('users.created_by', $this->session->userdata('uuid'));
@@ -289,6 +290,17 @@ class guru_model extends CI_Model {
 		// Filter jenis kelamin (L = Laki-laki, P = Perempuan).
 		if ( ! empty($filters['jenis_kelamin'])) {
 			$this->db->where('user_profiles.jenis_kelamin', $filters['jenis_kelamin']);
+		}
+
+		if (isset($filters['admin_uuid']) && $filters['admin_uuid'] !== '') {
+			if ($filters['admin_uuid'] === '__unassigned__') {
+				$this->db->group_start();
+				$this->db->where('users.created_by IS NULL', NULL, FALSE);
+				$this->db->or_where("users.created_by NOT IN (SELECT uuid FROM users WHERE role_id = 2 AND status = 'aktif' AND deleted_at IS NULL)", NULL, FALSE);
+				$this->db->group_end();
+			} else {
+				$this->db->where('users.created_by', $filters['admin_uuid']);
+			}
 		}
 	}
 
