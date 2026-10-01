@@ -79,31 +79,65 @@
     </div>
 
     <!-- Soal & Jawaban -->
-    <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
-        <h3 class="text-lg font-bold text-gray-900 mb-6">Soal & Jawaban</h3>
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 md:p-8 table-shadow">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <h3 class="text-lg font-bold text-gray-900">Soal &amp; Jawaban</h3>
+            <span
+                class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-100 border border-gray-200 rounded-full px-3 py-1">
+                <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
+                <?= count($soal); ?> Soal
+            </span>
+        </div>
         <form method="post" action="<?= base_url('ujian/tambah_nilai/'.$ujian->uuid .'/'.$siswa->uuid); ?>">
-            <div class="space-y-6">
+            <div class="space-y-5">
                 <?php $no = 1; foreach ($soal as $d): ?>
-                <div class="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                    <div class="grid md:grid-cols-3 gap-6">
-                        <div class="md:col-span-2">
-                            <div class="flex items-start gap-2 mb-3">
+                <div data-soal-card class="bg-gray-50 rounded-2xl p-4 sm:p-6 border border-gray-200">
+                    <div class="grid md:grid-cols-3 gap-5 md:gap-6 items-start">
+                        <!-- Pertanyaan & Jawaban -->
+                        <div class="md:col-span-2 min-w-0">
+                            <div class="flex items-start gap-3 mb-4">
                                 <span
-                                    class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex-shrink-0"><?= $no++; ?></span>
-                                <p class="text-sm font-medium text-gray-900"><?= $d->soal; ?></p>
+                                    class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex-shrink-0 mt-0.5"><?= $no++; ?></span>
+                                <div
+                                    class="prose min-w-0 max-w-none flex-1 text-sm text-gray-900 font-medium leading-relaxed break-words [overflow-wrap:anywhere] [&>p:first-child]:mt-0 [&>p:last-child]:mb-0 [&_a]:break-words">
+                                    <?= $d->soal; ?>
+                                </div>
                             </div>
-                            <div class="ml-9">
-                                <p class="text-sm font-semibold text-gray-700 mb-1">Jawaban:</p>
-                                <div class="text-sm text-gray-800 bg-white rounded-lg p-3 border border-gray-200">
+
+                            <div class="ml-0 sm:ml-10 mt-3">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jawaban
+                                        Siswa</p>
                                     <?php if (isset($jawaban[$d->uuid][0]->jawaban_siswa)): ?>
-                                    <?= $jawaban[$d->uuid][0]->jawaban_teks ?? $jawaban[$d->uuid][0]->jawaban_siswa; ?>
+                                    <span data-jumlah-karakter class="text-[11px] font-medium text-gray-400"></span>
+                                    <?php endif; ?>
+                                </div>
+                                <div
+                                    class="text-sm text-gray-800 bg-white rounded-xl p-3.5 sm:p-4 border border-gray-200 leading-relaxed break-words [overflow-wrap:anywhere] [&>p]:my-1 [&>p:first-child]:mt-0 [&>p:last-child]:mb-0 [&>ul]:my-2 [&>ol]:my-2 [&_a]:break-words">
+                                    <?php if (isset($jawaban[$d->uuid][0]->jawaban_siswa)): ?>
+                                    <div data-jawaban class="relative">
+                                        <div data-jawaban-isi>
+                                            <?= $jawaban[$d->uuid][0]->jawaban_teks ?? $jawaban[$d->uuid][0]->jawaban_siswa; ?>
+                                        </div>
+                                        <div data-jawaban-grad
+                                            class="hidden pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white via-white/95 to-transparent">
+                                        </div>
+                                    </div>
+                                    <button type="button" data-jawaban-toggle
+                                        class="hidden mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors">
+                                        <span data-jawaban-label>Selengkapnya</span>
+                                        <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform"></i>
+                                    </button>
                                     <?php else: ?>
-                                    <span class="text-red-600">Tidak dijawab</span>
+                                    <span class="inline-flex items-center gap-1.5 text-red-600 font-medium"><i
+                                            data-lucide="circle-slash" class="w-4 h-4"></i> Tidak dijawab</span>
                                     <?php endif; ?>
                                 </div>
                             </div>
                         </div>
-                        <div>
+
+                        <!-- Nilai -->
+                        <div class="min-w-0">
                             <?php if (isset($jawaban[$d->uuid][0]->jawaban_siswa)): ?>
                             <div class="bg-white rounded-xl p-4 border border-gray-200">
                                 <label class="block text-sm font-semibold text-gray-700 mb-2">Nilai <span
@@ -145,6 +179,63 @@
 
 <script>
 lucide.createIcons();
+</script>
+
+<script>
+// Jawaban siswa yang panjang: tampilkan ringkas + tombol "Selengkapnya"
+// supaya guru tetap bisa membaca seluruh jawaban tanpa halaman jadi terlalu panjang.
+(function() {
+    var BATAS = 176; // tinggi (px) sebelum jawaban dipotong
+
+    document.querySelectorAll('[data-jawaban]').forEach(function(wrapper) {
+        var isi = wrapper.querySelector('[data-jawaban-isi]');
+        var grad = wrapper.querySelector('[data-jawaban-grad]');
+        var tombol = wrapper.parentElement.querySelector('[data-jawaban-toggle]');
+        if (!isi || !tombol) return;
+
+        // Jumlah karakter jawaban (agar Guru tahu panjangnya jawaban)
+        var card = wrapper.closest('[data-soal-card]');
+        var counter = card ? card.querySelector('[data-jumlah-karakter]') : null;
+        if (counter) {
+            counter.textContent = (isi.textContent || '').trim().length + ' karakter';
+        }
+
+        // Ukur tinggi jawaban secara penuh
+        isi.style.maxHeight = '';
+        isi.style.overflow = 'visible';
+        var tinggiPenuh = isi.scrollHeight;
+
+        // Jawaban pendek -> tampil utuh, tanpa tombol
+        if (tinggiPenuh <= BATAS + 48) return;
+
+        isi.style.maxHeight = BATAS + 'px';
+        isi.style.overflow = 'hidden';
+        if (grad) grad.classList.remove('hidden');
+
+        var label = tombol.querySelector('[data-jawaban-label]');
+        var ikon = tombol.querySelector('svg');
+        tombol.classList.remove('hidden');
+
+        tombol.addEventListener('click', function() {
+            var terbuka = isi.getAttribute('data-terbuka') === '1';
+            if (terbuka) {
+                isi.style.maxHeight = BATAS + 'px';
+                isi.style.overflow = 'hidden';
+                isi.removeAttribute('data-terbuka');
+                if (label) label.textContent = 'Selengkapnya';
+                if (ikon) ikon.style.transform = '';
+                if (grad) grad.classList.remove('hidden');
+            } else {
+                isi.style.maxHeight = 'none';
+                isi.style.overflow = 'visible';
+                isi.setAttribute('data-terbuka', '1');
+                if (label) label.textContent = 'Tampilkan lebih sedikit';
+                if (ikon) ikon.style.transform = 'rotate(180deg)';
+                if (grad) grad.classList.add('hidden');
+            }
+        });
+    });
+})();
 </script>
 
 <?php if(!isset($from_controller)): ?>

@@ -85,6 +85,9 @@ class Ujian extends MY_Controller {
 		$rules = array_merge($rules_ujian, $rules_mapel);
 		$this->form_validation->set_rules($rules);
 		if ($this->form_validation->run() == TRUE) {
+			if (!$this->mapel_model->get_by_uuid($this->input->post('namaMapel'))) {
+				show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
+			}
 			$insert = $this->ujian_model->insert();
 			if ($insert) {
 				$this->session->set_flashdata('success_msg', 'Data ujian berhasil disimpan');
@@ -102,10 +105,12 @@ class Ujian extends MY_Controller {
 		
 		}
 
-		$guru_uuid = $this->session->userdata('uuid');
-		$guru = $this->guru_model->get_by_uuid($guru_uuid);
-		$mapel_list = $guru->mapel_list ?? [];
-		$mapel = $this->mapel_model->get_many_mapel_by_uuid($mapel_list);
+		if (in_array($this->session->userdata('role'), ['admin', 'superadmin'], true)) {
+			$mapel = $this->mapel_model->get_all();
+		} else {
+			$guru = $this->guru_model->get_by_uuid($this->session->userdata('uuid'));
+			$mapel = $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? []);
+		}
 
 		$data = array(
 			'mapel' => $mapel,
@@ -125,7 +130,7 @@ class Ujian extends MY_Controller {
 			show_404();
 		}
 		// Edit ujian hanya dapat diakses oleh guru yang buat ujian ini (atau superadmin/admin)
-		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengedit ujian ini.', 403);
 		}
 
@@ -150,10 +155,12 @@ class Ujian extends MY_Controller {
 
 		$guru_uuid = $this->session->userdata('uuid');
 		$guru = $this->guru_model->get_by_uuid($guru_uuid);
-		if ($guru) {
+		if (in_array($this->session->userdata('role'), ['admin', 'superadmin'], true)) {
+			$mapel = $this->mapel_model->get_all();
+		} elseif ($guru) {
 			$mapel = $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? []);
 		} else {
-			$mapel = $this->mapel_model->get_all();
+			$mapel = [];
 		}
 
 		$data = array(
@@ -189,6 +196,9 @@ class Ujian extends MY_Controller {
 		}
 		$bab = $this->bab_model->get_by_uuid($sub->bab_uuid);
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		if (!$materi || !admin_can_access_creator($materi->created_by)) {
+			show_404();
+		}
 
 		$rules_ujian = $this->ujian_model->rules();
 		$this->form_validation->set_rules($rules_ujian);
@@ -237,7 +247,10 @@ class Ujian extends MY_Controller {
 	public function tambah_soal($ujian_uuid)
 	{
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
-		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+		if (!$ujian) {
+			show_404();
+		}
+		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menambah soal ujian.', 403);
 		}
 		
@@ -402,6 +415,9 @@ class Ujian extends MY_Controller {
 		if (!$ujian) {
 			show_404();
 		}
+		if (!admin_can_access_creator($ujian->created_by)) {
+			show_error('Anda tidak memiliki akses untuk mengekspor soal ujian.', 403);
+		}
 		$soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
 
 		$spreadsheet = new Spreadsheet();
@@ -507,7 +523,7 @@ class Ujian extends MY_Controller {
 		if (!$ujian) {
 			show_404();
 		}
-		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengimport soal ujian.', 403);
 		}
 
@@ -714,7 +730,10 @@ class Ujian extends MY_Controller {
 	public function tambah_kelas($ujian_uuid)
 	{
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
-		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+		if (!$ujian) {
+			show_404();
+		}
+		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengelola peserta ujian.', 403);
 		}
 		
@@ -793,7 +812,7 @@ class Ujian extends MY_Controller {
 		if (!$ujian) {
 			show_404();
 		}
-		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengekspor nilai ujian.', 403);
 		}
 
@@ -1148,6 +1167,14 @@ class Ujian extends MY_Controller {
 
 	public function hapus_siswa($relasi_uuid)
 	{
+		$relasi = $this->db->get_where('ujian_siswa', array('uuid' => $relasi_uuid, 'deleted_at' => NULL))->row();
+		$ujian = $relasi ? $this->ujian_model->get_by_uuid($relasi->ujian_uuid) : NULL;
+		if (!$ujian) {
+			show_404();
+		}
+		if (!admin_can_access_creator($ujian->created_by)) {
+			show_error('Anda tidak memiliki akses untuk menghapus peserta ujian.', 403);
+		}
 		$result = $this->siswa_model->delete_siswa_ujian_and_ujian_jawaban_by_uuid($relasi_uuid);
 		if ($result) {
 			$this->session->set_flashdata('success_msg', 'Data siswa ujian berhasil dihapus');
@@ -1160,11 +1187,15 @@ class Ujian extends MY_Controller {
 	public function hapus_soal($soal_uuid)
 	{
 		$soal = $this->soal_model->get_by_uuid($soal_uuid);
-		if ($soal) {
-			$ujian = $this->ujian_model->get_by_uuid($soal->ujian_uuid);
-			if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
-				show_error('Anda tidak memiliki akses untuk menghapus soal ujian.', 403);
-			}
+		if (!$soal) {
+			show_404();
+		}
+		$ujian = $this->ujian_model->get_by_uuid($soal->ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+		if (!admin_can_access_creator($ujian->created_by)) {
+			show_error('Anda tidak memiliki akses untuk menghapus soal ujian.', 403);
 		}
 		$result = $this->soal_model->delete_by_uuid($soal_uuid);
 		if ($result) {
@@ -1178,6 +1209,9 @@ class Ujian extends MY_Controller {
 	public function get_soal($soal_uuid)
 	{
 		$soal = $this->soal_model->get_by_uuid($soal_uuid);
+		if ($soal && user_role() === 'admin' && !$this->ujian_model->get_by_uuid($soal->ujian_uuid)) {
+			$soal = NULL;
+		}
 		if ($soal) {
 			$soal->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($soal_uuid);
 			$this->output
@@ -1193,6 +1227,9 @@ class Ujian extends MY_Controller {
 	public function get_soal_by_uuid($soal_uuid)
 	{
 		$soal = $this->soal_model->get_by_uuid($soal_uuid);
+		if ($soal && user_role() === 'admin' && !$this->ujian_model->get_by_uuid($soal->ujian_uuid)) {
+			$soal = NULL;
+		}
 		if ($soal) {
 			$this->output
 				->set_content_type('application/json')
@@ -1208,8 +1245,15 @@ class Ujian extends MY_Controller {
 		$soal_uuid = $this->input->post('soal_uuid');
 		$ujian_uuid = $this->input->post('ujian_uuid');
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
-		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+		if (!$ujian) {
+			show_404();
+		}
+		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengedit soal ujian.', 403);
+		}
+		$soal = $this->soal_model->get_by_uuid($soal_uuid);
+		if (!$soal || $soal->ujian_uuid !== $ujian_uuid) {
+			show_404();
 		}
 		$rules = [
 			[
@@ -1240,7 +1284,10 @@ class Ujian extends MY_Controller {
 	public function hapus($uuid)
 	{
 		$ujian = $this->ujian_model->get_by_uuid($uuid);
-		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+		if (!$ujian) {
+			show_404();
+		}
+		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menghapus ujian.', 403);
 		}
 		$result = $this->ujian_model->delete_by_uuid($uuid);
@@ -1258,7 +1305,10 @@ class Ujian extends MY_Controller {
 		$ujian_uuid = $this->input->post('ujian_uuid');
 
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
-		if (!is_admin_or_superadmin() && $this->session->userdata('uuid') != $ujian->created_by) {
+		if (!$ujian) {
+			show_404();
+		}
+		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menghapus soal ujian.', 403);
 		}
 
@@ -1270,6 +1320,10 @@ class Ujian extends MY_Controller {
 
 		$deleted = 0;
 		foreach ($soal_uuids as $uuid) {
+			$soal = $this->soal_model->get_by_uuid($uuid);
+			if (!$soal || $soal->ujian_uuid !== $ujian_uuid) {
+				continue;
+			}
 			$result = $this->soal_model->delete_by_uuid($uuid);
 			if ($result) {
 				$deleted++;

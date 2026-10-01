@@ -43,7 +43,7 @@ class Perangkat extends MY_Controller {
             show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
         }
 
-        $mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
+        $mapel = $this->mapel_model->get_by_uuid($mapel_uuid, FALSE);
         if (empty($mapel)) {
             show_404();
         }
@@ -88,7 +88,7 @@ class Perangkat extends MY_Controller {
             show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
         }
 
-        $mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
+        $mapel = $this->mapel_model->get_by_uuid($mapel_uuid, FALSE);
         if (empty($mapel)) {
             show_404();
         }
@@ -140,7 +140,9 @@ class Perangkat extends MY_Controller {
         }
 
         // Cek akses: superadmin/admin/pemilik
-        $can_delete = is_admin_or_superadmin() || $perangkat->guru_uuid == $this->session->userdata('uuid');
+        $can_delete = is_superadmin()
+            || (user_role() === 'admin' && admin_can_access_creator($perangkat->guru_uuid))
+            || ($perangkat->guru_uuid == $this->session->userdata('uuid'));
         
         if (!$can_delete) {
             show_error('Anda tidak memiliki akses untuk menghapus file ini.', 403);

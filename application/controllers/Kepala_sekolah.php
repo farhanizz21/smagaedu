@@ -159,7 +159,11 @@ class Kepala_sekolah extends MY_Controller {
 
 	public function index()
 	{
-		$guru = $this->guru_model->get_all();
+		$admin_filter_enabled = has_role(['superadmin', 'kepala_sekolah']);
+		$filters = array(
+			'admin_uuid' => $admin_filter_enabled ? trim((string) $this->input->get('admin_uuid')) : ''
+		);
+		$guru = $this->guru_model->get_all($filters);
 		foreach ($guru as $val) {
 			// mapel_nama and mapel_data are already set in get_all() method
 			
@@ -198,8 +202,21 @@ class Kepala_sekolah extends MY_Controller {
 		$best_guru = array_slice($guru, 0, min(3, count($guru)));
 		$worst_guru = array_slice($guru, max(0, count($guru) - 3));
 
+		$admins = array();
+		if ($admin_filter_enabled) {
+			$this->db->select('uuid, nama, username');
+			$this->db->where('role_id', 2);
+			$this->db->where('deleted_at', NULL);
+			$this->db->where('status', 'aktif');
+			$this->db->order_by('nama', 'ASC');
+			$admins = $this->db->get('users')->result();
+		}
+
 		$data = array(
 			'guru' => $guru,
+			'admins' => $admins,
+			'filters' => $filters,
+			'admin_filter_enabled' => $admin_filter_enabled,
 			'best_guru' => $best_guru,
 			'worst_guru' => $worst_guru,
 			'active_nav' => 'kepala_sekolah'
@@ -315,6 +332,39 @@ class Kepala_sekolah extends MY_Controller {
 		// Since there's no direct kelas-guru relationship, we'll show all classes
 		$kelas = $this->kelas_model->get_all();
 
+		// Kumpulkan UUID mapel yang diampu untuk menyaring bab (materi)
+		$mapel_uuids = [];
+		foreach ($mapel_list as $m) {
+			$mapel_uuids[] = $m->uuid;
+		}
+
+		// Hitung jumlah bab (materi) yang dibuat guru untuk tiap mata pelajaran
+		foreach ($mapel_list as $m) {
+			$this->db->where('mapel_uuid', $m->uuid);
+			$this->db->where('created_by', $guru_uuid);
+			$this->db->where('deleted_at', NULL, FALSE);
+			$m->bab_count = $this->db->count_all_results('materi');
+		}
+
+		// Ambil daftar bab (materi) beserta nama mapel dan jumlah sub bab
+		$bab = [];
+		if (!empty($mapel_uuids)) {
+			$this->db->select('mt.*, mp.nama AS mapel_nama');
+			$this->db->from('materi mt');
+			$this->db->join('mapel mp', 'mp.uuid = mt.mapel_uuid', 'left');
+			$this->db->where('mt.created_by', $guru_uuid);
+			$this->db->where('mt.deleted_at', NULL, FALSE);
+			$this->db->where_in('mt.mapel_uuid', $mapel_uuids);
+			$this->db->order_by('mt.modified_at', 'DESC');
+			$bab = $this->db->get()->result();
+
+			foreach ($bab as $b) {
+				$this->db->where('materi_uuid', $b->uuid);
+				$this->db->where('deleted_at', NULL, FALSE);
+				$b->sub_bab_count = $this->db->count_all_results('bab');
+			}
+		}
+
 		$data = array(
 			'guru' => $guru,
 			'jadwal' => $jadwal,
@@ -323,6 +373,7 @@ class Kepala_sekolah extends MY_Controller {
 			'proyek' => $proyek,
 			'ujian' => $ujian,
 			'kelas' => $kelas,
+			'bab' => $bab,
 			'active_nav' => 'kepala_sekolah'
 		);
 

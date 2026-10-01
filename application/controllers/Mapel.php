@@ -23,24 +23,127 @@ class Mapel extends MY_Controller {
 	{
 		$user_uuid = $this->session->userdata('uuid');
 		$user_role = $this->session->userdata('role');
-		
-		// Jika guru, tampilkan data yang dibuat sendiri + data yang diampu
-		if ($user_role === 'guru') {
-			$guru = $this->guru_model->get_by_uuid($user_uuid);
-			$assigned_uuids = [];
-			if ($guru && !empty($guru->mapel_uuid)) {
-				$assigned_uuids = json_decode($guru->mapel_uuid, true);
-			}
-			$mapel = $this->mapel_model->get_all_by_guru_relation($user_uuid, $assigned_uuids);
-		} else {
-			$mapel = $this->mapel_model->get_all();
-		}
-		
-		$data = array(
-			'mapel' => $mapel,
-			'active_nav' => 'mapel'
+
+		// ----- Pencarian & filter (query string) -----
+		$filters = array(
+			'q' => trim((string) $this->input->get('q')),
 		);
-		
+
+		// ----- Jumlah data per halaman -----
+		$per_page_options = array(10, 25, 50, 100);
+		$per_page = (int) $this->input->get('per_page');
+		if ( ! in_array($per_page, $per_page_options, TRUE)) {
+			$per_page = 10;
+		}
+
+		// ----- Halaman aktif -----
+		$page = (int) $this->input->get('page');
+		if ($page < 1) {
+			$page = 1;
+		}
+
+		// Siapkan konteks data: guru hanya melihat mapel yang dibuat sendiri +
+		// yang diampu, sedangkan admin/superadmin melihat semua mapel.
+		$is_guru = ($user_role === 'guru');
+		$assigned_uuids = array();
+		if ($is_guru) {
+			$guru = $this->guru_model->get_by_uuid($user_uuid);
+			if ($guru) {
+				// get_by_uuid sudah menyediakan mapel_list, yaitu daftar uuid
+				// mapel yang diampu hasil parsing format JSON lama maupun baru.
+				if ( ! empty($guru->mapel_list) && is_array($guru->mapel_list)) {
+					$assigned_uuids = $guru->mapel_list;
+				} elseif ( ! empty($guru->mapel_uuid)) {
+					// Fallback: parse manual, dukung format lama (array uuid)
+					// dan format baru (array objek berisi mapel_uuid).
+					$decoded = json_decode($guru->mapel_uuid, true);
+					if (is_array($decoded)) {
+						foreach ($decoded as $item) {
+							if (is_string($item)) {
+								$assigned_uuids[] = $item;
+							} elseif (is_array($item) && isset($item['mapel_uuid'])) {
+								$assigned_uuids[] = $item['mapel_uuid'];
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if ($is_guru) {
+			$total_rows = $this->mapel_model->count_by_guru_relation($user_uuid, $assigned_uuids, $filters);
+		} else {
+			$total_rows = $this->mapel_model->count_filtered($filters, FALSE);
+		}
+
+		$total_pages = (int) ceil($total_rows / $per_page);
+		if ($total_pages < 1) {
+			$total_pages = 1;
+		}
+		if ($page > $total_pages) {
+			$page = $total_pages;
+		}
+
+		$offset = ($page - 1) * $per_page;
+
+		if ($is_guru) {
+			$mapel = $this->mapel_model->get_all_by_guru_relation($user_uuid, $assigned_uuids, $filters, $per_page, $offset);
+		} else {
+			$mapel = $this->mapel_model->get_all($filters, $per_page, $offset, FALSE);
+		}
+
+		// ----- Konfigurasi pagination (library CI3, mode query string) -----
+		$this->load->library('pagination');
+
+		$this->pagination->initialize(array(
+			'base_url'             => base_url('mapel'),
+			'total_rows'           => $total_rows,
+			'per_page'             => $per_page,
+			'use_page_numbers'     => TRUE,
+			'page_query_string'    => TRUE,
+			'query_string_segment' => 'page',
+			'reuse_query_string'   => TRUE,
+			'cur_page'             => $page,
+			'num_links'            => 2,
+			'first_link'           => '&laquo;',
+			'prev_link'            => '&lsaquo;',
+			'next_link'            => '&rsaquo;',
+			'last_link'            => '&raquo;',
+			'full_tag_open'        => '<nav aria-label="Navigasi halaman"><ul class="flex flex-wrap items-center justify-center gap-1 list-none p-0 m-0">',
+			'full_tag_close'       => '</ul></nav>',
+			'num_tag_open'         => '<li>',
+			'num_tag_close'        => '</li>',
+			'cur_tag_open'         => '<li><span class="min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold text-white bg-blue-600 border border-blue-600">',
+			'cur_tag_close'        => '</span></li>',
+			'first_tag_open'       => '<li>',
+			'first_tag_close'      => '</li>',
+			'prev_tag_open'        => '<li>',
+			'prev_tag_close'       => '</li>',
+			'next_tag_open'        => '<li>',
+			'next_tag_close'       => '</li>',
+			'last_tag_open'        => '<li>',
+			'last_tag_close'       => '</li>',
+			'attributes'           => array(
+				'class' => 'min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors',
+			),
+		));
+
+		// ----- Rentang data yang sedang ditampilkan -----
+		$start_no = ($total_rows > 0) ? $offset + 1 : 0;
+		$end_no   = min($offset + $per_page, $total_rows);
+
+		$data = array(
+			'mapel'            => $mapel,
+			'filters'          => $filters,
+			'per_page'         => $per_page,
+			'per_page_options' => $per_page_options,
+			'total_rows'       => $total_rows,
+			'start_no'         => $start_no,
+			'end_no'           => $end_no,
+			'pagination_links' => $this->pagination->create_links(),
+			'active_nav'       => 'mapel',
+		);
+
         $this->load->view('partials/header_tailwind', ['title' => 'Data Mata Pelajaran']);
 		$this->load->view('partials/navbar', ['active_nav' => 'mapel']);
         $this->load->view('master/mapel/mapel', array_merge($data, ['from_controller' => true]));
@@ -74,7 +177,7 @@ class Mapel extends MY_Controller {
 
 	public function edit($uuid){
 		// Cek kepemilikan/relasi data untuk guru
-		$mapel = $this->mapel_model->get_by_uuid($uuid);
+		$mapel = $this->mapel_model->get_by_uuid($uuid, FALSE);
 		if (!$mapel) {
 			show_error('Data mata pelajaran tidak ditemukan.', 404);
 		}
@@ -102,7 +205,7 @@ class Mapel extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
-			$update = $this->mapel_model->update($uuid);
+			$update = $this->mapel_model->update($uuid, FALSE);
 			if ($update) {
 				$this->session->set_flashdata('success_msg', 'Data Mata Pelajaran berhasil di Update');
 				redirect('mapel');
@@ -126,7 +229,7 @@ class Mapel extends MY_Controller {
 	public function hapus($uuid){
 		{
 			// Cek kepemilikan/relasi data untuk guru
-			$mapel = $this->mapel_model->get_by_uuid($uuid);
+			$mapel = $this->mapel_model->get_by_uuid($uuid, FALSE);
 			if (!$mapel) {
 				show_error('Data mata pelajaran tidak ditemukan.', 404);
 			}
@@ -143,7 +246,7 @@ class Mapel extends MY_Controller {
 					show_error('Anda tidak memiliki akses untuk menghapus data ini.', 403);
 				}
 			}			
-			$result = $this->mapel_model->delete_by_uuid($uuid);
+			$result = $this->mapel_model->delete_by_uuid($uuid, FALSE);
 			if ($result) {
 				$this->session->set_flashdata('success_msg', 'Data mata pelajaran berhasil dihapus');
 			} else {
@@ -183,7 +286,7 @@ class Mapel extends MY_Controller {
 			redirect('mapel');
 		}
 
-		$deleted = $this->mapel_model->delete_batch_by_uuid($uuids);
+		$deleted = $this->mapel_model->delete_batch_by_uuid($uuids, FALSE);
 
 		if ($deleted > 0) {
 			$this->session->set_flashdata('success_msg', $deleted . ' data mata pelajaran berhasil dihapus');

@@ -99,7 +99,8 @@ class siswa_model extends CI_Model {
 				'password' => password_hash($password, PASSWORD_DEFAULT),
 				'tgl_lahir' => $tanggal_lahir,
 				'jenis_kelamin' => $jenisKelamin,
-				'kelas_uuid' => $kelas
+				'kelas_uuid' => $kelas,
+				'created_by' => $this->session->userdata('uuid')
 			);
 			$this->db->insert('siswa', $data_siswa);
 
@@ -111,7 +112,7 @@ class siswa_model extends CI_Model {
 		return false;
 	}
 
-	public function update($uuid)
+	public function update($uuid, $admin_scope = TRUE)
 	{
 		$nis = $this->input->post('nis');
 		$namaLengkap = $this->input->post('namaLengkap');
@@ -127,7 +128,12 @@ class siswa_model extends CI_Model {
 			'username' => $username,
 			'modified_at' => date("Y-m-d H:i:s")
 		);
-		$this->db->update('users', $data_user, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		$this->db->where('role_id', 4);
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
+		$this->db->update('users', $data_user);
 
 		// Update tabel siswa (legacy)
 		$data_siswa = array(
@@ -138,7 +144,11 @@ class siswa_model extends CI_Model {
 			'jenis_kelamin' => $jenisKelamin,
 			'kelas_uuid' => $kelas
 		);
-		$this->db->update('siswa', $data_siswa, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
+		$this->db->update('siswa', $data_siswa);
 
 		// Update tabel user_profiles
 		$user = $this->db->get_where('users', array('uuid' => $uuid))->row();
@@ -167,11 +177,15 @@ class siswa_model extends CI_Model {
 		return true;
 	}
 
-	public function get_by_uuid($uuid)
+	public function get_by_uuid($uuid, $admin_scope = TRUE)
 	{
 		$this->db->select("siswa.*, kelas.nama as kelas_nama");
 		$this->db->join('kelas', 'siswa.kelas_uuid = kelas.uuid', 'left');
-		$data = $this->db->get_where('siswa', array('siswa.uuid' => $uuid))->row();
+		$this->db->where('siswa.uuid', $uuid);
+		if ($admin_scope) {
+			apply_admin_creator_scope('siswa.created_by');
+		}
+		$data = $this->db->get('siswa')->row();
 		return $data;
 	}
 	
@@ -195,12 +209,25 @@ class siswa_model extends CI_Model {
 		}
 	}
 
-	public function get_all()
+	/**
+	 * Daftar siswa dengan dukungan pencarian, filter, dan pagination.
+	 *
+	 * @param array $filters filter: q (nis/nama/username), kelas (uuid), jenis_kelamin (1/2)
+	 * @param int|null $limit jumlah baris per halaman (NULL = tanpa limit, kompatibel pemakaian lama)
+	 * @param int $offset offset baris
+	 * @return array
+	 */
+	public function get_all($filters = array(), $limit = NULL, $offset = 0, $admin_scope = TRUE)
 	{
 		$this->db->select("siswa.*, DATE_FORMAT(siswa.tgl_lahir, '%d-%m-%Y') as tgl_lahir_formatted, kelas.nama as kelas_nama", FALSE);
 		$this->db->join('kelas', 'siswa.kelas_uuid = kelas.uuid', 'left');
-		$this->db->where('siswa.deleted_at IS NULL', NULL, FALSE);
+		$this->_apply_filters($filters, $admin_scope);
 		$this->db->order_by('siswa.id', 'DESC');
+
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
+
 		$data = $this->db->get('siswa')->result();
 
 		foreach ($data as $key) {
@@ -208,6 +235,55 @@ class siswa_model extends CI_Model {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Hitung jumlah siswa berdasarkan filter yang sama dengan get_all().
+	 *
+	 * @param array $filters
+	 * @return int
+	 */
+	public function count_filtered($filters = array(), $admin_scope = TRUE)
+	{
+		$this->db->join('kelas', 'siswa.kelas_uuid = kelas.uuid', 'left');
+		$this->_apply_filters($filters, $admin_scope);
+
+		return $this->db->count_all_results('siswa');
+	}
+
+	/**
+	 * Terapkan kondisi WHERE bersama untuk pencarian & filter data siswa aktif.
+	 * Data yang sudah soft delete (deleted_at terisi) tidak diikutsertakan.
+	 *
+	 * @param array $filters
+	 * @return void
+	 */
+	private function _apply_filters($filters = array(), $admin_scope = TRUE)
+	{
+		$this->db->where('siswa.deleted_at IS NULL', NULL, FALSE);
+		if ($admin_scope) {
+			apply_admin_creator_scope('siswa.created_by');
+		}
+
+		// Pencarian bebas: cocokkan NIS, nama, atau username.
+		if ( ! empty($filters['q'])) {
+			$q = $filters['q'];
+			$this->db->group_start();
+			$this->db->like('siswa.nama', $q);
+			$this->db->or_like('siswa.nis', $q);
+			$this->db->or_like('siswa.username', $q);
+			$this->db->group_end();
+		}
+
+		// Filter kelas (uuid).
+		if ( ! empty($filters['kelas'])) {
+			$this->db->where('siswa.kelas_uuid', $filters['kelas']);
+		}
+
+		// Filter jenis kelamin (1 = Laki-laki, 2 = Perempuan).
+		if ( ! empty($filters['jenis_kelamin'])) {
+			$this->db->where('siswa.jenis_kelamin', $filters['jenis_kelamin']);
+		}
 	}
 
 		/**
@@ -515,7 +591,7 @@ class siswa_model extends CI_Model {
 		$this->db->update('users');
 	}
 
-	public function delete_batch_by_uuid($uuids)
+	public function delete_batch_by_uuid($uuids, $admin_scope = TRUE)
 	{
 		if (!is_array($uuids) || empty($uuids)) {
 			return 0;
@@ -530,6 +606,9 @@ class siswa_model extends CI_Model {
 		);
 
 		$this->db->where_in('uuid', $uuids);
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
 		$this->db->update('siswa', $data);
 
 		$deleted = $this->db->affected_rows();
@@ -540,12 +619,16 @@ class siswa_model extends CI_Model {
 		return $deleted;
 	}
 
-	public function delete_by_uuid($uuid)
+	public function delete_by_uuid($uuid, $admin_scope = TRUE)
 	{
 		$data = array(
 			'deleted_at' => date("Y-m-d H:i:s")
 		);
-		$this->db->update('siswa', $data, array('uuid' => $uuid));
+		$this->db->where('uuid', $uuid);
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
+		$this->db->update('siswa', $data);
 		$result = ($this->db->affected_rows() > 0) ? true : false;
 
 		// Nonaktifkan akun login & lepaskan username agar bisa dipakai ulang

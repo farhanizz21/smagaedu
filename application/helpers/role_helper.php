@@ -111,3 +111,55 @@ if (!function_exists('require_role_access')) {
         return in_array($user_role, $roles);
     }
 }
+
+if (!function_exists('admin_visible_creator_uuids')) {
+    /** Return creator UUIDs visible to the current admin. */
+    function admin_visible_creator_uuids() {
+        $CI =& get_instance();
+        $admin_uuid = $CI->session->userdata('uuid');
+        $visible_uuids = array($admin_uuid);
+
+        if (user_role() !== 'admin' || empty($admin_uuid)) {
+            return $visible_uuids;
+        }
+
+        $CI->db->select('uuid');
+        $CI->db->where('role_id', 3);
+        $CI->db->where('created_by', $admin_uuid);
+        $teachers = $CI->db->get('users')->result();
+        foreach ($teachers as $teacher) {
+            $visible_uuids[] = $teacher->uuid;
+        }
+
+        return array_values(array_unique($visible_uuids));
+    }
+}
+
+if (!function_exists('admin_can_access_creator')) {
+    /** Check whether the current admin owns a record or manages its creator. */
+    function admin_can_access_creator($creator_uuid) {
+        $role = user_role();
+        if ($role === 'superadmin') {
+            return true;
+        }
+
+        if ($role !== 'admin') {
+            return $creator_uuid === get_instance()->session->userdata('uuid');
+        }
+
+        return in_array($creator_uuid, admin_visible_creator_uuids(), true);
+    }
+}
+
+if (!function_exists('apply_admin_creator_scope')) {
+    /** Apply creator ownership filtering to the current query builder. */
+    function apply_admin_creator_scope($column) {
+        if (user_role() === 'admin') {
+            $CI =& get_instance();
+            $admin_uuid = $CI->db->escape($CI->session->userdata('uuid'));
+            $condition = '(' . $column . ' = ' . $admin_uuid
+                . ' OR ' . $column . ' IN (SELECT uuid FROM users WHERE role_id = 3 AND created_by = ' . $admin_uuid . '))';
+            $CI->db->where($condition, NULL, FALSE);
+        }
+    }
+}

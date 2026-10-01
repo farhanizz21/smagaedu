@@ -13,6 +13,22 @@
         </div>
     </div>
 
+    <?php if(!empty($admin_filter_enabled)): ?>
+    <form method="get" action="<?= base_url('kepala_sekolah') ?>" class="flex flex-col sm:flex-row gap-3 mb-6">
+        <select name="admin_uuid" onchange="this.form.submit()"
+            class="w-full sm:max-w-xs px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none">
+            <option value="">Semua Admin</option>
+            <option value="__unassigned__" <?= ($filters['admin_uuid'] === '__unassigned__') ? 'selected' : '' ?>>Belum ditugaskan</option>
+            <?php foreach($admins as $admin): ?>
+            <option value="<?= html_escape($admin->uuid) ?>" <?= ($filters['admin_uuid'] === $admin->uuid) ? 'selected' : '' ?>><?= html_escape($admin->nama) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <a href="<?= base_url('kepala_sekolah') ?>" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset filter
+        </a>
+    </form>
+    <?php endif; ?>
+
     <?php if ($this->session->userdata('success_msg')): ?>
     <div class="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
         <i data-lucide="check-circle" class="w-5 h-5 text-green-500 flex-shrink-0"></i>
@@ -129,7 +145,8 @@
                         <div class="flex-1 min-w-0">
                             <p class="font-semibold text-gray-900 text-sm truncate"><?= $bg->nama ?></p>
                             <p class="text-xs text-gray-500">
-                                <?= $bg->bab_count ?> bab • <?= $bg->ujian_count ?> ujian
+                                <?= $bg->materi_count ?> bab • <?= $bg->bab_count ?> sub bab • <?= $bg->ujian_count ?>
+                                ujian
                                 <?php if ($bg->last_update): ?>
                                 • Update <?= date('d M Y', strtotime($bg->last_update)) ?>
                                 <?php endif; ?>
@@ -235,6 +252,8 @@
                             Nama</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Username</th>
+                        <th class="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-56">
+                            Admin / Pembuat</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Mata Pelajaran</th>
                         <th class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
@@ -287,6 +306,11 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-gray-600"><?= $val->username; ?></td>
+                        <td class="px-4 py-4">
+                            <span class="block max-w-56 truncate text-gray-600" title="<?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>">
+                                <?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>
+                            </span>
+                        </td>
                         <td class="px-6 py-4">
                             <div class="flex flex-wrap gap-1.5">
                                 <?php if (!empty($val->mapel_nama)) : ?>
@@ -328,7 +352,7 @@
                                     <?php if ($val->materi_count > 0): ?>
                                     <span
                                         class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100"
-                                        title="Materi">
+                                        title="Bab">
                                         <i data-lucide="file-text"
                                             class="w-2.5 h-2.5 mr-0.5"></i><?= $val->materi_count ?>
                                     </span>
@@ -336,7 +360,7 @@
                                     <?php if ($val->bab_count > 0): ?>
                                     <span
                                         class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100"
-                                        title="Bab / Sub Bab">
+                                        title="Sub Bab">
                                         <i data-lucide="book" class="w-2.5 h-2.5 mr-0.5"></i><?= $val->bab_count ?>
                                     </span>
                                     <?php endif; ?>

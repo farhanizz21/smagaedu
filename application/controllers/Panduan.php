@@ -71,6 +71,10 @@ class Panduan extends MY_Controller {
 	}
 
 	public function edit($uuid){
+		$panduan = $this->panduan_model->get_by_uuid($uuid);
+		if (!$panduan) {
+			show_404();
+		}
 		$rules = [
 			[
 				'field' => 'judul',
@@ -97,7 +101,7 @@ class Panduan extends MY_Controller {
 		}
 
 		$data = array(
-			'panduan' => $this->panduan_model->get_by_uuid($uuid),
+			'panduan' => $panduan,
 			'active_nav' => 'panduan'
 		);
 

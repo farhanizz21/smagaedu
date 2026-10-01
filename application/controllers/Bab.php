@@ -28,9 +28,9 @@ class Bab extends MY_Controller {
 				show_error('Bab terkunci. Selesaikan bab sebelumnya terlebih dahulu.', 403);
 			}
  
- 		$mapel = $this->mapel_model->get_by_uuid($materi->mapel_uuid);
+		$mapel = $this->mapel_model->get_by_uuid($materi->mapel_uuid, FALSE);
  		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
- 		$can_manage = is_admin_or_superadmin() || $materi->created_by == $this->session->userdata('uuid');
+		$can_manage = admin_can_access_creator($materi->created_by);
  
 		// Get comments for each bab
   		$komentar_data = [];
@@ -130,7 +130,7 @@ class Bab extends MY_Controller {
 		}
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh tambah bab
-		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
+		if (!admin_can_access_creator($materi->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menambah bab ini.', 403);
 		}
 
@@ -222,9 +222,12 @@ class Bab extends MY_Controller {
 			show_404();
 		}
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		if (empty($materi)) {
+			show_404();
+		}
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh tambah ujian
-		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
+		if (!admin_can_access_creator($materi->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menambah ujian pada sub bab ini.', 403);
 		}
 
@@ -270,9 +273,12 @@ class Bab extends MY_Controller {
 			show_404();
 		}
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		if (empty($materi)) {
+			show_404();
+		}
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh edit
-		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
+		if (!admin_can_access_creator($materi->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengubah bab ini.', 403);
 		}
 
@@ -325,6 +331,13 @@ class Bab extends MY_Controller {
 
 	public function komentar_tambah($bab_uuid)
 	{
+		if (user_role() === 'admin') {
+			$bab = $this->bab_model->get_by_uuid($bab_uuid);
+			$materi = $bab ? $this->materi_model->get_by_uuid($bab->materi_uuid) : NULL;
+			if (!$materi) {
+				show_404();
+			}
+		}
         $rules = $this->komentar_model->rules();
 		$this->form_validation->set_rules($rules);
 
@@ -341,6 +354,14 @@ class Bab extends MY_Controller {
 
 	public function komentar_hapus($uuid)
 	{
+		if (user_role() === 'admin') {
+			$komentar = $this->db->get_where('bab_komentar', array('uuid' => $uuid))->row();
+			$bab = $komentar ? $this->bab_model->get_by_uuid($komentar->bab_uuid) : NULL;
+			$materi = $bab ? $this->materi_model->get_by_uuid($bab->materi_uuid) : NULL;
+			if (!$materi) {
+				show_404();
+			}
+		}
 		$result = $this->komentar_model->delete_bab_komentar_by_uuid($uuid);
 		if ($result) {
 			$this->session->set_flashdata('success_msg', 'Komentar berhasil dihapus');
@@ -357,9 +378,12 @@ class Bab extends MY_Controller {
 			show_404();
 		}
 		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		if (empty($materi)) {
+			show_404();
+		}
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh hapus
-		if (!is_admin_or_superadmin() && $materi->created_by != $this->session->userdata('uuid')) {
+		if (!admin_can_access_creator($materi->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menghapus bab ini.', 403);
 		}
 

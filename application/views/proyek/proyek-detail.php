@@ -63,7 +63,7 @@
                 <h2 class="text-xl font-bold text-gray-900 mb-2"><?= $proyek->judul ?></h2>
                 <div class="flex items-center gap-2 text-sm text-gray-600">
                     <i data-lucide="user" class="w-4 h-4"></i>
-                    <span>Dibuat oleh : <?= $guru->nama ?></span>
+                    <span>Dibuat oleh : <?= html_escape($guru->nama ?? '-'); ?></span>
                 </div>
             </div>
         </div>

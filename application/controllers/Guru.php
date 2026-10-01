@@ -29,12 +29,102 @@ class Guru extends MY_Controller {
 
 	public function index()
 	{
-		$guru = $this->guru_model->get_all();
-		// Data is already enriched with mapel_nama, mapel_data, and kelas_per_mapel in the model
+		// ----- Pencarian & filter (query string) -----
+		$filters = array(
+			'q'             => trim((string) $this->input->get('q')),
+			'mapel'         => trim((string) $this->input->get('mapel')),
+			'jenis_kelamin' => trim((string) $this->input->get('jenis_kelamin')),
+			'admin_uuid'    => is_superadmin() ? trim((string) $this->input->get('admin_uuid')) : '',
+		);
+
+		// ----- Jumlah data per halaman -----
+		$per_page_options = array(10, 25, 50, 100);
+		$per_page = (int) $this->input->get('per_page');
+		if ( ! in_array($per_page, $per_page_options, TRUE)) {
+			$per_page = 10;
+		}
+
+		// ----- Halaman aktif -----
+		$page = (int) $this->input->get('page');
+		if ($page < 1) {
+			$page = 1;
+		}
+
+		$total_rows  = $this->guru_model->count_filtered($filters);
+		$total_pages = (int) ceil($total_rows / $per_page);
+		if ($total_pages < 1) {
+			$total_pages = 1;
+		}
+		if ($page > $total_pages) {
+			$page = $total_pages;
+		}
+
+		$offset = ($page - 1) * $per_page;
+
+		// Data guru (sudah dilengkapi mapel_nama, mapel_data, kelas_per_mapel).
+		$guru = $this->guru_model->get_all($filters, $per_page, $offset);
+		$admins = array();
+		if (is_superadmin()) {
+			$this->db->select('uuid, nama, username');
+			$this->db->where('role_id', 2);
+			$this->db->where('deleted_at', NULL);
+			$this->db->where('status', 'aktif');
+			$this->db->order_by('nama', 'ASC');
+			$admins = $this->db->get('users')->result();
+		}
+
+		// ----- Konfigurasi pagination (library CI3, mode query string) -----
+		$this->load->library('pagination');
+
+		$this->pagination->initialize(array(
+			'base_url'             => base_url('guru'),
+			'total_rows'           => $total_rows,
+			'per_page'             => $per_page,
+			'use_page_numbers'     => TRUE,
+			'page_query_string'    => TRUE,
+			'query_string_segment' => 'page',
+			'reuse_query_string'   => TRUE,
+			'cur_page'             => $page,
+			'num_links'            => 2,
+			'first_link'           => '&laquo;',
+			'prev_link'            => '&lsaquo;',
+			'next_link'            => '&rsaquo;',
+			'last_link'            => '&raquo;',
+			'full_tag_open'        => '<nav aria-label="Navigasi halaman"><ul class="flex flex-wrap items-center justify-center gap-1 list-none p-0 m-0">',
+			'full_tag_close'       => '</ul></nav>',
+			'num_tag_open'         => '<li>',
+			'num_tag_close'        => '</li>',
+			'cur_tag_open'         => '<li><span class="min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold text-white bg-blue-600 border border-blue-600">',
+			'cur_tag_close'        => '</span></li>',
+			'first_tag_open'       => '<li>',
+			'first_tag_close'      => '</li>',
+			'prev_tag_open'        => '<li>',
+			'prev_tag_close'       => '</li>',
+			'next_tag_open'        => '<li>',
+			'next_tag_close'       => '</li>',
+			'last_tag_open'        => '<li>',
+			'last_tag_close'       => '</li>',
+			'attributes'           => array(
+				'class' => 'min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors',
+			),
+		));
+
+		// ----- Rentang data yang sedang ditampilkan -----
+		$start_no = ($total_rows > 0) ? $offset + 1 : 0;
+		$end_no   = min($offset + $per_page, $total_rows);
 
 		$data = array(
-			'guru' => $guru,
-			'active_nav' => 'guru'
+			'guru'             => $guru,
+			'admins'           => $admins,
+			'daftar_mapel'     => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
+			'filters'          => $filters,
+			'per_page'         => $per_page,
+			'per_page_options' => $per_page_options,
+			'total_rows'       => $total_rows,
+			'start_no'         => $start_no,
+			'end_no'           => $end_no,
+			'pagination_links' => $this->pagination->create_links(),
+			'active_nav'       => 'guru',
 		);
 
         $this->load->view('partials/header_tailwind', ['title' => 'Data Guru']);
@@ -43,12 +133,86 @@ class Guru extends MY_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
 
+	public function assign_admin()
+	{
+		$this->require_superadmin();
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_error('Metode permintaan tidak diizinkan.', 405);
+		}
+
+		$guru_uuid = trim((string) $this->input->post('guru_uuid'));
+		$admin_uuid = trim((string) $this->input->post('admin_uuid'));
+		$guru = $this->db->get_where('users', array('uuid' => $guru_uuid, 'role_id' => 3, 'deleted_at' => NULL))->row();
+		$admin = $admin_uuid === '' ? NULL : $this->db->get_where('users', array('uuid' => $admin_uuid, 'role_id' => 2, 'status' => 'aktif', 'deleted_at' => NULL))->row();
+
+		if (!$guru || ($admin_uuid !== '' && !$admin)) {
+			$this->session->set_flashdata('error_msg', 'Guru atau admin yang dipilih tidak valid.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->where('uuid', $guru_uuid);
+		$this->db->where('role_id', 3);
+		$this->db->update('users', array(
+			'created_by' => $admin_uuid === '' ? NULL : $admin_uuid,
+			'modified_at' => date('Y-m-d H:i:s')
+		));
+
+		$this->session->set_flashdata('success_msg', 'Penanggung jawab guru berhasil diperbarui.');
+		redirect('guru');
+	}
+
+	public function bulk_assign_admin()
+	{
+		$this->require_superadmin();
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_error('Metode permintaan tidak diizinkan.', 405);
+		}
+
+		$guru_uuids = array_values(array_unique(array_filter(array_map('trim', (array) $this->input->post('guru_uuids')))));
+		$admin_uuid = trim((string) $this->input->post('admin_uuid'));
+		$admin = $admin_uuid === '' ? NULL : $this->db->get_where('users', array('uuid' => $admin_uuid, 'role_id' => 2, 'status' => 'aktif', 'deleted_at' => NULL))->row();
+
+		if (empty($guru_uuids) || ($admin_uuid !== '' && !$admin)) {
+			$this->session->set_flashdata('error_msg', 'Guru atau admin yang dipilih tidak valid.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->where_in('uuid', $guru_uuids);
+		$this->db->where('role_id', 3);
+		$this->db->where('deleted_at', NULL);
+		if ($this->db->count_all_results('users') !== count($guru_uuids)) {
+			$this->session->set_flashdata('error_msg', 'Sebagian data guru yang dipilih tidak valid. Tidak ada perubahan yang disimpan.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->trans_start();
+		$this->db->where_in('uuid', $guru_uuids);
+		$this->db->where('role_id', 3);
+		$this->db->where('deleted_at', NULL);
+		$this->db->update('users', array(
+			'created_by' => $admin_uuid === '' ? NULL : $admin_uuid,
+			'modified_at' => date('Y-m-d H:i:s')
+		));
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			$this->session->set_flashdata('error_msg', 'Penugasan admin gagal disimpan.');
+		} else {
+			$this->session->set_flashdata('success_msg', 'Admin pengelola berhasil ditetapkan untuk ' . count($guru_uuids) . ' guru.');
+		}
+		redirect('guru');
+	}
+
 	public function tambah()
 	{
         $rules = $this->guru_model->rules();
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			$this->_validate_admin_teacher_assignments();
 			$insert = $this->guru_model->insert();
 			if ($insert) {
 				$this->session->set_flashdata('success_msg', 'Data guru berhasil di simpan');
@@ -60,8 +224,8 @@ class Guru extends MY_Controller {
 		}
 
 		$data = array(
-			'mapel' => $this->mapel_model->get_all(),
-			'kelas' => $this->kelas_model->get_all(),
+			'mapel' => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
+			'kelas' => $this->kelas_model->get_all(FALSE),
 			'active_nav' => 'guru'
 		);
 
@@ -72,6 +236,10 @@ class Guru extends MY_Controller {
 	}
 
 	public function edit($uuid){
+		$guru = $this->guru_model->get_by_uuid($uuid);
+		if (!$guru) {
+			show_404();
+		}
 		$rules = [
 			[
 				'field' => 'namaLengkap',
@@ -94,6 +262,7 @@ class Guru extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			$this->_validate_admin_teacher_assignments();
 			$update = $this->guru_model->update($uuid);
 			if ($update) {
 				$this->session->set_flashdata('success_msg', 'Data Guru berhasil di Update');
@@ -104,14 +273,12 @@ class Guru extends MY_Controller {
 			}
 		}
 
-		$guru = $this->guru_model->get_by_uuid($uuid);
-
 		$data = array(
 			'guru' => $guru,
 			'mapel_list' => $guru->mapel_list ?? [],
 			'kelas_map' => $guru->kelas_map ?? [],
-			'mapel' => $this->mapel_model->get_all(),
-			'kelas' => $this->kelas_model->get_all(),
+			'mapel' => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
+			'kelas' => $this->kelas_model->get_all(FALSE),
 			'active_nav' => 'guru'
 		);
 
@@ -133,6 +300,29 @@ class Guru extends MY_Controller {
 		}
 
 		return true;
+	}
+
+	private function _validate_admin_teacher_assignments()
+	{
+		if (user_role() !== 'admin') {
+			return;
+		}
+
+		$mapel_uuids = (array) $this->input->post('namaMapel');
+		foreach ($mapel_uuids as $mapel_uuid) {
+			if (!$this->mapel_model->get_by_uuid($mapel_uuid, FALSE)) {
+				show_error('Mata pelajaran tidak ditemukan.', 404);
+			}
+		}
+
+		$kelas_map = (array) $this->input->post('kelasMapel');
+		foreach ($kelas_map as $kelas_uuids) {
+			foreach ((array) $kelas_uuids as $kelas_uuid) {
+				if (!$this->kelas_model->get_by_uuid($kelas_uuid, FALSE)) {
+					show_error('Kelas tidak ditemukan.', 404);
+				}
+			}
+		}
 	}
 
 
@@ -200,8 +390,8 @@ class Guru extends MY_Controller {
 		$this->load->view('partials/header_tailwind', ['title' => 'Import Data Guru']);
 		$this->load->view('partials/navbar', ['active_nav' => 'guru']);
 		$this->load->view('master/guru/guru-import', array(
-			'daftar_mapel' => $this->mapel_model->get_all(),
-			'daftar_kelas' => $this->kelas_model->get_all(),
+			'daftar_mapel' => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
+			'daftar_kelas' => $this->kelas_model->get_all(FALSE),
 			'from_controller' => true
 		));
 		$this->load->view('partials/footer_tailwind');
@@ -252,12 +442,12 @@ class Guru extends MY_Controller {
 
 			// Peta mata pelajaran & kelas: nama (dinormalisasi) => data
 			$mapel_map = array();
-			foreach ($this->mapel_model->get_all() as $mapel) {
+			foreach ($this->mapel_model->get_all(array(), NULL, 0, FALSE) as $mapel) {
 				$mapel_map[$this->_normalize_key($mapel->nama)] = $mapel;
 			}
 
 			$kelas_map = array();
-			foreach ($this->kelas_model->get_all() as $kelas) {
+			foreach ($this->kelas_model->get_all(FALSE) as $kelas) {
 				$kelas_map[$this->_normalize_key($kelas->nama)] = $kelas;
 			}
 
@@ -475,8 +665,8 @@ class Guru extends MY_Controller {
 	 */
 	public function download_template_guru()
 	{
-		$daftar_mapel = $this->mapel_model->get_all();
-		$daftar_kelas = $this->kelas_model->get_all();
+		$daftar_mapel = $this->mapel_model->get_all(array(), NULL, 0, FALSE);
+		$daftar_kelas = $this->kelas_model->get_all(FALSE);
 		$jumlah_mapel = count($daftar_mapel);
 		$jumlah_kelas = count($daftar_kelas);
 

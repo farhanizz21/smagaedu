@@ -193,14 +193,30 @@ class guru_model extends CI_Model {
 		];
 	}
 
-	public function get_all()
+	/**
+	 * Daftar guru dengan dukungan pencarian, filter, dan pagination.
+	 *
+	 * @param array $filters filter: q (nama/username/nip), mapel (uuid), jenis_kelamin (L/P)
+	 * @param int|null $limit jumlah baris per halaman (NULL = tanpa limit, kompatibel pemakaian lama)
+	 * @param int $offset offset baris
+	 * @return array
+	 */
+	public function get_all($filters = array(), $limit = NULL, $offset = 0)
 	{
-		$this->db->select('users.*, user_profiles.mapel_uuid, user_profiles.jenis_kelamin');
+		$this->db->select('users.*, user_profiles.mapel_uuid, user_profiles.jenis_kelamin, guru_creator.nama AS admin_nama');
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
-		$this->db->where('users.role_id', 3);
-		$this->db->where('users.deleted_at', NULL, FALSE);
+		$this->db->join('users AS guru_creator', 'users.created_by = guru_creator.uuid', 'left');
+		$this->_apply_filters($filters);
+		if (user_role() === 'admin') {
+			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+		}
 		$this->db->order_by('users.nama', 'ASC');
+
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
+
 		$data = $this->db->get()->result();
 
 		// Enrich data with mapel and kelas names
@@ -223,6 +239,69 @@ class guru_model extends CI_Model {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Hitung jumlah guru berdasarkan filter yang sama dengan get_all().
+	 *
+	 * @param array $filters
+	 * @return int
+	 */
+	public function count_filtered($filters = array())
+	{
+		$this->db->from('users');
+		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
+		$this->_apply_filters($filters);
+		if (user_role() === 'admin') {
+			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+		}
+
+		return $this->db->count_all_results();
+	}
+
+	/**
+	 * Terapkan kondisi WHERE bersama untuk pencarian & filter guru aktif.
+	 * Guru yang sudah soft delete (deleted_at terisi) tidak diikutsertakan.
+	 *
+	 * @param array $filters
+	 * @return void
+	 */
+	private function _apply_filters($filters = array())
+	{
+		$this->db->where('users.role_id', 3);
+		$this->db->where('users.deleted_at', NULL, FALSE);
+
+		// Pencarian bebas: cocokkan nama, username, atau NIP.
+		if ( ! empty($filters['q'])) {
+			$q = $filters['q'];
+			$this->db->group_start();
+			$this->db->like('users.nama', $q);
+			$this->db->or_like('users.username', $q);
+			$this->db->or_like('user_profiles.nip', $q);
+			$this->db->group_end();
+		}
+
+		// Filter mata pelajaran. Relasi mapel disimpan sebagai JSON di
+		// user_profiles.mapel_uuid, sehingga dicocokkan via LIKE terhadap uuid.
+		if ( ! empty($filters['mapel'])) {
+			$this->db->like('user_profiles.mapel_uuid', $filters['mapel']);
+		}
+
+		// Filter jenis kelamin (L = Laki-laki, P = Perempuan).
+		if ( ! empty($filters['jenis_kelamin'])) {
+			$this->db->where('user_profiles.jenis_kelamin', $filters['jenis_kelamin']);
+		}
+
+		if (isset($filters['admin_uuid']) && $filters['admin_uuid'] !== '') {
+			if ($filters['admin_uuid'] === '__unassigned__') {
+				$this->db->group_start();
+				$this->db->where('users.created_by IS NULL', NULL, FALSE);
+				$this->db->or_where("users.created_by NOT IN (SELECT uuid FROM users WHERE role_id = 2 AND status = 'aktif' AND deleted_at IS NULL)", NULL, FALSE);
+				$this->db->group_end();
+			} else {
+				$this->db->where('users.created_by', $filters['admin_uuid']);
+			}
+		}
 	}
 
 	/**
@@ -415,6 +494,10 @@ class guru_model extends CI_Model {
 		$this->db->select('uuid');
 		$this->db->where_in('uuid', $uuids);
 		$this->db->where('deleted_at', NULL);
+		$this->db->where('role_id', 3);
+		if (user_role() === 'admin') {
+			$this->db->where('created_by', $this->session->userdata('uuid'));
+		}
 		$targets = $this->db->get('users')->result();
 
 		if (empty($targets)) {
@@ -434,6 +517,10 @@ class guru_model extends CI_Model {
 		// Pastikan akun masih aktif sebelum dihapus
 		$this->db->where('uuid', $uuid);
 		$this->db->where('deleted_at', NULL);
+		$this->db->where('role_id', 3);
+		if (user_role() === 'admin') {
+			$this->db->where('created_by', $this->session->userdata('uuid'));
+		}
 		if ($this->db->count_all_results('users') === 0) {
 			return false;
 		}
@@ -451,6 +538,9 @@ class guru_model extends CI_Model {
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
 		$this->db->where('users.uuid', $uuid);
 		$this->db->where('users.role_id', 3);
+		if (user_role() === 'admin') {
+			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+		}
 		$data = $this->db->get()->row();
 
 		if ($data) {
@@ -460,6 +550,55 @@ class guru_model extends CI_Model {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Ubah relasi mapel-kelas guru (mapel_uuid => [kelas_uuid, ...]) menjadi
+	 * daftar kelas lengkap (objek kelas) untuk tiap mata pelajaran.
+	 *
+	 * @param array $kelas_map hasil parse user_profiles.mapel_uuid
+	 * @return array [mapel_uuid => [objek kelas]]
+	 */
+	public function resolve_kelas_per_mapel($kelas_map = [])
+	{
+		if (empty($kelas_map) || !is_array($kelas_map)) {
+			return [];
+		}
+
+		// Kumpulkan seluruh kelas uuid agar cukup satu kali query
+		$all_uuids = [];
+		foreach ($kelas_map as $kelas_uuids) {
+			if (is_array($kelas_uuids)) {
+				$all_uuids = array_merge($all_uuids, $kelas_uuids);
+			}
+		}
+		$all_uuids = array_values(array_unique($all_uuids));
+
+		if (empty($all_uuids)) {
+			return [];
+		}
+
+		// Index data kelas berdasarkan uuid
+		$kelas_by_uuid = [];
+		foreach ($this->get_kelas_names($all_uuids) as $kelas) {
+			$kelas_by_uuid[$kelas->uuid] = $kelas;
+		}
+
+		// Susun kembali per mata pelajaran (lewati kelas yang sudah dihapus/kosong)
+		$result = [];
+		foreach ($kelas_map as $mapel_uuid => $kelas_uuids) {
+			$result[$mapel_uuid] = [];
+			if (!is_array($kelas_uuids)) {
+				continue;
+			}
+			foreach ($kelas_uuids as $kelas_uuid) {
+				if (isset($kelas_by_uuid[$kelas_uuid])) {
+					$result[$mapel_uuid][] = $kelas_by_uuid[$kelas_uuid];
+				}
+			}
+		}
+
+		return $result;
 	}
 
 	/**
