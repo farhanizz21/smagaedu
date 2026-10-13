@@ -52,7 +52,7 @@ class Bab extends MY_Controller {
   		$user_login = $this->session->userdata('uuid');
 		$all_unlocked = is_admin_or_superadmin() || $can_manage || $is_mapel_pengampu;
 
-  		// Urutkan bab berdasarkan urutan (modified_at ASC)
+		// Urutkan bab berdasarkan urutan dibuat (id ASC)
   		$bab_sorted = $bab;
 
 		$progress = $all_unlocked ? [] : $this->bab_model->get_progress_for_materi($materi_uuid, $user_login);

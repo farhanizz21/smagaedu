@@ -39,7 +39,7 @@ class bab_model extends CI_Model {
     {
         $this->db->where('materi_uuid', $materi_uuid);
         $this->db->where('deleted_at', NULL, FALSE);
-        $this->db->order_by('modified_at', 'ASC');
+        $this->db->order_by('id', 'ASC');
         return $this->db->get('bab')->result();
     }
 
