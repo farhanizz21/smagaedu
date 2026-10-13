@@ -8,7 +8,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <div class="flex items-center gap-3 mb-1">
-                <a href="<?= base_url('mata_pelajaran/detail/' . $mapel_uuid) ?>"
+                <a href="<?= base_url('mata_pelajaran/detail/' . $mapel_uuid . '?semester=' . $semester) ?>"
                     class="text-gray-400 hover:text-gray-600 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
@@ -30,6 +30,17 @@
         <?= form_open_multipart('bab/tambah/' . $mapel_uuid); ?>
         <div class="space-y-6">
             <input type="hidden" name="namaMapel" value="<?= $mapel_uuid; ?>">
+            <div>
+                <label for="semester" class="block text-sm font-semibold text-gray-700 mb-1.5">Semester<span class="text-red-500">*</span></label>
+                <select name="semester" id="semester"
+                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
+                    <option value="1" <?= (string) set_value('semester', $semester) === '1' ? 'selected' : '' ?>>Semester 1</option>
+                    <option value="2" <?= (string) set_value('semester', $semester) === '2' ? 'selected' : '' ?>>Semester 2</option>
+                </select>
+                <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('semester')) ? '' : 'hidden' ?>">
+                    <?= form_error('semester') ?>
+                </div>
+            </div>
             <!-- Thumbnail -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Thumbnail</label>
@@ -61,7 +72,7 @@
                 <i data-lucide="save" class="w-4 h-4"></i>
                 Simpan
             </button>
-            <a href="<?= base_url('mata_pelajaran/detail/' . $mapel_uuid) ?>"
+            <a href="<?= base_url('mata_pelajaran/detail/' . $mapel_uuid . '?semester=' . $semester) ?>"
                 class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
                 <i data-lucide="x" class="w-4 h-4"></i>
                 Batal

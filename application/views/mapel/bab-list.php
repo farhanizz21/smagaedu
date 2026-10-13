@@ -14,7 +14,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <div class="flex items-center gap-3 mb-2">
-                        <a href="<?= base_url('mata_pelajaran') ?>"
+                        <a href="<?= base_url(!empty($semester) ? 'mata_pelajaran/semester/' . $mapel->uuid : 'mata_pelajaran') ?>"
                             class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
                             <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                         </a>
@@ -24,12 +24,16 @@
                         </div>
                         <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Daftar Bab</h1>
                     </div>
-                    <p class="text-teal-100 text-sm md:text-base ml-[104px]">Mata Pelajaran:
+                    <p class="text-teal-100 text-sm md:text-base ml-[104px]">
+                        Mata Pelajaran:
                         <span class="text-white font-semibold"><?= $mapel->nama ?></span>
+                        <?php if (!empty($semester)): ?>
+                        <span class="mx-1 text-white/60">|</span> Semester <?= $semester ?>
+                        <?php endif; ?>
                     </p>
                 </div>
                 <?php if($pengampu == true || $is_admin): ?>
-                <a href="<?= base_url('bab/tambah/' . $mapel->uuid) ?>"
+                <a href="<?= base_url('bab/tambah/' . $mapel->uuid . (!empty($semester) ? '?semester=' . $semester : '')) ?>"
                     class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-emerald-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
                     <i data-lucide="plus" class="w-4 h-4"></i>
                     Tambah Bab
@@ -112,6 +116,7 @@
                     <h5
                         class="font-bold text-gray-900 text-base leading-snug group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r <?= $palette['from'] ?> <?= $palette['to'] ?> transition-all duration-300">
                         <?= $val->judul ?></h5>
+                    <span class="flex-shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-600">Semester <?= $val->semester ?? 1 ?></span>
                     <?php if ($is_completed): ?>
                     <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0" title="Selesai"></i>
                     <?php endif; ?>
@@ -134,7 +139,7 @@
                     $can_manage = $is_admin || $val->created_by == $current_uuid;
                 ?>
                 <?php if($can_manage): ?>
-                <a href="<?= base_url('bab/edit/' . $val->uuid) ?>"
+                <a href="<?= base_url('bab/edit/' . $val->uuid . '?semester=' . ($val->semester ?? 1)) ?>"
                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors">
                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                 </a>

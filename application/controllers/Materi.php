@@ -52,6 +52,11 @@ class Materi extends MY_Controller {
     
     public function detail($mapel_uuid)
 	{
+		$semester = $this->input->get('semester');
+		if ($semester !== NULL && !in_array($semester, ['1', '2'], TRUE)) {
+			show_404();
+		}
+
 		if (user_role() === 'admin' && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
 			show_404();
 		}
@@ -71,7 +76,7 @@ class Materi extends MY_Controller {
 		if (!$mapel) {
 			show_404();
 		}
-		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid);
+		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid, $semester);
 		$guru_uuid = $this->session->userdata('uuid');
 		$pengampu = $this->guru_model->get_mapel_pengampu($mapel_uuid, $guru_uuid);
 		$user_uuid = $this->session->userdata('uuid');
@@ -94,13 +99,47 @@ class Materi extends MY_Controller {
 			'mapel' => $mapel,
 			'pengampu' => $pengampu,
 			'materi_progress' => $materi_progress,
+			'semester' => $semester,
 			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
 
-        $this->load->view('partials/header_tailwind', ['title' => 'Daftar Materi']);
+		$title = $semester ? 'Daftar Bab - Semester ' . $semester : 'Daftar Materi';
+		$this->load->view('partials/header_tailwind', ['title' => $title]);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
         $this->load->view('mapel/bab-list', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
+	}
+
+	public function semester($mapel_uuid)
+	{
+		if (user_role() === 'admin' && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
+			show_404();
+		}
+
+		if ($this->session->userdata('role') === 'siswa') {
+			$this->load->model('siswa_model');
+			$siswa = $this->siswa_model->get_by_uuid($this->session->userdata('uuid'));
+			$kelas_uuid = $siswa->kelas_uuid ?? null;
+			$allowed_mapel = $this->mapel_model->get_mapel_uuids_by_kelas($kelas_uuid);
+
+			if (!in_array($mapel_uuid, $allowed_mapel, true)) {
+				show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
+			}
+		}
+
+		$mapel = $this->mapel_model->get_by_uuid($mapel_uuid, FALSE);
+		if (!$mapel) {
+			show_404();
+		}
+
+		$this->load->view('partials/header_tailwind', ['title' => 'Pilih Semester - ' . $mapel->nama]);
+		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
+		$this->load->view('mapel/semester', [
+			'mapel' => $mapel,
+			'active_nav' => 'materi',
+			'from_controller' => true
+		]);
 		$this->load->view('partials/footer_tailwind');
 	}
 
@@ -112,6 +151,11 @@ class Materi extends MY_Controller {
 		if (!$mapel_valid) {
 			show_404();
 		}
+		$semester = $this->input->get('semester');
+		if ($semester !== NULL && !in_array($semester, ['1', '2'], TRUE)) {
+			show_404();
+		}
+		$semester = $semester ?: '1';
 		// Superadmin and admin have full access, guru needs permission
 		$this->require_permission('manage_materi');
 		
@@ -136,7 +180,8 @@ class Materi extends MY_Controller {
 					$thumbnail = $this->upload->data('file_name');
 				} else {
 					$this->session->set_flashdata('error_msg', 'Gagal mengunggah thumbnail: ' . $this->upload->display_errors());
-					redirect('bab/tambah/'.$mapel_uuid);
+					$selected_semester = $this->input->post('semester') ?: $semester;
+					redirect('bab/tambah/' . $mapel_uuid . '?semester=' . $selected_semester);
 				}
 			}
 
@@ -146,7 +191,7 @@ class Materi extends MY_Controller {
 			} else {
 				$this->session->set_flashdata('error_msg', 'Data Materi gagal disimpan');
 			}
-			redirect('mata_pelajaran/detail/'.$mapel_uuid);
+			redirect('mata_pelajaran/detail/' . $mapel_uuid . '?semester=' . $this->input->post('semester'));
 		}
 		
 		$guru_uuid = $this->session->userdata('uuid');
@@ -155,6 +200,7 @@ class Materi extends MY_Controller {
 		$data = array(
 			'guru' => $guru,
 			'mapel_uuid' => $mapel_uuid,
+			'semester' => $semester,
 			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
@@ -180,6 +226,11 @@ class Materi extends MY_Controller {
 				'field' => 'judul',
 				'label' => 'Judul Materi',
 				'rules' => 'required'
+			],
+			[
+				'field' => 'semester',
+				'label' => 'Semester',
+				'rules' => 'required|in_list[1,2]'
 			]
 		];
 		$this->form_validation->set_rules($rules);
@@ -201,7 +252,7 @@ class Materi extends MY_Controller {
 					$thumbnail = $this->upload->data('file_name');
 				} else {
 					$this->session->set_flashdata('error_msg', 'Gagal mengunggah thumbnail: ' . $this->upload->display_errors());
-					redirect('bab/edit/' . $uuid);
+					redirect('bab/edit/' . $uuid . '?semester=' . $this->input->post('semester'));
 				}
 			}
 
@@ -211,7 +262,7 @@ class Materi extends MY_Controller {
 			} else {
 				$this->session->set_flashdata('error_msg', 'Data Materi gagal di Update');
 			}
-			redirect('mata_pelajaran/detail/' . $materi->mapel_uuid);
+			redirect('mata_pelajaran/detail/' . $materi->mapel_uuid . '?semester=' . $this->input->post('semester'));
 		}
 
 		$data = array(
