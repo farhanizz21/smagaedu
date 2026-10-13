@@ -1,5 +1,5 @@
 <?php if(!isset($from_controller)): ?>
-<?php $this->load->view('partials/header_tailwind', ['title' => 'Daftar Bab']); ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Daftar Pekan']); ?>
 <?php $this->load->view('partials/navbar', ['active_nav' => 'materi']); ?>
 <?php endif; ?>
 
@@ -22,7 +22,7 @@
                             class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                             <i data-lucide="book-marked" class="w-6 h-6 text-white"></i>
                         </div>
-                        <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Daftar Bab</h1>
+                        <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Daftar Pekan</h1>
                     </div>
                     <p class="text-teal-100 text-sm md:text-base ml-[104px]">
                         Mata Pelajaran:
@@ -32,13 +32,10 @@
                         <?php endif; ?>
                     </p>
                 </div>
-                <?php if($pengampu == true || $is_admin): ?>
-                <a href="<?= base_url('bab/tambah/' . $mapel->uuid . (!empty($semester) ? '?semester=' . $semester : '')) ?>"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-emerald-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                    Tambah Bab
-                </a>
-                <?php endif; ?>
+                <span class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white">
+                    <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                    20 Pekan
+                </span>
             </div>
         </div>
     </div>
@@ -60,7 +57,8 @@
     <?php endif; ?>
 
     <!-- Card Grid -->
-    <?php if(!empty($materi)): ?>
+    <?php $materi_by_pekan = []; ?>
+    <?php foreach ($materi as $item) { $materi_by_pekan[(int) $item->pekan_ke] = $item; } ?>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php 
             $color_palettes = [
@@ -73,12 +71,34 @@
             ];
             $i = 0;
         ?>
-        <?php foreach($materi as $val): ?>
+        <?php for ($pekan_ke = 1; $pekan_ke <= 20; $pekan_ke++): ?>
         <?php 
+            $val = $materi_by_pekan[$pekan_ke] ?? null;
             $palette = $color_palettes[$i % count($color_palettes)];
             $i++;
             $icons = ['book-open', 'book-marked', 'book-audio', 'file-text', 'notebook-text', 'scroll-text'];
             $icon = $icons[$i % count($icons)];
+        ?>
+        <?php if (!$val): ?>
+        <div class="card overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-white">
+            <div class="h-2 w-full bg-gray-100"></div>
+            <div class="flex min-h-64 flex-col items-center justify-center p-6 text-center">
+                <span class="flex h-14 w-14 items-center justify-center rounded-2xl <?= $palette['bg'] ?> text-2xl font-bold <?= $palette['icon'] ?>">
+                    <?= $pekan_ke ?>
+                </span>
+                <h2 class="mt-4 text-lg font-bold text-gray-900">Pekan <?= $pekan_ke ?></h2>
+                <p class="mt-1 text-sm text-gray-500">Belum ada materi</p>
+                <?php if ($pengampu == true || $is_admin): ?>
+                <a href="<?= base_url('bab/tambah/' . $mapel->uuid . '?semester=' . $semester . '&pekan_ke=' . $pekan_ke) ?>"
+                    class="mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800">
+                    <i data-lucide="plus" class="h-4 w-4"></i>
+                    Isi Pekan
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
+        <?php else: ?>
+        <?php
             $materi_state = $materi_progress[$val->uuid] ?? ['unlocked' => true, 'completed' => false];
             $is_locked = !$materi_state['unlocked'];
             $is_completed = !empty($materi_state['completed']);
@@ -94,8 +114,8 @@
                     <div class="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-2">
                         <i data-lucide="lock" class="w-6 h-6 text-gray-400"></i>
                     </div>
-                    <p class="text-sm font-semibold">Bab terkunci</p>
-                    <p class="text-xs opacity-85 mt-1">Selesaikan bab sebelumnya terlebih dahulu</p>
+                    <p class="text-sm font-semibold">Pekan terkunci</p>
+                    <p class="text-xs opacity-85 mt-1">Selesaikan pekan sebelumnya terlebih dahulu</p>
                 </div>
             </div>
             <?php endif; ?>
@@ -115,15 +135,14 @@
                     <div class="flex items-start justify-between gap-2">
                     <h5
                         class="font-bold text-gray-900 text-base leading-snug group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r <?= $palette['from'] ?> <?= $palette['to'] ?> transition-all duration-300">
-                        <?= $val->judul ?></h5>
-                    <span class="flex-shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-600">Semester <?= $val->semester ?? 1 ?></span>
+                        Pekan <?= $pekan_ke ?></h5>
                     <?php if ($is_completed): ?>
                     <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0" title="Selesai"></i>
                     <?php endif; ?>
                     </div>
                     <p class="text-sm text-gray-500 flex items-center gap-1.5">
                         <i data-lucide="user" class="w-4 h-4"></i>
-                        <?= $val->nama ?>
+                        <?= $val->judul !== ('Pekan ' . $pekan_ke) ? $val->judul : 'Materi pembelajaran' ?>
                     </p>
                 </div>
             </a>
@@ -132,7 +151,7 @@
             <div class="px-5 pb-4 flex items-center gap-2">
                 <a href="<?= base_url('sub_bab/index/' . $val->uuid) ?>"
                     class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r <?= $palette['btn'] ?> shadow-md hover:shadow-lg hover:scale-[1.02] transition-all">
-                    <i data-lucide="layers" class="w-3.5 h-3.5"></i> Sub Bab
+                    <i data-lucide="layers" class="w-3.5 h-3.5"></i> Buka Pekan
                 </a>
                 <?php
                     $current_uuid = $this->session->userdata('uuid');
@@ -141,11 +160,11 @@
                 <?php if($can_manage): ?>
                 <a href="<?= base_url('bab/edit/' . $val->uuid . '?semester=' . ($val->semester ?? 1)) ?>"
                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors">
-                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                    <i data-lucide="pencil" class="w-3.5 h-3.5" title="Edit Pekan"></i>
                 </a>
                 <a href="<?= base_url('mata_pelajaran/hapus/' . $val->uuid) ?>"
                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
-                    onclick="return confirm('Apakah Anda yakin ingin menghapus bab <?= $val->judul; ?>?')">
+                    onclick="return confirm('Apakah Anda yakin ingin menghapus Pekan <?= $pekan_ke ?>?')">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                 </a>
                 <?php endif; ?>
@@ -160,18 +179,9 @@
                 </div>
             </div>
         </div>
-        <?php endforeach; ?>
+        <?php endif; ?>
+        <?php endfor; ?>
     </div>
-    <?php else: ?>
-    <div class="bg-white rounded-2xl border-2 border-gray-100 text-center py-16">
-        <div
-            class="w-20 h-20 rounded-3xl bg-gradient-to-br from-emerald-100 to-teal-100 flex items-center justify-center mx-auto mb-4">
-            <i data-lucide="book-open" class="w-10 h-10 text-emerald-400"></i>
-        </div>
-        <p class="text-gray-400 font-medium">Belum ada data bab</p>
-        <p class="text-gray-300 text-sm mt-1">Silakan tambah bab baru untuk mata pelajaran ini</p>
-    </div>
-    <?php endif; ?>
 </div>
 
 <style>

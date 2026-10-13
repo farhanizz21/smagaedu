@@ -1,5 +1,5 @@
 <?php if(!isset($from_controller)): ?>
-<?php $this->load->view('partials/header_tailwind', ['title' => 'Daftar Bab']); ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Materi Pekan']); ?>
 <?php $this->load->view('partials/navbar', ['active_nav' => 'materi']); ?>
 <?php endif; ?>
 
@@ -139,7 +139,7 @@ if (!function_exists('sub_bab_prepare_html')) {
                             class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                             <i data-lucide="book-open" class="w-6 h-6 text-white"></i>
                         </div>
-                        <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Daftar Sub Bab</h1>
+                        <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">Materi Pekan</h1>
                     </div>
                     <div class="ml-[104px] mt-2 space-y-1">
                         <p class="text-purple-100 text-sm md:text-base">
@@ -147,7 +147,7 @@ if (!function_exists('sub_bab_prepare_html')) {
                             <span class="text-white font-semibold"><?= $mapel->nama ?? $materi->judul ?></span>
                         </p>
                         <p class="text-purple-100 text-sm md:text-base">
-                            <span class="font-medium">Bab:</span>
+                            <span class="font-medium">Pekan:</span>
                             <span class="text-white font-semibold"><?= $materi->judul ?></span>
                         </p>
                     </div>

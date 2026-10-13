@@ -52,8 +52,8 @@ class Materi extends MY_Controller {
     
     public function detail($mapel_uuid)
 	{
-		$semester = $this->input->get('semester');
-		if ($semester !== NULL && !in_array($semester, ['1', '2'], TRUE)) {
+		$semester = $this->input->get('semester') ?: '1';
+		if (!in_array($semester, ['1', '2'], TRUE)) {
 			show_404();
 		}
 
@@ -104,7 +104,7 @@ class Materi extends MY_Controller {
 			'active_nav' => 'materi'
 		);
 
-		$title = $semester ? 'Daftar Bab - Semester ' . $semester : 'Daftar Materi';
+		$title = 'Daftar Pekan - Semester ' . $semester;
 		$this->load->view('partials/header_tailwind', ['title' => $title]);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
         $this->load->view('mapel/bab-list', array_merge($data, ['from_controller' => true]));
@@ -151,11 +151,15 @@ class Materi extends MY_Controller {
 		if (!$mapel_valid) {
 			show_404();
 		}
-		$semester = $this->input->get('semester');
+		$semester = $this->input->get('semester') ?: $this->input->post('semester');
 		if ($semester !== NULL && !in_array($semester, ['1', '2'], TRUE)) {
 			show_404();
 		}
 		$semester = $semester ?: '1';
+		$pekan_ke = (int) ($this->input->get('pekan_ke') ?: $this->input->post('pekan_ke'));
+		if ($pekan_ke < 1 || $pekan_ke > 20) {
+			show_404();
+		}
 		// Superadmin and admin have full access, guru needs permission
 		$this->require_permission('manage_materi');
 		
@@ -163,6 +167,11 @@ class Materi extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 		
 		if ($this->form_validation->run() == TRUE) {
+			$posted_semester = $this->input->post('semester');
+			$posted_week = (int) $this->input->post('pekan_ke');
+			if ($this->materi_model->week_exists($mapel_uuid, $posted_semester, $posted_week)) {
+				show_error('Pekan tersebut sudah memiliki materi.', 409);
+			}
 			$this->load->library('upload');
 
 			$thumbnail = null;
@@ -181,15 +190,15 @@ class Materi extends MY_Controller {
 				} else {
 					$this->session->set_flashdata('error_msg', 'Gagal mengunggah thumbnail: ' . $this->upload->display_errors());
 					$selected_semester = $this->input->post('semester') ?: $semester;
-					redirect('bab/tambah/' . $mapel_uuid . '?semester=' . $selected_semester);
+					redirect('bab/tambah/' . $mapel_uuid . '?semester=' . $selected_semester . '&pekan_ke=' . $pekan_ke);
 				}
 			}
 
 			$insert = $this->materi_model->insert($thumbnail, $mapel_uuid);
 			if ($insert) {
-				$this->session->set_flashdata('success_msg', 'Data Materi berhasil disimpan');
+				$this->session->set_flashdata('success_msg', 'Pekan berhasil disimpan');
 			} else {
-				$this->session->set_flashdata('error_msg', 'Data Materi gagal disimpan');
+				$this->session->set_flashdata('error_msg', 'Pekan gagal disimpan');
 			}
 			redirect('mata_pelajaran/detail/' . $mapel_uuid . '?semester=' . $this->input->post('semester'));
 		}
@@ -201,11 +210,12 @@ class Materi extends MY_Controller {
 			'guru' => $guru,
 			'mapel_uuid' => $mapel_uuid,
 			'semester' => $semester,
+			'pekan_ke' => $pekan_ke,
 			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
 
-        $this->load->view('partials/header_tailwind', ['title' => 'Tambah Materi']);
+		$this->load->view('partials/header_tailwind', ['title' => 'Tambah Pekan']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
         $this->load->view('mapel/bab-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
@@ -216,26 +226,40 @@ class Materi extends MY_Controller {
 		if (empty($materi)) {
 			show_404();
 		}
-
 		if (!admin_can_access_creator($materi->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengubah materi ini.', 403);
+		}
+		if (empty($materi->pekan_ke)) {
+			$this->materi_model->get_by_mapel_uuid($materi->mapel_uuid, $materi->semester);
+			$materi = $this->materi_model->get_by_uuid($uuid);
 		}
 
 		$rules = [
 			[
 				'field' => 'judul',
-				'label' => 'Judul Materi',
+				'label' => 'Nama Pekan',
 				'rules' => 'required'
 			],
 			[
 				'field' => 'semester',
 				'label' => 'Semester',
 				'rules' => 'required|in_list[1,2]'
+			],
+			[
+				'field' => 'pekan_ke',
+				'label' => 'Pekan',
+				'rules' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[20]'
 			]
 		];
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			$target_semester = $this->input->post('semester');
+			$pekan_ke = (int) $this->input->post('pekan_ke');
+			if ($this->materi_model->week_exists($materi->mapel_uuid, $target_semester, $pekan_ke, $uuid)) {
+				$this->session->set_flashdata('error_msg', 'Pekan ke-' . $pekan_ke . ' di Semester ' . $target_semester . ' sudah berisi materi.');
+				redirect('bab/edit/' . $uuid . '?semester=' . $materi->semester);
+			}
 			$this->load->library('upload');
 
 			$thumbnail = $materi->thumbnail;
@@ -258,11 +282,11 @@ class Materi extends MY_Controller {
 
 			$update = $this->materi_model->update($uuid, $thumbnail);
 			if ($update) {
-				$this->session->set_flashdata('success_msg', 'Data Materi berhasil di Update');
+				$this->session->set_flashdata('success_msg', 'Pekan berhasil diperbarui');
 			} else {
-				$this->session->set_flashdata('error_msg', 'Data Materi gagal di Update');
+				$this->session->set_flashdata('error_msg', 'Pekan gagal diperbarui');
 			}
-			redirect('mata_pelajaran/detail/' . $materi->mapel_uuid . '?semester=' . $this->input->post('semester'));
+			redirect('mata_pelajaran/detail/' . $materi->mapel_uuid . '?semester=' . $target_semester);
 		}
 
 		$data = array(
@@ -272,7 +296,7 @@ class Materi extends MY_Controller {
 			'active_nav' => 'materi'
 		);
 
-		$this->load->view('partials/header_tailwind', ['title' => 'Edit Materi']);
+		$this->load->view('partials/header_tailwind', ['title' => 'Edit Pekan']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
         $this->load->view('mapel/bab-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');

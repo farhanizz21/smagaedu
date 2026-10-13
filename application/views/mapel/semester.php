@@ -28,7 +28,7 @@
             <div>
                 <p class="text-xs font-semibold uppercase text-blue-700">Semester</p>
                 <h2 class="mt-2 text-2xl font-bold text-gray-900"><?= $semester ?></h2>
-                <p class="mt-2 text-sm text-gray-600">Lihat daftar bab <?= $mapel->nama ?></p>
+                <p class="mt-2 text-sm text-gray-600">Lihat daftar pekan <?= $mapel->nama ?></p>
             </div>
             <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700 transition group-hover:bg-blue-700 group-hover:text-white">
                 <i data-lucide="arrow-right" class="h-5 w-5"></i>
