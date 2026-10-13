@@ -152,13 +152,19 @@ if (!function_exists('sub_bab_prepare_html')) {
                         </p>
                     </div>
                 </div>
-                <?php if($can_manage): ?>
-                <a href="<?= base_url('sub_bab/tambah/' . $materi->uuid) ?>"
-                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-purple-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                    Tambah Sub Bab
-                </a>
-                <?php endif; ?>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white">
+                        <i data-lucide="calendar-check" class="w-4 h-4"></i>
+                        <?= $pertemuan_count ?>/3 Pertemuan
+                    </span>
+                    <?php if ($can_add_meeting && $pertemuan_count < 3): ?>
+                    <a href="<?= base_url('sub_bab/tambah/' . $materi->uuid) ?>"
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-purple-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Tambah Pertemuan
+                    </a>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -216,12 +222,12 @@ if (!function_exists('sub_bab_prepare_html')) {
                     <div class="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-3">
                         <i data-lucide="lock" class="w-7 h-7 text-gray-400"></i>
                     </div>
-                    <p class="text-sm font-semibold mb-1">Sub Bab Terkunci</p>
+                    <p class="text-sm font-semibold mb-1">Pertemuan Terkunci</p>
                     <p class="text-xs opacity-80">
                         <?php if($has_ujian): ?>
-                        Selesaikan ujian sub bab sebelumnya untuk membuka
+                        Selesaikan ujian pertemuan sebelumnya untuk membuka
                         <?php else: ?>
-                        Selesaikan sub bab sebelumnya untuk membuka
+                        Selesaikan pertemuan sebelumnya untuk membuka
                         <?php endif; ?>
                     </p>
                 </div>
@@ -291,7 +297,7 @@ if (!function_exists('sub_bab_prepare_html')) {
                             class="js-preview-image relative w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden border <?= $palette['border'] ?> bg-gray-50 flex-shrink-0 group"
                             title="Lihat gambar">
                             <img src="<?= htmlspecialchars($deskripsi_img, ENT_QUOTES, 'UTF-8') ?>"
-                                alt="Gambar sub bab"
+                                alt="Gambar pertemuan"
                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 loading="lazy" decoding="async">
                             <?php if ($deskripsi_img_total > 1): ?>
@@ -336,7 +342,7 @@ if (!function_exists('sub_bab_prepare_html')) {
                     </a>
                     <a href="<?= base_url('sub_bab/hapus/' . $val->uuid) ?>"
                         class="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-all"
-                        onclick="return confirm('Apakah Anda yakin ingin menghapus sub bab ini?')">
+                        onclick="return confirm('Apakah Anda yakin ingin menghapus pertemuan ini?')">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     </a>
                     <?php endif; ?>
@@ -491,8 +497,8 @@ if (!function_exists('sub_bab_prepare_html')) {
             class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-100 to-purple-100 flex items-center justify-center mx-auto mb-4">
             <i data-lucide="book-open" class="w-10 h-10 text-violet-400"></i>
         </div>
-        <p class="text-gray-400 font-medium">Belum ada bab</p>
-        <p class="text-gray-300 text-sm mt-1">Silakan tambah bab baru untuk mata pelajaran ini</p>
+        <p class="text-gray-400 font-medium">Belum ada pertemuan</p>
+        <p class="text-gray-300 text-sm mt-1">Tambahkan pertemuan untuk pekan ini</p>
     </div>
     <?php endif; ?>
 </div>

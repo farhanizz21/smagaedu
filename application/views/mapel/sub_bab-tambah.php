@@ -1,5 +1,5 @@
 <?php if(!isset($from_controller)): ?>
-<?php $this->load->view('partials/header_tailwind', ['title' => 'Tambah Bab']); ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Tambah Pertemuan']); ?>
 <?php $this->load->view('partials/navbar', ['active_nav' => 'materi']); ?>
 <?php endif; ?>
 
@@ -14,7 +14,7 @@
                     class="text-gray-400 hover:text-gray-600 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
-                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Tambah Sub Bab</h1>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Tambah Pertemuan</h1>
             </div>
             <p class="text-gray-500 text-sm ml-8">Materi: <span
                     class="text-blue-600 font-semibold"><?= $materi->judul ?></span></p>
@@ -32,11 +32,11 @@
         <?= form_open_multipart('sub_bab/tambah/' . $materi->uuid); ?>
         <div class="space-y-6">
             <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Judul Sub Bab <span
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Judul Pertemuan <span
                         class="text-red-500">*</span></label>
                 <input type="text" name="judul" id="judul"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm placeholder:text-gray-400"
-                    placeholder="Masukkan Judul Sub Bab" value="<?= set_value('judul'); ?>">
+                    placeholder="Masukkan Judul Pertemuan" value="<?= set_value('judul'); ?>">
                 <div class="text-red-500 text-xs mt-1 <?= !empty(form_error('judul')) ? '' : 'hidden' ?>">
                     <?= form_error('judul') ?>
                 </div>
@@ -84,7 +84,7 @@
                 <div id="ujian-fields" class="space-y-4 hidden bg-blue-50/50 rounded-xl p-4 border border-blue-100">
                     <p class="text-xs text-blue-600 font-medium flex items-center gap-1.5">
                         <i data-lucide="info" class="w-3.5 h-3.5"></i>
-                        Ujian akan otomatis terhubung dengan sub bab ini
+                        Ujian akan otomatis terhubung dengan pertemuan ini
                     </p>
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Ujian <span
@@ -274,7 +274,7 @@ var quill = new Quill('#editor', {
             }
         }
     },
-    placeholder: 'Masukkan deskripsi sub bab...'
+    placeholder: 'Masukkan deskripsi pertemuan...'
 });
 
 // Timpa handler bawaan tombol gambar supaya gambar diunggah ke server
