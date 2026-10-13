@@ -642,6 +642,43 @@ class guru_model extends CI_Model {
 		return in_array($mapel_uuid, $parsed['mapel_list']);
 	}
 
+	public function get_mapel_uuids_for_kelas_tingkat($tingkat)
+	{
+		$kelas_by_uuid = array();
+		$this->db->where('deleted_at', NULL, FALSE);
+		foreach ($this->db->get('kelas')->result() as $kelas) {
+			if (preg_match('/^' . preg_quote($tingkat, '/') . '(?:\\b|[-.])/i', trim($kelas->nama))) {
+				$kelas_by_uuid[$kelas->uuid] = true;
+			}
+		}
+
+		if (empty($kelas_by_uuid)) {
+			return array();
+		}
+
+		$this->db->select('user_profiles.mapel_uuid');
+		$this->db->from('users');
+		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
+		$this->db->where('users.role_id', 3);
+		$this->db->where('users.deleted_at', NULL, FALSE);
+		$profiles = $this->db->get()->result();
+		$mapel_uuids = array();
+
+		foreach ($profiles as $profile) {
+			$parsed = $this->parse_mapel_data($profile->mapel_uuid);
+			foreach ($parsed['kelas_map'] as $mapel_uuid => $kelas_uuids) {
+				foreach ((array) $kelas_uuids as $kelas_uuid) {
+					if (isset($kelas_by_uuid[$kelas_uuid])) {
+						$mapel_uuids[$mapel_uuid] = true;
+						break;
+					}
+				}
+			}
+		}
+
+		return array_keys($mapel_uuids);
+	}
+
 	/**
 	 * Get mapel UUID list from user_profiles.mapel_uuid - handles both old and new format
 	 */

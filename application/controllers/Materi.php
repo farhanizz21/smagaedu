@@ -13,6 +13,16 @@ class Materi extends MY_Controller {
 		$this->load->model('bab_model');
 	}
 
+	private function max_week_for_mapel($mapel_uuid, $semester)
+	{
+		if ((string) $semester !== '2') {
+			return 20;
+		}
+
+		$mapel_kelas_xii = $this->guru_model->get_mapel_uuids_for_kelas_tingkat('XII');
+		return in_array($mapel_uuid, $mapel_kelas_xii, TRUE) ? 10 : 20;
+	}
+
 	public function index()
 	{
 		$user_role = $this->session->userdata('role');
@@ -100,6 +110,7 @@ class Materi extends MY_Controller {
 			'pengampu' => $pengampu,
 			'materi_progress' => $materi_progress,
 			'semester' => $semester,
+			'max_week' => $this->max_week_for_mapel($mapel_uuid, $semester),
 			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
 		);
@@ -151,13 +162,14 @@ class Materi extends MY_Controller {
 		if (!$mapel_valid) {
 			show_404();
 		}
-		$semester = $this->input->get('semester') ?: $this->input->post('semester');
+		$semester = $this->input->post('semester') ?: $this->input->get('semester');
 		if ($semester !== NULL && !in_array($semester, ['1', '2'], TRUE)) {
 			show_404();
 		}
 		$semester = $semester ?: '1';
-		$pekan_ke = (int) ($this->input->get('pekan_ke') ?: $this->input->post('pekan_ke'));
-		if ($pekan_ke < 1 || $pekan_ke > 20) {
+		$max_week = $this->max_week_for_mapel($mapel_uuid, $semester);
+		$pekan_ke = (int) ($this->input->post('pekan_ke') ?: $this->input->get('pekan_ke'));
+		if ($pekan_ke < 1 || $pekan_ke > $max_week) {
 			show_404();
 		}
 		// Superadmin and admin have full access, guru needs permission
@@ -233,6 +245,8 @@ class Materi extends MY_Controller {
 			$this->materi_model->get_by_mapel_uuid($materi->mapel_uuid, $materi->semester);
 			$materi = $this->materi_model->get_by_uuid($uuid);
 		}
+		$target_semester = $this->input->post('semester') ?: $materi->semester;
+		$max_week = $this->max_week_for_mapel($materi->mapel_uuid, $target_semester);
 
 		$rules = [
 			[
@@ -248,7 +262,7 @@ class Materi extends MY_Controller {
 			[
 				'field' => 'pekan_ke',
 				'label' => 'Pekan',
-				'rules' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[20]'
+				'rules' => 'required|integer|greater_than_equal_to[1]|less_than_equal_to[' . $max_week . ']'
 			]
 		];
 		$this->form_validation->set_rules($rules);

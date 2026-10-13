@@ -34,7 +34,7 @@
                 </div>
                 <span class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white">
                     <i data-lucide="calendar-days" class="w-4 h-4"></i>
-                    20 Pekan
+                    <?= (int) ($max_week ?? 20) ?> Pekan
                 </span>
             </div>
         </div>
@@ -71,7 +71,7 @@
             ];
             $i = 0;
         ?>
-        <?php for ($pekan_ke = 1; $pekan_ke <= 20; $pekan_ke++): ?>
+        <?php for ($pekan_ke = 1; $pekan_ke <= (int) ($max_week ?? 20); $pekan_ke++): ?>
         <?php 
             $val = $materi_by_pekan[$pekan_ke] ?? null;
             $palette = $color_palettes[$i % count($color_palettes)];
