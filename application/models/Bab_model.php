@@ -7,6 +7,16 @@ class bab_model extends CI_Model {
     public function insert($materi_uuid, $dokumentasi)
     {
         $uuid = Uuid::uuid4()->toString();
+        $this->db->trans_begin();
+        $week = $this->db->query(
+            'SELECT uuid FROM materi WHERE uuid = ? AND deleted_at IS NULL FOR UPDATE',
+            array($materi_uuid)
+        )->row();
+        if (!$week || $this->count_by_materi_uuid($materi_uuid) >= 3) {
+            $this->db->trans_rollback();
+            return false;
+        }
+
         $data = array(
             'uuid'        => $uuid,
             'materi_uuid' => $materi_uuid,
@@ -17,9 +27,11 @@ class bab_model extends CI_Model {
             'created_by'  => $this->session->userdata('uuid')
         );
         $this->db->insert('bab', $data);
-        if ($this->db->affected_rows() > 0) {
+		if ($this->db->trans_status() && $this->db->affected_rows() > 0) {
+			$this->db->trans_commit();
             return $uuid;
         }
+		$this->db->trans_rollback();
         return false;
     }
 
@@ -27,8 +39,15 @@ class bab_model extends CI_Model {
     {
         $this->db->where('materi_uuid', $materi_uuid);
         $this->db->where('deleted_at', NULL, FALSE);
-        $this->db->order_by('modified_at', 'ASC');
+        $this->db->order_by('id', 'ASC');
         return $this->db->get('bab')->result();
+    }
+
+    public function count_by_materi_uuid($materi_uuid)
+    {
+        $this->db->where('materi_uuid', $materi_uuid);
+        $this->db->where('deleted_at', NULL, FALSE);
+        return $this->db->count_all_results('bab');
     }
 
     public function get_by_uuid($uuid)

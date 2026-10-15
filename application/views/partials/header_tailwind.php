@@ -94,9 +94,9 @@
         margin-right: 4px !important;
     }
 
-        /* Custom table styling */
+    /* Custom table styling */
     .table-row-hover:hover {
-                background-color: #f8fafc;
+        background-color: #f8fafc;
     }
 
     /* =================================================--------------
@@ -113,21 +113,69 @@
         margin-bottom: 0.5rem;
         letter-spacing: -0.01em;
     }
-    .prose h1 { font-size: 2.125rem; }   /* 34px */
-    .prose h2 { font-size: 1.625rem; }   /* 26px */
-    .prose h3 { font-size: 1.3125rem; }  /* 21px */
-    .prose h4 { font-size: 1.0625rem; }
-    .prose h5 { font-size: 0.95rem; }
-    .prose h6 { font-size: 0.875rem; }
-    .prose :where(p) { margin: 0.65rem 0; }
-    .prose :where(ul, ol) { margin: 0.65rem 0; padding-left: 1.5rem; }
-    .prose :where(li) { margin: 0.15rem 0; }
-    .prose :where(blockquote) {
-        border-left: 4px solid #e5e7eb; margin: 1rem 0; padding: 0 1rem; color: #4b5563;
+
+    .prose h1 {
+        font-size: 2.125rem;
     }
-    .prose :where(a) { color: #2563eb; text-decoration: underline; }
-    .prose :where(img) { max-width: 100%; height: auto; display: block; margin: 0.65rem 0; }
-    .prose :where(pre, code) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+    /* 34px */
+    .prose h2 {
+        font-size: 1.625rem;
+    }
+
+    /* 26px */
+    .prose h3 {
+        font-size: 1.3125rem;
+    }
+
+    /* 21px */
+    .prose h4 {
+        font-size: 1.0625rem;
+    }
+
+    .prose h5 {
+        font-size: 0.95rem;
+    }
+
+    .prose h6 {
+        font-size: 0.875rem;
+    }
+
+    .prose :where(p) {
+        margin: 0.65rem 0;
+    }
+
+    .prose :where(ul, ol) {
+        margin: 0.65rem 0;
+        padding-left: 1.5rem;
+    }
+
+    .prose :where(li) {
+        margin: 0.15rem 0;
+    }
+
+    .prose :where(blockquote) {
+        border-left: 4px solid #e5e7eb;
+        margin: 1rem 0;
+        padding: 0 1rem;
+        color: #4b5563;
+    }
+
+    .prose :where(a) {
+        color: #2563eb;
+        text-decoration: underline;
+    }
+
+    .prose :where(img) {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0.65rem 0;
+    }
+
+    .prose :where(pre, code) {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
     </style>
 </head>
 

@@ -25,11 +25,15 @@ class Bab extends MY_Controller {
  			show_404();
  		}
 			if (has_role(['siswa']) && !$this->bab_model->is_materi_unlocked_for_student($materi_uuid, $this->session->userdata('uuid'))) {
-				show_error('Bab terkunci. Selesaikan bab sebelumnya terlebih dahulu.', 403);
+				show_error('Pertemuan terkunci. Selesaikan pertemuan sebelumnya terlebih dahulu.', 403);
 			}
  
 		$mapel = $this->mapel_model->get_by_uuid($materi->mapel_uuid, FALSE);
- 		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
+		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
+		$pertemuan_count = count($bab);
+		$is_mapel_pengampu = user_role() === 'guru'
+			? $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'))
+			: false;
 		$can_manage = admin_can_access_creator($materi->created_by);
  
 		// Get comments for each bab
@@ -46,9 +50,9 @@ class Bab extends MY_Controller {
   		// Untuk siswa: cek apakah ujian sub bab sebelumnya sudah dikerjakan
   		$user_role = $this->session->userdata('role');
   		$user_login = $this->session->userdata('uuid');
-  		$all_unlocked = is_admin_or_superadmin() || $can_manage;
+		$all_unlocked = is_admin_or_superadmin() || $can_manage || $is_mapel_pengampu;
 
-  		// Urutkan bab berdasarkan urutan (modified_at ASC)
+		// Urutkan bab berdasarkan urutan dibuat (id ASC)
   		$bab_sorted = $bab;
 
 		$progress = $all_unlocked ? [] : $this->bab_model->get_progress_for_materi($materi_uuid, $user_login);
@@ -112,11 +116,13 @@ class Bab extends MY_Controller {
 			'bab_completed_count' => $bab_completed_count,
   			'bab_has_ujian' => $bab_has_ujian,
   			'is_admin' => is_admin_or_superadmin(),
-  			'can_manage' => $can_manage,
+			'can_manage' => $can_manage,
+			'pertemuan_count' => $pertemuan_count,
+			'can_add_meeting' => $can_manage || $is_mapel_pengampu,
   			'active_nav' => 'materi'
   		);
  
- 		$this->load->view('partials/header_tailwind', ['title' => 'Bab']);
+		$this->load->view('partials/header_tailwind', ['title' => 'Materi Pekan']);
  		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
          $this->load->view('mapel/sub_bab', array_merge($data, ['from_controller' => true]));
  		$this->load->view('partials/footer_tailwind');
@@ -129,13 +135,20 @@ class Bab extends MY_Controller {
 			show_404();
 		}
 
-		// Superadmin, admin, atau pengampu mata pelajaran yang boleh tambah bab
-		if (!admin_can_access_creator($materi->created_by)) {
-			show_error('Anda tidak memiliki akses untuk menambah bab ini.', 403);
+		// Superadmin, admin, pembuat pekan, atau guru pengampu dapat menambah pertemuan.
+		$is_mapel_pengampu = user_role() === 'guru'
+			? $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'))
+			: false;
+		if (!admin_can_access_creator($materi->created_by) && !$is_mapel_pengampu) {
+			show_error('Anda tidak memiliki akses untuk menambah pertemuan ini.', 403);
+		}
+		if ($this->bab_model->count_by_materi_uuid($materi_uuid) >= 3) {
+			$this->session->set_flashdata('error_msg', 'Satu pekan maksimal memiliki 3 pertemuan.');
+			redirect('sub_bab/index/' . $materi_uuid);
 		}
 
 		$rules = [
-			['field' => 'judul', 'label' => 'Judul Bab', 'rules' => 'required']
+			['field' => 'judul', 'label' => 'Judul Pertemuan', 'rules' => 'required']
 		];
 		// Validasi ujian hanya jika guru ingin membuat ujian sekaligus
 		$create_ujian = $this->input->post('create_ujian');
@@ -150,6 +163,10 @@ class Bab extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			if ($this->bab_model->count_by_materi_uuid($materi_uuid) >= 3) {
+				$this->session->set_flashdata('error_msg', 'Satu pekan maksimal memiliki 3 pertemuan.');
+				redirect('sub_bab/index/' . $materi_uuid);
+			}
 			$this->load->library('upload');
 
 			$dokumentasi = null;
@@ -180,17 +197,20 @@ class Bab extends MY_Controller {
 				}
 
 				if ($ujian_uuid) {
-					$this->session->set_flashdata('success_msg', 'Sub Bab dan Ujian berhasil disimpan');
+					$this->session->set_flashdata('success_msg', 'Pertemuan dan ujian berhasil disimpan');
 					// Jika guru memilih simpan & tambah soal, redirect ke halaman tambah soal
 					$action = $this->input->post('action');
 					if ($action == 'simpan_detail') {
 						redirect('ujian/tambah_soal/' . $ujian_uuid);
 					}
 				} else {
-					$this->session->set_flashdata('success_msg', 'Bab berhasil disimpan');
+					$this->session->set_flashdata('success_msg', 'Pertemuan berhasil disimpan');
 				}
 			} else {
-				$this->session->set_flashdata('error_msg', 'Bab gagal disimpan');
+				$error_message = $this->bab_model->count_by_materi_uuid($materi_uuid) >= 3
+					? 'Satu pekan maksimal memiliki 3 pertemuan.'
+					: 'Pertemuan gagal disimpan';
+				$this->session->set_flashdata('error_msg', $error_message);
 			}
 			redirect('sub_bab/index/' . $materi_uuid);
 		}
@@ -205,7 +225,7 @@ class Bab extends MY_Controller {
 			'active_nav' => 'materi'
 		);
 
-		$this->load->view('partials/header_tailwind', ['title' => 'Tambah Bab']);
+		$this->load->view('partials/header_tailwind', ['title' => 'Tambah Pertemuan']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
         $this->load->view('mapel/sub_bab-tambah', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
@@ -228,7 +248,7 @@ class Bab extends MY_Controller {
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh tambah ujian
 		if (!admin_can_access_creator($materi->created_by)) {
-			show_error('Anda tidak memiliki akses untuk menambah ujian pada sub bab ini.', 403);
+			show_error('Anda tidak memiliki akses untuk menambah ujian pada pertemuan ini.', 403);
 		}
 
 		$rules = [
@@ -242,7 +262,7 @@ class Bab extends MY_Controller {
 		if ($this->form_validation->run() == TRUE) {
 			$ujian_uuid = $this->ujian_model->insert_bab($bab_uuid, $materi->mapel_uuid);
 			if ($ujian_uuid) {
-				$this->session->set_flashdata('success_msg', 'Ujian berhasil dibuat untuk sub bab');
+				$this->session->set_flashdata('success_msg', 'Ujian berhasil dibuat untuk pertemuan');
 
 				$action = $this->input->post('action');
 				if ($action == 'simpan_detail') {
@@ -260,7 +280,7 @@ class Bab extends MY_Controller {
 			'active_nav' => 'materi'
 		);
 
-		$this->load->view('partials/header_tailwind', ['title' => 'Buat Ujian Sub Bab']);
+		$this->load->view('partials/header_tailwind', ['title' => 'Buat Ujian Pertemuan']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
 		$this->load->view('mapel/sub_bab-tambah-ujian', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
@@ -277,13 +297,13 @@ class Bab extends MY_Controller {
 			show_404();
 		}
 
-		// Superadmin, admin, atau pengampu mata pelajaran yang boleh edit
+		// Superadmin, admin, atau pembuat pertemuan yang boleh edit
 		if (!admin_can_access_creator($materi->created_by)) {
-			show_error('Anda tidak memiliki akses untuk mengubah bab ini.', 403);
+			show_error('Anda tidak memiliki akses untuk mengubah pertemuan ini.', 403);
 		}
 
 		$rules = [
-			['field' => 'judul', 'label' => 'Judul Bab', 'rules' => 'required']
+			['field' => 'judul', 'label' => 'Judul Pertemuan', 'rules' => 'required']
 		];
 		$this->form_validation->set_rules($rules);
 
@@ -310,9 +330,9 @@ class Bab extends MY_Controller {
 			}
 
 			if ($this->bab_model->update($uuid, $dokumentasi)) {
-				$this->session->set_flashdata('success_msg', 'Bab berhasil di Update');
+				$this->session->set_flashdata('success_msg', 'Pertemuan berhasil diperbarui');
 			} else {
-				$this->session->set_flashdata('error_msg', 'Bab gagal di Update');
+				$this->session->set_flashdata('error_msg', 'Pertemuan gagal diperbarui');
 			}
 			redirect('sub_bab/index/' . $bab->materi_uuid);
 		}
@@ -323,7 +343,7 @@ class Bab extends MY_Controller {
 			'active_nav' => 'materi'
 		);
 
-		$this->load->view('partials/header_tailwind', ['title' => 'Edit Bab']);
+		$this->load->view('partials/header_tailwind', ['title' => 'Edit Pertemuan']);
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
         $this->load->view('mapel/sub_bab-edit', array_merge($data, ['from_controller' => true]));
 		$this->load->view('partials/footer_tailwind');
@@ -384,14 +404,14 @@ class Bab extends MY_Controller {
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh hapus
 		if (!admin_can_access_creator($materi->created_by)) {
-			show_error('Anda tidak memiliki akses untuk menghapus bab ini.', 403);
+			show_error('Anda tidak memiliki akses untuk menghapus pertemuan ini.', 403);
 		}
 
 		$result = $this->bab_model->delete_by_uuid($uuid);
 		if ($result) {
-			$this->session->set_flashdata('success_msg', 'Bab berhasil dihapus');
+			$this->session->set_flashdata('success_msg', 'Pertemuan berhasil dihapus');
 		} else {
-			$this->session->set_flashdata('error_msg', 'Gagal menghapus Bab');
+			$this->session->set_flashdata('error_msg', 'Gagal menghapus pertemuan');
 		}
 		redirect('sub_bab/index/' . $bab->materi_uuid);
 	}

@@ -275,6 +275,8 @@ CREATE TABLE `materi` (
   `id` int(50) NOT NULL AUTO_INCREMENT,
   `uuid` varchar(100) NOT NULL,
   `mapel_uuid` varchar(100) DEFAULT NULL,
+  `semester` tinyint unsigned NOT NULL DEFAULT 1,
+  `pekan_ke` tinyint unsigned DEFAULT NULL,
   `judul` varchar(100) NOT NULL,
   `thumbnail` varchar(100) DEFAULT NULL,
   `berkas` varchar(100) NOT NULL,

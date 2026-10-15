@@ -79,6 +79,7 @@ $route['ujian/upload_editor_file'] = 'ujian/upload_editor_file';
 
 // Materi routes
 $route['mata_pelajaran'] = 'materi';
+$route['mata_pelajaran/semester/(:any)'] = 'materi/semester/$1';
 $route['mata_pelajaran/detail/(:any)'] = 'materi/detail/$1';
 $route['mata_pelajaran/hapus/(:any)'] = 'materi/hapus/$1';
 
