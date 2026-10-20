@@ -18,12 +18,16 @@
         <select name="admin_uuid" onchange="this.form.submit()"
             class="w-full sm:max-w-xs px-4 py-2.5 rounded-xl border border-gray-300 bg-white text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none">
             <option value="">Semua Admin</option>
-            <option value="__unassigned__" <?= ($filters['admin_uuid'] === '__unassigned__') ? 'selected' : '' ?>>Belum ditugaskan</option>
+            <option value="__unassigned__" <?= ($filters['admin_uuid'] === '__unassigned__') ? 'selected' : '' ?>>Belum
+                ditugaskan</option>
             <?php foreach($admins as $admin): ?>
-            <option value="<?= html_escape($admin->uuid) ?>" <?= ($filters['admin_uuid'] === $admin->uuid) ? 'selected' : '' ?>><?= html_escape($admin->nama) ?></option>
+            <option value="<?= html_escape($admin->uuid) ?>"
+                <?= ($filters['admin_uuid'] === $admin->uuid) ? 'selected' : '' ?>><?= html_escape($admin->nama) ?>
+            </option>
             <?php endforeach; ?>
         </select>
-        <a href="<?= base_url('kepala_sekolah') ?>" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50">
+        <a href="<?= base_url('kepala_sekolah') ?>"
+            class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-gray-600 hover:bg-gray-50">
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset filter
         </a>
     </form>
@@ -145,7 +149,8 @@
                         <div class="flex-1 min-w-0">
                             <p class="font-semibold text-gray-900 text-sm truncate"><?= $bg->nama ?></p>
                             <p class="text-xs text-gray-500">
-                                <?= $bg->materi_count ?> bab • <?= $bg->bab_count ?> sub bab • <?= $bg->ujian_count ?>
+                                <?= $bg->materi_count ?> pekan • <?= $bg->bab_count ?> pertemuan •
+                                <?= $bg->ujian_count ?>
                                 ujian
                                 <?php if ($bg->last_update): ?>
                                 • Update <?= date('d M Y', strtotime($bg->last_update)) ?>
@@ -209,7 +214,8 @@
                                 <?php if ($wg->total_content == 0): ?>
                                 <span class="text-red-500 font-medium">Belum ada konten sama sekali</span>
                                 <?php else: ?>
-                                <?= $wg->bab_count ?> bab • <?= $wg->ujian_count ?> ujian
+                                <?= $wg->materi_count ?> pekan • <?= $wg->bab_count ?> pertemuan •
+                                <?= $wg->ujian_count ?> ujian
                                 <?php if ($wg->last_update): ?>
                                 • Terakhir <?= date('d M Y', strtotime($wg->last_update)) ?>
                                 <?php endif; ?>
@@ -240,7 +246,51 @@
     </div>
 
     <!-- Table Card -->
-    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
+    <div id="guruList" class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
+        <div class="border-b border-gray-100 p-5">
+            <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <label class="relative md:col-span-2">
+                    <span class="sr-only">Cari guru</span>
+                    <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"></i>
+                    <input type="search" class="search w-full rounded-xl border border-gray-300 py-2.5 pl-10 pr-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                        placeholder="Cari nama, mata pelajaran, atau admin...">
+                </label>
+                <label>
+                    <span class="sr-only">Filter mata pelajaran</span>
+                    <select id="guruMapelFilter" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        <option value="">Semua Mata Pelajaran</option>
+                        <?php
+                        $mapel_filter_options = [];
+                        foreach ($guru as $guru_item) {
+                            foreach ($guru_item->mapel_nama ?? [] as $nama_mapel) {
+                                $mapel_filter_options[$nama_mapel] = $nama_mapel;
+                            }
+                        }
+                        natcasesort($mapel_filter_options);
+                        foreach ($mapel_filter_options as $nama_mapel):
+                        ?>
+                        <option value="<?= html_escape($nama_mapel) ?>"><?= html_escape($nama_mapel) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>
+                    <span class="sr-only">Filter status update mapel</span>
+                    <select id="guruStatusFilter" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        <option value="">Semua Status Update</option>
+                        <option value="updated">Sudah ada update</option>
+                        <option value="not-updated">Belum ada update</option>
+                    </select>
+                </label>
+                <label>
+                    <span class="sr-only">Jumlah guru per halaman</span>
+                    <select id="guruPageSize" class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        <option value="10">10 guru per halaman</option>
+                        <option value="25">25 guru per halaman</option>
+                        <option value="50">50 guru per halaman</option>
+                    </select>
+                </label>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
@@ -250,11 +300,10 @@
                             Rank</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Nama</th>
-                        <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
-                            Username</th>
-                        <th class="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-56">
+                        <th
+                            class="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-56">
                             Admin / Pembuat</th>
-                        <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
+                        <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider min-w-56">
                             Mata Pelajaran</th>
                         <th class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Jadwal</th>
@@ -267,9 +316,8 @@
                             Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="guru-items divide-y divide-gray-100">
                     <?php 
-                        $no = 1;
                         foreach($guru as $val) {
                     ?>
                     <tr class="table-row-hover transition-colors">
@@ -302,102 +350,76 @@
                                     class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
                                     <?= strtoupper(substr($val->nama, 0, 1)) ?>
                                 </div>
-                                <span class="font-medium text-gray-900"><?= $val->nama; ?></span>
+                                <span class="name font-medium text-gray-900"><?= html_escape($val->nama); ?></span>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-gray-600"><?= $val->username; ?></td>
                         <td class="px-4 py-4">
-                            <span class="block max-w-56 truncate text-gray-600" title="<?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>">
+                            <span class="admin block max-w-56 truncate text-gray-600"
+                                title="<?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>">
                                 <?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>
                             </span>
                         </td>
                         <td class="px-6 py-4">
-                            <div class="flex flex-wrap gap-1.5">
+                            <div class="flex max-w-sm flex-wrap gap-1.5">
                                 <?php if (!empty($val->mapel_nama)) : ?>
                                 <?php foreach ($val->mapel_nama as $nama_mapel) : ?>
                                 <span
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                                    <?= $nama_mapel ?>
+                                    class="inline-flex items-center rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-medium leading-4 text-blue-700">
+                                    <?= html_escape($nama_mapel) ?>
                                 </span>
                                 <?php endforeach; ?>
                                 <?php else: ?>
-                                <span class="text-gray-400 text-xs">-</span>
+                                <span class="text-xs text-gray-400">Belum ada mata pelajaran</span>
                                 <?php endif; ?>
                             </div>
+                            <span class="mapel sr-only"><?= html_escape(implode(' ', $val->mapel_nama ?? [])) ?></span>
                         </td>
                         <td class="px-6 py-4 text-center">
+                            <span class="jadwal_status sr-only"><?= $val->jadwal_count > 0 ? 'Ada jadwal' : 'Belum ada jadwal' ?></span>
                             <?php if ($val->jadwal_count > 0): ?>
                             <span
-                                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                                class="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
                                 <i data-lucide="check" class="w-3 h-3"></i>
-                                <?= $val->jadwal_count ?> file
+                                <?= $val->jadwal_count ?> file jadwal
                             </span>
                             <?php else: ?>
                             <span
-                                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">
                                 <i data-lucide="x" class="w-3 h-3"></i>
-                                Belum
+                                Belum ada jadwal
                             </span>
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4">
-                            <?php if ($val->mapel_updated): ?>
-                            <div class="flex flex-col items-center gap-1">
-                                <span
-                                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                                    <i data-lucide="check" class="w-3 h-3"></i>
-                                    Sudah Update
-                                </span>
-                                <div class="flex flex-wrap justify-center gap-1 mt-1">
-                                    <?php if ($val->materi_count > 0): ?>
+                            <span class="update_status sr-only"><?= $val->mapel_updated ? 'updated' : 'not-updated' ?></span>
+                            <div class="flex min-w-44 flex-col items-start gap-2">
+                                <div class="flex flex-wrap gap-1.5">
                                     <span
-                                        class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100"
-                                        title="Bab">
-                                        <i data-lucide="file-text"
-                                            class="w-2.5 h-2.5 mr-0.5"></i><?= $val->materi_count ?>
+                                        class="inline-flex items-center gap-1 rounded-md border border-blue-100 bg-blue-50 px-2 py-1 text-[11px] font-medium text-blue-700"
+                                        title="Pekan">
+                                        <i data-lucide="calendar" class="h-3 w-3"></i>
+                                        Pekan: <?= (int) $val->materi_count ?>
                                     </span>
-                                    <?php endif; ?>
-                                    <?php if ($val->bab_count > 0): ?>
                                     <span
-                                        class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-100"
-                                        title="Sub Bab">
-                                        <i data-lucide="book" class="w-2.5 h-2.5 mr-0.5"></i><?= $val->bab_count ?>
+                                        class="inline-flex items-center gap-1 rounded-md border border-amber-100 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-700"
+                                        title="Pertemuan">
+                                        <i data-lucide="clock" class="h-3 w-3"></i>
+                                        Pertemuan: <?= (int) $val->bab_count ?>
                                     </span>
-                                    <?php endif; ?>
-                                    <?php if ($val->sub_materi_count > 0): ?>
                                     <span
-                                        class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-purple-50 text-purple-600 border border-purple-100"
-                                        title="Sub Materi">
-                                        <i data-lucide="layers"
-                                            class="w-2.5 h-2.5 mr-0.5"></i><?= $val->sub_materi_count ?>
-                                    </span>
-                                    <?php endif; ?>
-                                    <?php if ($val->ujian_count > 0): ?>
-                                    <span
-                                        class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-cyan-50 text-cyan-600 border border-cyan-100"
+                                        class="inline-flex items-center gap-1 rounded-md border border-cyan-100 bg-cyan-50 px-2 py-1 text-[11px] font-medium text-cyan-700"
                                         title="Ujian">
-                                        <i data-lucide="clipboard-list"
-                                            class="w-2.5 h-2.5 mr-0.5"></i><?= $val->ujian_count ?>
+                                        <i data-lucide="clipboard-list" class="h-3 w-3"></i>
+                                        Ujian: <?= (int) $val->ujian_count ?>
                                     </span>
-                                    <?php endif; ?>
                                 </div>
                                 <?php if ($val->last_update): ?>
-                                <span class="text-[10px] text-gray-400">
+                                <span class="text-[11px] text-gray-500">
                                     <i data-lucide="clock" class="w-2.5 h-2.5 inline"></i>
-                                    <?= date('d M Y H:i', strtotime($val->last_update)) ?>
+                                    Update terakhir: <?= date('d M Y H:i', strtotime($val->last_update)) ?>
                                 </span>
                                 <?php endif; ?>
                             </div>
-                            <?php else: ?>
-                            <div class="flex flex-col items-center gap-1">
-                                <span
-                                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200">
-                                    <i data-lucide="x" class="w-3 h-3"></i>
-                                    Belum Update
-                                </span>
-                                <span class="text-[10px] text-gray-400">Belum ada materi/bab/ujian</span>
-                            </div>
-                            <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-center">
                             <?php if ($val->last_update): ?>
@@ -424,13 +446,19 @@
                             </div>
                         </td>
                     </tr>
-                    <?php 
-                        $no++;
-                    }
-                    ?>
+                    <?php } ?>
                 </tbody>
             </table>
         </div>
+        <div id="guruListEmpty" class="hidden px-6 py-10 text-center text-sm text-gray-500">
+            Tidak ada guru yang sesuai dengan pencarian atau filter.
+        </div>
+        <?php if (!empty($guru)): ?>
+        <div class="flex flex-col gap-4 border-t border-gray-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p id="guruListSummary" class="text-sm text-gray-500" aria-live="polite"></p>
+            <ul class="pagination flex flex-wrap items-center justify-center gap-2"></ul>
+        </div>
+        <?php endif; ?>
         <?php if(empty($guru)): ?>
         <div class="text-center py-12 text-gray-400">
             <i data-lucide="users" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
@@ -439,6 +467,88 @@
         <?php endif; ?>
     </div>
 </div>
+
+<?php if (!empty($guru)): ?>
+<style>
+#guruList .pagination li {
+    display: inline-block;
+}
+
+#guruList .pagination li a {
+    display: inline-flex;
+    min-width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 0 10px;
+    color: #374151;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#guruList .pagination li.active a {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #fff;
+}
+
+#guruList .pagination li.disabled a {
+    color: #cbd5e1;
+    pointer-events: none;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof List === 'undefined') {
+        return;
+    }
+
+    var guruList = new List('guruList', {
+        listClass: 'guru-items',
+        valueNames: ['name', 'mapel', 'admin', 'update_status', 'jadwal_status'],
+        page: 10,
+        pagination: {
+            item: "<li><a class='page'></a></li>"
+        }
+    });
+    var mapelFilter = document.getElementById('guruMapelFilter');
+    var statusFilter = document.getElementById('guruStatusFilter');
+    var pageSize = document.getElementById('guruPageSize');
+    var summary = document.getElementById('guruListSummary');
+    var emptyState = document.getElementById('guruListEmpty');
+
+    var applyFilters = function() {
+        var selectedMapel = mapelFilter.value.toLowerCase();
+        var selectedStatus = statusFilter.value;
+
+        guruList.filter(function(item) {
+            var values = item.values();
+            var matchesMapel = !selectedMapel || values.mapel.toLowerCase().includes(selectedMapel);
+            var matchesStatus = !selectedStatus || values.update_status === selectedStatus;
+            return matchesMapel && matchesStatus;
+        });
+    };
+
+    mapelFilter.addEventListener('change', applyFilters);
+    statusFilter.addEventListener('change', applyFilters);
+    pageSize.addEventListener('change', function() {
+        guruList.show(1, Number(pageSize.value));
+    });
+    guruList.on('updated', function() {
+        var visibleCount = guruList.visibleItems.length;
+        var totalCount = guruList.matchingItems.length;
+        summary.textContent = 'Menampilkan ' + visibleCount + ' dari ' + totalCount + ' guru';
+        emptyState.classList.toggle('hidden', totalCount > 0);
+    });
+    guruList.update();
+});
+</script>
+<?php endif; ?>
 
 <?php if(!isset($from_controller)): ?>
 <?php $this->load->view('partials/footer_tailwind'); ?>
