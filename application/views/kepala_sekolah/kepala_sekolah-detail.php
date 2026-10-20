@@ -58,68 +58,36 @@
                 </div>
                 <div>
                     <h3 class="font-bold text-gray-900">Status Update Mata Pelajaran</h3>
-                    <p class="text-xs text-gray-500">Kelengkapan pembaruan materi, bab, sub bab, dan ujian pada menu
-                        mata pelajaran</p>
+                    <p class="text-xs text-gray-500">Ringkasan materi yang sudah dibuat di setiap pekan</p>
                 </div>
             </div>
         </div>
         <div class="p-6">
-            <?php if ($guru->mapel_updated): ?>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div
-                    class="rounded-xl bg-blue-50 border border-blue-100 p-4 text-center hover:shadow-md transition-all">
-                    <i data-lucide="file-text" class="w-6 h-6 text-blue-600 mx-auto mb-2"></i>
-                    <p class="text-2xl font-bold text-gray-900"><?= $guru->materi_count ?></p>
-                    <p class="text-xs text-gray-500 mt-1">Bab</p>
+            <?php if (!empty($mapel_list)): ?>
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <?php foreach ([1, 2] as $semester): ?>
+                <?php
+                    $semester_summary = $semester_upload_summary[$semester];
+                    $is_complete = $semester_summary['total'] > 0 &&
+                        $semester_summary['uploaded'] === $semester_summary['total'];
+                ?>
+                <div class="flex items-center gap-4 rounded-xl border <?= $is_complete ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50' ?> p-4">
+                    <div class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl <?= $is_complete ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' ?>">
+                        <i data-lucide="<?= $is_complete ? 'check' : 'book-open' ?>" class="h-5 w-5"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">Semester <?= $semester ?></p>
+                        <p class="mt-0.5 text-xs text-gray-600">
+                            <?= $semester_summary['uploaded'] ?> dari <?= $semester_summary['total'] ?> materi/pertemuan sudah dibuat
+                        </p>
+                    </div>
                 </div>
-                <div
-                    class="rounded-xl bg-amber-50 border border-amber-100 p-4 text-center hover:shadow-md transition-all">
-                    <i data-lucide="book" class="w-6 h-6 text-amber-600 mx-auto mb-2"></i>
-                    <p class="text-2xl font-bold text-gray-900"><?= $guru->bab_count ?></p>
-                    <p class="text-xs text-gray-500 mt-1">Sub Bab</p>
-                </div>
-                <div
-                    class="rounded-xl bg-purple-50 border border-purple-100 p-4 text-center hover:shadow-md transition-all">
-                    <i data-lucide="layers" class="w-6 h-6 text-purple-600 mx-auto mb-2"></i>
-                    <p class="text-2xl font-bold text-gray-900"><?= $guru->sub_materi_count ?></p>
-                    <p class="text-xs text-gray-500 mt-1">Sub Materi</p>
-                </div>
-                <div
-                    class="rounded-xl bg-cyan-50 border border-cyan-100 p-4 text-center hover:shadow-md transition-all">
-                    <i data-lucide="clipboard-list" class="w-6 h-6 text-cyan-600 mx-auto mb-2"></i>
-                    <p class="text-2xl font-bold text-gray-900"><?= $guru->ujian_count ?></p>
-                    <p class="text-xs text-gray-500 mt-1">Ujian</p>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-center gap-3 mt-4">
-                <span
-                    class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
-                    Sudah melakukan update
-                </span>
-                <?php if ($guru->last_update): ?>
-                <span class="text-xs text-gray-500">
-                    <i data-lucide="clock" class="w-3.5 h-3.5 inline text-gray-400"></i>
-                    Terakhir update: <?= date('d M Y H:i', strtotime($guru->last_update)) ?> WIB
-                </span>
-                <?php endif; ?>
+                <?php endforeach; ?>
             </div>
             <?php else: ?>
-            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div
-                    class="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 flex items-center justify-center flex-shrink-0">
-                    <i data-lucide="alert-triangle" class="w-7 h-7 text-red-500"></i>
-                </div>
-                <div class="flex-1">
-                    <p class="font-semibold text-gray-900 text-sm">Belum melakukan update pada menu mata pelajaran</p>
-                    <p class="text-xs text-gray-500 mt-0.5">Guru belum menambahkan materi, bab/sub bab, atau ujian
-                        untuk mata pelajaran yang diampu.</p>
-                </div>
-                <span
-                    class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-red-50 text-red-600 border border-red-200 flex-shrink-0">
-                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
-                    Belum Update
-                </span>
+            <div class="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <i data-lucide="alert-triangle" class="h-5 w-5 flex-shrink-0 text-amber-600"></i>
+                <p class="text-sm text-amber-800">Guru belum memiliki mata pelajaran untuk dipantau.</p>
             </div>
             <?php endif; ?>
         </div>
@@ -230,67 +198,76 @@
                 </div>
             </div>
 
-            <!-- Bab Section -->
+            <!-- Materi per Semester dan Pekan Section -->
             <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-blue-50">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                            <i data-lucide="book-marked" class="w-5 h-5 text-indigo-600"></i>
+                            <i data-lucide="calendar-days" class="w-5 h-5 text-indigo-600"></i>
                         </div>
                         <div>
-                            <h3 class="font-bold text-gray-900">Bab</h3>
-                            <p class="text-xs text-gray-500"><?= count($bab) ?> bab telah dibuat</p>
+                            <h3 class="font-bold text-gray-900">Materi per Semester dan Pekan</h3>
+                            <p class="text-xs text-gray-500">Jumlah materi/pertemuan per pekan (maksimal 3)</p>
                         </div>
                     </div>
                 </div>
                 <div class="p-6">
-                    <?php if (!empty($bab)): ?>
-                    <div id="babList">
-                        <div class="relative mb-4">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
-                            </div>
-                            <input
-                                class="search w-full pl-9 pr-4 py-2.5 rounded-xl border-2 border-gray-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-100 outline-none transition-all text-sm placeholder:text-gray-400 bg-white"
-                                placeholder="Cari bab..." />
-                        </div>
+                    <?php if (!empty($mapel_list)): ?>
+                    <div id="materiList">
                         <div class="list space-y-3">
-                            <?php foreach ($bab as $b): ?>
-                            <a href="<?= base_url('sub_bab/index/'.$b->uuid) ?>"
-                                class="item flex items-start gap-4 p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 transition-colors group">
-                                <div
-                                    class="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white flex-shrink-0">
-                                    <i data-lucide="file-text" class="w-5 h-5"></i>
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <p class="name font-semibold text-gray-900 text-sm truncate"><?= $b->judul ?></p>
-                                        <?php if (!empty($b->mapel_nama)): ?>
-                                        <span
-                                            class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-600 flex-shrink-0">
-                                            <?= $b->mapel_nama ?>
-                                        </span>
-                                        <?php endif; ?>
+                            <?php foreach ($mapel_list as $m): ?>
+                            <div class="item rounded-xl border border-gray-200 p-3 sm:p-4">
+                                <h4 class="name mb-3 font-bold text-gray-900"><?= html_escape($m->nama) ?></h4>
+                                <div class="space-y-3">
+                                    <?php foreach ([1, 2] as $semester): ?>
+                                    <?php
+                                    $week_limit = $week_limits[$m->uuid][$semester];
+                                    $semester_materi = $materi_by_mapel_semester[$m->uuid][$semester] ?? [];
+                                    $uploaded_material_count = 0;
+                                    foreach ($semester_materi as $materi_item) {
+                                        $uploaded_material_count += (int) $materi_item->meeting_count;
+                                    }
+                                ?>
+                                    <div class="flex items-start gap-3">
+                                        <div class="flex w-28 flex-shrink-0 items-center justify-between gap-1 pt-1">
+                                            <h5 class="text-xs font-semibold text-gray-800">Sem. <?= $semester ?></h5>
+                                            <span
+                                                class="text-[10px] text-gray-500"><?= $uploaded_material_count ?>/<?= $week_limit * 3 ?></span>
+                                        </div>
+                                        <div class="grid flex-1 grid-cols-5 gap-1.5 sm:grid-cols-10">
+                                            <?php for ($pekan = 1; $pekan <= $week_limit; $pekan++): ?>
+                                            <?php $materi = $semester_materi[$pekan] ?? null; ?>
+                                            <?php $meeting_count = $materi ? (int) $materi->meeting_count : 0; ?>
+                                            <?php if ($meeting_count > 0): ?>
+                                            <a href="<?= base_url('sub_bab/index/' . $materi->uuid) ?>"
+                                                title="<?= html_escape('Pekan ' . $pekan . ': ' . $meeting_count . ' dari 3 materi/pertemuan dibuat') ?>"
+                                                aria-label="<?= html_escape('Pekan ' . $pekan . ': ' . $meeting_count . ' dari 3 materi/pertemuan dibuat') ?>"
+                                                class="rounded-md border px-1 py-1.5 text-center text-xs font-semibold transition <?= $meeting_count >= 3 ? 'border-green-200 bg-green-50 text-green-700 hover:border-green-300 hover:bg-green-100' : 'border-amber-200 bg-amber-50 text-amber-700 hover:border-amber-300 hover:bg-amber-100' ?>">
+                                                <span class="block"><?= $pekan ?></span>
+                                                <span class="block text-[10px]"><?= $meeting_count ?>/3</span>
+                                            </a>
+                                            <?php else: ?>
+                                            <div title="Pekan <?= $pekan ?>: belum diunggah"
+                                                aria-label="Pekan <?= $pekan ?> belum diunggah"
+                                                class="rounded-md border border-dashed border-gray-200 bg-gray-50 px-1 py-1.5 text-center text-xs text-gray-400">
+                                                <span class="block"><?= $pekan ?></span>
+                                                <span class="block text-[10px]">0/3</span>
+                                            </div>
+                                            <?php endif; ?>
+                                            <?php endfor; ?>
+                                        </div>
                                     </div>
-                                    <p class="text-xs text-gray-400">
-                                        <i data-lucide="layers" class="w-3 h-3 inline"></i>
-                                        <?= isset($b->sub_bab_count) ? $b->sub_bab_count : 0 ?> sub bab
-                                        <span class="mx-1">&bull;</span>
-                                        <i data-lucide="clock" class="w-3 h-3 inline"></i>
-                                        <?= date('d M Y', strtotime($b->modified_at)) ?>
-                                    </p>
+                                    <?php endforeach; ?>
                                 </div>
-                                <i data-lucide="chevron-right"
-                                    class="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-colors flex-shrink-0 mt-1"></i>
-                            </a>
+                            </div>
                             <?php endforeach; ?>
                         </div>
-                        <ul class="pagination flex flex-wrap justify-center items-center gap-2 mt-6"></ul>
+                        <ul class="pagination flex flex-wrap justify-center items-center gap-2 mt-5"></ul>
                     </div>
                     <?php else: ?>
                     <div class="text-center py-8 text-gray-400">
-                        <i data-lucide="file-x" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
-                        <p class="text-sm">Belum ada bab yang dibuat</p>
+                        <i data-lucide="book-x" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                        <p class="text-sm">Guru belum memiliki mata pelajaran untuk dipantau</p>
                     </div>
                     <?php endif; ?>
                 </div>
@@ -526,13 +503,13 @@
 
 <style>
 #mapelList .pagination li,
-#babList .pagination li,
+#materiList .pagination li,
 #kelasList .pagination li {
     display: inline-block;
 }
 
 #mapelList .pagination li a,
-#babList .pagination li a,
+#materiList .pagination li a,
 #kelasList .pagination li a {
     display: inline-flex;
     align-items: center;
@@ -551,7 +528,7 @@
 }
 
 #mapelList .pagination li a:hover,
-#babList .pagination li a:hover,
+#materiList .pagination li a:hover,
 #kelasList .pagination li a:hover {
     border-color: #818cf8;
     background-color: #eef2ff;
@@ -560,7 +537,7 @@
 }
 
 #mapelList .pagination li.active a,
-#babList .pagination li.active a,
+#materiList .pagination li.active a,
 #kelasList .pagination li.active a {
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     border-color: transparent;
@@ -569,7 +546,7 @@
 }
 
 #mapelList .pagination li.disabled a,
-#babList .pagination li.disabled a,
+#materiList .pagination li.disabled a,
 #kelasList .pagination li.disabled a {
     color: #cbd5e1;
     pointer-events: none;
@@ -578,7 +555,7 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     if (typeof List === 'undefined') {
         return;
     }
@@ -592,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function () {
         item: "<li><a class='page'></a></li>"
     };
 
-    var setupList = function (id, pageSize) {
+    var setupList = function(id, pageSize) {
         if (!document.getElementById(id)) {
             return;
         }
@@ -605,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     setupList('mapelList', 5);
-    setupList('babList', 5);
+    setupList('materiList', 3);
     setupList('kelasList', 8);
 });
 </script>

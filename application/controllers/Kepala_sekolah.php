@@ -21,8 +21,8 @@ class Kepala_sekolah extends MY_Controller {
 	}
 
 	/**
-	 * Hitung update konten (materi, bab, sub materi, ujian) yang dibuat guru
-	 * untuk mata pelajaran yang diampunya.
+	 * Hitung konten (materi, bab, sub materi, ujian) pada mata pelajaran yang
+	 * diampu. Materi dan pertemuannya dihitung tanpa membatasi pengunggah.
 	 *
 	 * @param object $guru_obj Objek guru dari guru_model (memiliki mapel_data)
 	 * @return array Berisi materi_count, bab_count, sub_materi_count, ujian_count,
@@ -53,8 +53,7 @@ class Kepala_sekolah extends MY_Controller {
 
 		$guru_uuid = $guru_obj->uuid;
 
-		// Count materi created by this guru for their mapel
-		$this->db->where('created_by', $guru_uuid);
+		// Count weeks and meetings for assigned mapel, regardless of uploader.
 		$this->db->where('deleted_at', NULL, FALSE);
 		$this->db->where_in('mapel_uuid', $mapel_uuids);
 		$stats['materi_count'] = $this->db->count_all_results('materi');
@@ -65,9 +64,8 @@ class Kepala_sekolah extends MY_Controller {
 		$this->db->where_in('mapel_uuid', $mapel_uuids);
 		$stats['ujian_count'] = $this->db->count_all_results('ujian');
 
-		// Get materi UUIDs created by this guru to count bab and sub_materi
+		// Use all weeks for assigned mapel so admin-uploaded meetings are included.
 		$this->db->select('uuid');
-		$this->db->where('created_by', $guru_uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
 		$this->db->where_in('mapel_uuid', $mapel_uuids);
 		$materi_rows = $this->db->get('materi')->result();
@@ -75,23 +73,20 @@ class Kepala_sekolah extends MY_Controller {
 		$bab_uuids = [];
 
 		if (!empty($materi_uuids)) {
-			// Count bab created by this guru
-			$this->db->where('created_by', $guru_uuid);
+			// Count meetings attached to those weeks, regardless of uploader.
 			$this->db->where('deleted_at', NULL, FALSE);
 			$this->db->where_in('materi_uuid', $materi_uuids);
 			$stats['bab_count'] = $this->db->count_all_results('bab');
 
-			// Get bab UUIDs to count sub_materi
+			// Get meeting UUIDs to count their sub-materials.
 			$this->db->select('uuid');
-			$this->db->where('created_by', $guru_uuid);
 			$this->db->where('deleted_at', NULL, FALSE);
 			$this->db->where_in('materi_uuid', $materi_uuids);
 			$bab_rows = $this->db->get('bab')->result();
 			$bab_uuids = array_column($bab_rows, 'uuid');
 
 			if (!empty($bab_uuids)) {
-				// Count sub_materi created by this guru
-				$this->db->where('created_by', $guru_uuid);
+				// Count sub-materials under those meetings, regardless of uploader.
 				$this->db->where('deleted_at', NULL, FALSE);
 				$this->db->where_in('bab_uuid', $bab_uuids);
 				$stats['sub_materi_count'] = $this->db->count_all_results('sub_materi');
@@ -101,9 +96,8 @@ class Kepala_sekolah extends MY_Controller {
 		// Get the latest update timestamp across all content types
 		$latest_timestamps = [];
 
-		// Latest materi update
+		// Latest week update, regardless of uploader.
 		$this->db->select('modified_at');
-		$this->db->where('created_by', $guru_uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
 		$this->db->where_in('mapel_uuid', $mapel_uuids);
 		$this->db->order_by('modified_at', 'DESC');
@@ -121,10 +115,9 @@ class Kepala_sekolah extends MY_Controller {
 		$latest_ujian = $this->db->get('ujian')->row();
 		if ($latest_ujian) $latest_timestamps[] = $latest_ujian->modified_at;
 
-		// Latest bab update
+		// Latest meeting update, regardless of uploader.
 		if (!empty($materi_uuids)) {
 			$this->db->select('modified_at');
-			$this->db->where('created_by', $guru_uuid);
 			$this->db->where('deleted_at', NULL, FALSE);
 			$this->db->where_in('materi_uuid', $materi_uuids);
 			$this->db->order_by('modified_at', 'DESC');
@@ -133,10 +126,9 @@ class Kepala_sekolah extends MY_Controller {
 			if ($latest_bab) $latest_timestamps[] = $latest_bab->modified_at;
 		}
 
-		// Latest sub_materi update
+		// Latest sub-material update, regardless of uploader.
 		if (!empty($bab_uuids)) {
 			$this->db->select('modified_at');
-			$this->db->where('created_by', $guru_uuid);
 			$this->db->where('deleted_at', NULL, FALSE);
 			$this->db->where_in('bab_uuid', $bab_uuids);
 			$this->db->order_by('modified_at', 'DESC');
@@ -145,7 +137,7 @@ class Kepala_sekolah extends MY_Controller {
 			if ($latest_sub) $latest_timestamps[] = $latest_sub->modified_at;
 		}
 
-		// Determine if teacher has made any updates
+		// Determine whether assigned mapel have any content.
 		$total_content = $stats['materi_count'] + $stats['bab_count'] + $stats['sub_materi_count'] + $stats['ujian_count'];
 		$stats['mapel_updated'] = $total_content > 0;
 
@@ -332,36 +324,74 @@ class Kepala_sekolah extends MY_Controller {
 		// Since there's no direct kelas-guru relationship, we'll show all classes
 		$kelas = $this->kelas_model->get_all();
 
-		// Kumpulkan UUID mapel yang diampu untuk menyaring bab (materi)
+		// Kumpulkan UUID mapel yang diampu untuk menyaring materi pekanan
 		$mapel_uuids = [];
 		foreach ($mapel_list as $m) {
 			$mapel_uuids[] = $m->uuid;
 		}
+		$mapel_kelas_xii = $this->guru_model->get_mapel_uuids_for_kelas_tingkat('XII');
+		$week_limits = [];
+		foreach ($mapel_list as $m) {
+			$week_limits[$m->uuid] = [
+				1 => 20,
+				2 => in_array($m->uuid, $mapel_kelas_xii, TRUE) ? 10 : 20
+			];
+		}
 
-		// Hitung jumlah bab (materi) yang dibuat guru untuk tiap mata pelajaran
+		// Hitung materi per mata pelajaran, termasuk materi yang diunggah admin
 		foreach ($mapel_list as $m) {
 			$this->db->where('mapel_uuid', $m->uuid);
-			$this->db->where('created_by', $guru_uuid);
 			$this->db->where('deleted_at', NULL, FALSE);
 			$m->bab_count = $this->db->count_all_results('materi');
 		}
 
-		// Ambil daftar bab (materi) beserta nama mapel dan jumlah sub bab
-		$bab = [];
+		// Kelompokkan materi yang diunggah berdasarkan mapel, semester, dan pekan
+		$materi_by_mapel_semester = [];
 		if (!empty($mapel_uuids)) {
 			$this->db->select('mt.*, mp.nama AS mapel_nama');
 			$this->db->from('materi mt');
 			$this->db->join('mapel mp', 'mp.uuid = mt.mapel_uuid', 'left');
-			$this->db->where('mt.created_by', $guru_uuid);
 			$this->db->where('mt.deleted_at', NULL, FALSE);
 			$this->db->where_in('mt.mapel_uuid', $mapel_uuids);
 			$this->db->order_by('mt.modified_at', 'DESC');
-			$bab = $this->db->get()->result();
+			$materi_list = $this->db->get()->result();
 
-			foreach ($bab as $b) {
-				$this->db->where('materi_uuid', $b->uuid);
+			$materi_uuids = array_column($materi_list, 'uuid');
+			$meeting_counts = [];
+			if (!empty($materi_uuids)) {
+				$this->db->select('materi_uuid, COUNT(*) AS meeting_count', FALSE);
+				$this->db->where_in('materi_uuid', $materi_uuids);
 				$this->db->where('deleted_at', NULL, FALSE);
-				$b->sub_bab_count = $this->db->count_all_results('bab');
+				$this->db->group_by('materi_uuid');
+				foreach ($this->db->get('bab')->result() as $row) {
+					$meeting_counts[$row->materi_uuid] = (int) $row->meeting_count;
+				}
+			}
+
+			foreach ($materi_list as $materi) {
+				$semester = (int) $materi->semester;
+				$pekan = (int) $materi->pekan_ke;
+				if (!isset($week_limits[$materi->mapel_uuid][$semester]) ||
+					$pekan < 1 || $pekan > $week_limits[$materi->mapel_uuid][$semester]) {
+					continue;
+				}
+				if (!isset($materi_by_mapel_semester[$materi->mapel_uuid][$semester][$pekan])) {
+					$materi->meeting_count = $meeting_counts[$materi->uuid] ?? 0;
+					$materi_by_mapel_semester[$materi->mapel_uuid][$semester][$pekan] = $materi;
+				}
+			}
+		}
+
+		$semester_upload_summary = [
+			1 => ['uploaded' => 0, 'total' => 0],
+			2 => ['uploaded' => 0, 'total' => 0]
+		];
+		foreach ($mapel_list as $m) {
+			foreach ([1, 2] as $semester) {
+				$semester_upload_summary[$semester]['total'] += $week_limits[$m->uuid][$semester] * 3;
+				foreach ($materi_by_mapel_semester[$m->uuid][$semester] ?? [] as $materi) {
+					$semester_upload_summary[$semester]['uploaded'] += $materi->meeting_count;
+				}
 			}
 		}
 
@@ -373,7 +403,9 @@ class Kepala_sekolah extends MY_Controller {
 			'proyek' => $proyek,
 			'ujian' => $ujian,
 			'kelas' => $kelas,
-			'bab' => $bab,
+			'materi_by_mapel_semester' => $materi_by_mapel_semester,
+			'week_limits' => $week_limits,
+			'semester_upload_summary' => $semester_upload_summary,
 			'active_nav' => 'kepala_sekolah'
 		);
 

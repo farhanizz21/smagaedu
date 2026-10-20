@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^php -l application/views/kepala_sekolah/kepala_sekolah-detail\\.php && git --no-pager diff --check$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^php -l application/views/kepala_sekolah/kepala_sekolah\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}
