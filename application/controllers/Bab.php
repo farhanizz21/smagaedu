@@ -20,7 +20,7 @@ class Bab extends MY_Controller {
 	// Daftar bab untuk satu materi
  	public function index($materi_uuid)
  	{
- 		$materi = $this->materi_model->get_by_uuid($materi_uuid);
+		$materi = $this->get_accessible_materi($materi_uuid);
  		if (empty($materi)) {
  			show_404();
  		}
@@ -31,10 +31,10 @@ class Bab extends MY_Controller {
 		$mapel = $this->mapel_model->get_by_uuid($materi->mapel_uuid, FALSE);
 		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
 		$pertemuan_count = count($bab);
-		$is_mapel_pengampu = user_role() === 'guru'
+		$is_mapel_pengampu = has_role('guru')
 			? $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'))
 			: false;
-		$can_manage = admin_can_access_creator($materi->created_by);
+		$can_manage = admin_can_access_creator($materi->created_by) || $is_mapel_pengampu;
  
 		// Get comments for each bab
   		$komentar_data = [];
@@ -130,13 +130,13 @@ class Bab extends MY_Controller {
 
 	public function tambah($materi_uuid)
 	{
-		$materi = $this->materi_model->get_by_uuid($materi_uuid);
+		$materi = $this->get_accessible_materi($materi_uuid);
 		if (empty($materi)) {
 			show_404();
 		}
 
 		// Superadmin, admin, pembuat pekan, atau guru pengampu dapat menambah pertemuan.
-		$is_mapel_pengampu = user_role() === 'guru'
+		$is_mapel_pengampu = has_role('guru')
 			? $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'))
 			: false;
 		if (!admin_can_access_creator($materi->created_by) && !$is_mapel_pengampu) {
@@ -241,13 +241,13 @@ class Bab extends MY_Controller {
 		if (empty($bab)) {
 			show_404();
 		}
-		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		$materi = $this->get_accessible_materi($bab->materi_uuid);
 		if (empty($materi)) {
 			show_404();
 		}
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh tambah ujian
-		if (!admin_can_access_creator($materi->created_by)) {
+		if (!admin_can_access_creator($materi->created_by) && !$this->is_mapel_pengampu($materi)) {
 			show_error('Anda tidak memiliki akses untuk menambah ujian pada pertemuan ini.', 403);
 		}
 
@@ -292,13 +292,13 @@ class Bab extends MY_Controller {
 		if (empty($bab)) {
 			show_404();
 		}
-		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		$materi = $this->get_accessible_materi($bab->materi_uuid);
 		if (empty($materi)) {
 			show_404();
 		}
 
 		// Superadmin, admin, atau pembuat pertemuan yang boleh edit
-		if (!admin_can_access_creator($materi->created_by)) {
+		if (!admin_can_access_creator($materi->created_by) && !$this->is_mapel_pengampu($materi)) {
 			show_error('Anda tidak memiliki akses untuk mengubah pertemuan ini.', 403);
 		}
 
@@ -353,7 +353,7 @@ class Bab extends MY_Controller {
 	{
 		if (has_role('admin')) {
 			$bab = $this->bab_model->get_by_uuid($bab_uuid);
-			$materi = $bab ? $this->materi_model->get_by_uuid($bab->materi_uuid) : NULL;
+			$materi = $bab ? $this->get_accessible_materi($bab->materi_uuid) : NULL;
 			if (!$materi) {
 				show_404();
 			}
@@ -377,7 +377,7 @@ class Bab extends MY_Controller {
 		if (has_role('admin')) {
 			$komentar = $this->db->get_where('bab_komentar', array('uuid' => $uuid))->row();
 			$bab = $komentar ? $this->bab_model->get_by_uuid($komentar->bab_uuid) : NULL;
-			$materi = $bab ? $this->materi_model->get_by_uuid($bab->materi_uuid) : NULL;
+			$materi = $bab ? $this->get_accessible_materi($bab->materi_uuid) : NULL;
 			if (!$materi) {
 				show_404();
 			}
@@ -397,13 +397,13 @@ class Bab extends MY_Controller {
 		if (empty($bab)) {
 			show_404();
 		}
-		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		$materi = $this->get_accessible_materi($bab->materi_uuid);
 		if (empty($materi)) {
 			show_404();
 		}
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh hapus
-		if (!admin_can_access_creator($materi->created_by)) {
+		if (!admin_can_access_creator($materi->created_by) && !$this->is_mapel_pengampu($materi)) {
 			show_error('Anda tidak memiliki akses untuk menghapus pertemuan ini.', 403);
 		}
 
@@ -414,6 +414,23 @@ class Bab extends MY_Controller {
 			$this->session->set_flashdata('error_msg', 'Gagal menghapus pertemuan');
 		}
 		redirect('sub_bab/index/' . $bab->materi_uuid);
+	}
+
+	private function is_mapel_pengampu($materi)
+	{
+		return has_role('guru')
+			&& $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'));
+	}
+
+	private function get_accessible_materi($materi_uuid)
+	{
+		$materi = $this->materi_model->get_by_uuid($materi_uuid);
+		if ($materi || !has_role('guru')) {
+			return $materi;
+		}
+
+		$materi = $this->materi_model->get_by_uuid($materi_uuid, FALSE);
+		return $materi && $this->is_mapel_pengampu($materi) ? $materi : NULL;
 	}
 
 	/**

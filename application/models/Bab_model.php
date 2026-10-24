@@ -120,7 +120,7 @@ class bab_model extends CI_Model {
         }
 
         $current_bab = $bab_uuid ? $this->get_by_uuid($bab_uuid) : null;
-        if (!$current_bab) {
+        if (!$current_bab || !$this->is_materi_accessible_by_period($current_bab->materi_uuid)) {
             return false;
         }
 
@@ -132,10 +132,20 @@ class bab_model extends CI_Model {
     {
         $this->db->where('mapel_uuid', $mapel_uuid);
         $this->db->where('deleted_at', NULL, FALSE);
-        $this->db->order_by('modified_at', 'ASC');
+        $this->db->order_by('semester', 'ASC');
+        $this->db->order_by('pekan_ke', 'ASC');
+        $this->db->order_by('id', 'ASC');
         $materi = $this->db->get('materi')->result();
         $progress = [];
-        $previous_completed = true;
+        $periode = $this->db->where('id', 1)->get('periode_akademik')->row();
+        $previous_week_completed = $periode
+            ? $this->is_week_completed_for_student(
+                $mapel_uuid,
+                (int) $periode->semester,
+                (int) $periode->pekan - 1,
+                $siswa_uuid
+            )
+            : false;
 
         foreach ($materi as $item) {
             $sub_progress = $this->get_progress_for_materi($item->uuid, $siswa_uuid);
@@ -147,14 +157,99 @@ class bab_model extends CI_Model {
                 }
             }
 
+            $item_semester = (int) $item->semester;
+            $item_week = (int) $item->pekan_ke;
             $progress[$item->uuid] = [
-                'unlocked' => $previous_completed,
-                'completed' => $completed
+                'unlocked' => false,
+                'completed' => $completed,
+                'semester' => $item_semester,
+                'week' => $item_week
             ];
-            $previous_completed = $completed;
+            $is_past = $periode && (
+                $item_semester < (int) $periode->semester
+                || ($item_semester === (int) $periode->semester
+                    && $item_week < (int) $periode->pekan)
+            );
+            $is_current = $periode
+                && $item_semester === (int) $periode->semester
+                && $item_week === (int) $periode->pekan;
+
+            $progress[$item->uuid]['unlocked'] = $is_past
+                || ($is_current && $previous_week_completed);
         }
 
+        foreach ($progress as &$state) {
+            unset($state['semester'], $state['week']);
+        }
+        unset($state);
+
         return $progress;
+    }
+
+    public function is_week_completed_for_student($mapel_uuid, $semester, $week, $siswa_uuid)
+    {
+        if ($week < 1) {
+            return true;
+        }
+
+        $materi = $this->db
+            ->select('uuid')
+            ->where('mapel_uuid', $mapel_uuid)
+            ->where('semester', $semester)
+            ->where('pekan_ke', $week)
+            ->where('deleted_at', NULL, FALSE)
+            ->get('materi')
+            ->result();
+        if (empty($materi)) {
+            return true;
+        }
+
+        $materi_uuids = array_map(function ($item) {
+            return $item->uuid;
+        }, $materi);
+        $bab = $this->db
+            ->select('uuid')
+            ->where_in('materi_uuid', $materi_uuids)
+            ->where('deleted_at', NULL, FALSE)
+            ->get('bab')
+            ->result();
+        if (empty($bab)) {
+            return true;
+        }
+
+        $ujian_uuids = [];
+        foreach ($bab as $item) {
+            $ujian = $this->db
+                ->select('u.uuid')
+                ->distinct()
+                ->from('ujian u')
+                ->join('sub_materi sm', 'sm.uuid = u.sub_materi_uuid AND sm.deleted_at IS NULL', 'left')
+                ->where('u.deleted_at', NULL, FALSE)
+                ->group_start()
+                    ->where('u.bab_uuid', $item->uuid)
+                    ->or_where('sm.bab_uuid', $item->uuid)
+                ->group_end()
+                ->get()
+                ->result();
+
+            foreach ($ujian as $exam) {
+                $ujian_uuids[$exam->uuid] = true;
+            }
+        }
+
+        foreach (array_keys($ujian_uuids) as $ujian_uuid) {
+            $submitted = $this->db
+                ->where('ujian_uuid', $ujian_uuid)
+                ->where('created_by', $siswa_uuid)
+                ->where('deleted_at', NULL, FALSE)
+                ->count_all_results('ujian_jawaban') > 0;
+
+            if (!$submitted) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function is_materi_unlocked_for_student($materi_uuid, $siswa_uuid)
@@ -164,12 +259,34 @@ class bab_model extends CI_Model {
             ->where('deleted_at', NULL, FALSE)
             ->get('materi')
             ->row();
-        if (!$materi) {
+        if (!$materi || !$this->is_materi_accessible_by_period($materi_uuid)) {
             return false;
         }
 
         $progress = $this->get_progress_for_mapel($materi->mapel_uuid, $siswa_uuid);
         return !empty($progress[$materi_uuid]['unlocked']);
+    }
+
+    public function is_materi_accessible_by_period($materi_uuid)
+    {
+        $materi = $this->db
+            ->select('semester, pekan_ke')
+            ->where('uuid', $materi_uuid)
+            ->where('deleted_at', NULL, FALSE)
+            ->get('materi')
+            ->row();
+        $periode = $this->db
+            ->where('id', 1)
+            ->get('periode_akademik')
+            ->row();
+
+        if (!$materi || !$periode || (int) $materi->pekan_ke < 1) {
+            return false;
+        }
+
+        return (int) $materi->semester < (int) $periode->semester
+            || ((int) $materi->semester === (int) $periode->semester
+                && (int) $materi->pekan_ke <= (int) $periode->pekan);
     }
 
     public function update($uuid, $dokumentasi)

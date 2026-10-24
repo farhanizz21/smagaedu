@@ -80,15 +80,27 @@
             $icon = $icons[$i % count($icons)];
         ?>
         <?php if (!$val): ?>
-        <div class="card overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-white">
+        <?php $is_period_locked = !empty($is_student) && (!$periode_akademik
+            || (int) $semester > (int) $periode_akademik->semester
+            || ((int) $semester === (int) $periode_akademik->semester
+                && $pekan_ke > (int) $periode_akademik->pekan)); ?>
+        <div class="card relative overflow-hidden rounded-2xl border-2 border-dashed border-gray-200 bg-white <?= $is_period_locked ? 'opacity-60' : '' ?>">
             <div class="h-2 w-full bg-gray-100"></div>
+            <?php if ($is_period_locked): ?>
+            <div class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-gray-900/25 backdrop-blur-[1px]">
+                <div class="text-center text-white">
+                    <i data-lucide="lock" class="mx-auto mb-2 h-6 w-6"></i>
+                    <p class="text-sm font-semibold">Pekan terkunci</p>
+                </div>
+            </div>
+            <?php endif; ?>
             <div class="flex min-h-64 flex-col items-center justify-center p-6 text-center">
                 <span class="flex h-14 w-14 items-center justify-center rounded-2xl <?= $palette['bg'] ?> text-2xl font-bold <?= $palette['icon'] ?>">
                     <?= $pekan_ke ?>
                 </span>
                 <h2 class="mt-4 text-lg font-bold text-gray-900">Pekan <?= $pekan_ke ?></h2>
                 <p class="mt-1 text-sm text-gray-500">Belum ada materi</p>
-                <?php if ($pengampu == true || $is_admin): ?>
+                <?php if (!$is_period_locked && ($pengampu == true || $is_admin)): ?>
                 <a href="<?= base_url('bab/tambah/' . $mapel->uuid . '?semester=' . $semester . '&pekan_ke=' . $pekan_ke) ?>"
                     class="mt-5 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-800">
                     <i data-lucide="plus" class="h-4 w-4"></i>
@@ -100,7 +112,11 @@
         <?php else: ?>
         <?php
             $materi_state = $materi_progress[$val->uuid] ?? ['unlocked' => true, 'completed' => false];
-            $is_locked = !$materi_state['unlocked'];
+            $is_period_locked = !empty($is_student) && (!$periode_akademik
+                || (int) $semester > (int) $periode_akademik->semester
+                || ((int) $semester === (int) $periode_akademik->semester
+                    && $pekan_ke > (int) $periode_akademik->pekan));
+            $is_locked = $is_period_locked || !$materi_state['unlocked'];
             $is_completed = !empty($materi_state['completed']);
         ?>
         <div
@@ -115,10 +131,11 @@
                         <i data-lucide="lock" class="w-6 h-6 text-gray-400"></i>
                     </div>
                     <p class="text-sm font-semibold">Pekan terkunci</p>
-                    <p class="text-xs opacity-85 mt-1">Selesaikan pekan sebelumnya terlebih dahulu</p>
+                    <p class="text-xs opacity-85 mt-1"><?= $is_period_locked ? 'Belum termasuk periode pembelajaran saat ini' : 'Selesaikan pekan sebelumnya terlebih dahulu' ?></p>
                 </div>
             </div>
             <?php endif; ?>
+            <?php if (!$is_locked): ?>
             <a href="<?= base_url('sub_bab/index/' . $val->uuid) ?>" class="block group flex-1">
                 <?php if (!empty($val->thumbnail)): ?>
                 <div class="relative overflow-hidden">
@@ -146,16 +163,36 @@
                     </p>
                 </div>
             </a>
+            <?php else: ?>
+            <div class="block flex-1" aria-disabled="true">
+                <?php if (!empty($val->thumbnail)): ?>
+                <div class="relative overflow-hidden">
+                    <img src="<?= base_url('uploads/thumbnail/' . $val->thumbnail) ?>"
+                        class="w-full h-44 object-cover">
+                </div>
+                <?php else: ?>
+                <div class="w-full h-44 <?= $palette['bg'] ?> flex items-center justify-center">
+                    <i data-lucide="<?= $icon ?>" class="w-16 h-16 <?= $palette['icon'] ?> opacity-30"></i>
+                </div>
+                <?php endif; ?>
+                <div class="p-5 flex flex-col gap-3 flex-1">
+                    <h5 class="font-bold text-gray-900 text-base leading-snug">Pekan <?= $pekan_ke ?></h5>
+                    <p class="text-sm text-gray-500"><?= $val->judul !== ('Pekan ' . $pekan_ke) ? $val->judul : 'Materi pembelajaran' ?></p>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Action Buttons -->
             <div class="px-5 pb-4 flex items-center gap-2">
+                <?php if (!$is_locked): ?>
                 <a href="<?= base_url('sub_bab/index/' . $val->uuid) ?>"
                     class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r <?= $palette['btn'] ?> shadow-md hover:shadow-lg hover:scale-[1.02] transition-all">
                     <i data-lucide="layers" class="w-3.5 h-3.5"></i> Buka Pekan
                 </a>
+                <?php endif; ?>
                 <?php
                     $current_uuid = $this->session->userdata('uuid');
-                    $can_manage = $is_admin || $val->created_by == $current_uuid;
+                    $can_manage = $is_admin || $pengampu || $val->created_by == $current_uuid;
                 ?>
                 <?php if($can_manage): ?>
                 <a href="<?= base_url('bab/edit/' . $val->uuid . '?semester=' . ($val->semester ?? 1)) ?>"

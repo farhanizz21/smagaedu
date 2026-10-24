@@ -23,6 +23,20 @@
 
     <div class="grid gap-5 sm:grid-cols-2">
         <?php foreach ([1, 2] as $semester): ?>
+        <?php $is_locked = !empty($is_student) && (!$periode_akademik || $semester > (int) $periode_akademik->semester); ?>
+        <?php if ($is_locked): ?>
+        <div aria-disabled="true"
+            class="relative flex min-h-48 items-center justify-between overflow-hidden rounded-xl border border-gray-200 bg-gray-100 p-6 opacity-60">
+            <div>
+                <p class="text-xs font-semibold uppercase text-gray-500">Semester</p>
+                <h2 class="mt-2 text-2xl font-bold text-gray-700"><?= $semester ?></h2>
+                <p class="mt-2 text-sm text-gray-500">Semester ini belum dapat diakses</p>
+            </div>
+            <span class="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-500">
+                <i data-lucide="lock" class="h-5 w-5"></i>
+            </span>
+        </div>
+        <?php else: ?>
         <a href="<?= base_url('mata_pelajaran/detail/' . $mapel->uuid . '?semester=' . $semester) ?>"
             class="group relative flex min-h-48 items-center justify-between overflow-hidden rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
             <div>
@@ -34,6 +48,7 @@
                 <i data-lucide="arrow-right" class="h-5 w-5"></i>
             </span>
         </a>
+        <?php endif; ?>
         <?php endforeach; ?>
     </div>
 </main>
