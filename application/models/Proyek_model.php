@@ -39,16 +39,11 @@ class proyek_model extends CI_Model {
 	{
 		$this->db->select('p.*');
 		$this->db->from('proyek p');
-		$this->db->join('users AS creator', 'creator.uuid = p.created_by AND EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = creator.id AND user_roles.role_id = 3)', 'left');
 		$this->db->where('p.deleted_at', NULL, FALSE);
 		if ($created_by !== null) {
 			$this->db->where('p.created_by', $created_by);
 		} elseif (has_role('admin')) {
-			$admin_uuid = $this->session->userdata('uuid');
-			$this->db->group_start();
-			$this->db->where('p.created_by', $admin_uuid);
-			$this->db->or_where('creator.created_by', $admin_uuid);
-			$this->db->group_end();
+			$this->db->where('p.created_by', $this->session->userdata('uuid'));
 		}
 		$this->db->order_by('p.modified_at', 'DESC');
 		$data = $this->db->get()->result();
