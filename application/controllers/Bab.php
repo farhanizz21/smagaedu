@@ -48,7 +48,7 @@ class Bab extends MY_Controller {
   		$bab_has_ujian = [];
 
   		// Untuk siswa: cek apakah ujian sub bab sebelumnya sudah dikerjakan
-  		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
   		$user_login = $this->session->userdata('uuid');
 		$all_unlocked = is_admin_or_superadmin() || $can_manage || $is_mapel_pengampu;
 
@@ -351,7 +351,7 @@ class Bab extends MY_Controller {
 
 	public function komentar_tambah($bab_uuid)
 	{
-		if (user_role() === 'admin') {
+		if (has_role('admin')) {
 			$bab = $this->bab_model->get_by_uuid($bab_uuid);
 			$materi = $bab ? $this->materi_model->get_by_uuid($bab->materi_uuid) : NULL;
 			if (!$materi) {
@@ -374,7 +374,7 @@ class Bab extends MY_Controller {
 
 	public function komentar_hapus($uuid)
 	{
-		if (user_role() === 'admin') {
+		if (has_role('admin')) {
 			$komentar = $this->db->get_where('bab_komentar', array('uuid' => $uuid))->row();
 			$bab = $komentar ? $this->bab_model->get_by_uuid($komentar->bab_uuid) : NULL;
 			$materi = $bab ? $this->materi_model->get_by_uuid($bab->materi_uuid) : NULL;

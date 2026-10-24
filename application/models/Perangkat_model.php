@@ -45,7 +45,7 @@ class Perangkat_model extends CI_Model {
         $this->db->from('users');
         $this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
         $this->db->where('users.uuid', $guru_uuid);
-        $this->db->where('users.role_id', 3);
+        $this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
         $this->db->where('users.deleted_at', NULL, FALSE);
         $guru = $this->db->get()->row();
         
@@ -66,7 +66,7 @@ class Perangkat_model extends CI_Model {
 
     public function get_all_mapel()
     {
-        if (user_role() === 'admin') {
+        if (has_role('admin')) {
             $mapel_uuids = $this->_get_admin_accessible_mapel_uuids();
             if (empty($mapel_uuids)) {
                 return [];
@@ -95,7 +95,7 @@ class Perangkat_model extends CI_Model {
         }
 
         $this->db->select('uuid');
-        $this->db->where('role_id', 3);
+        $this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
         $this->db->where('created_by', $this->session->userdata('uuid'));
         $this->db->where('deleted_at', NULL, FALSE);
         foreach ($this->db->get('users')->result() as $teacher) {
@@ -190,13 +190,13 @@ class Perangkat_model extends CI_Model {
 
     public function can_access($mapel_uuid)
     {
-        $user_role = $this->session->userdata('role');
+        $user_role = user_role();
         
         if ($user_role === 'superadmin') {
             return true;
         }
 
-        if ($user_role === 'admin') {
+        if (has_role('admin')) {
             $mapel = $this->db->get_where('mapel', array('uuid' => $mapel_uuid, 'deleted_at' => NULL))->row();
             return $mapel && in_array($mapel_uuid, $this->_get_admin_accessible_mapel_uuids(), true);
         }

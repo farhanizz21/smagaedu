@@ -276,6 +276,7 @@ class Admin extends MY_Controller {
 
 			$this->db->insert('users', $data_user);
 			if ($this->db->affected_rows() > 0) {
+				$this->db->insert('user_roles', array('user_id' => $this->db->insert_id(), 'role_id' => 5));
 				$this->session->set_flashdata('success_msg', 'Data kepala sekolah berhasil di simpan');
 				redirect('admin/kepala_sekolah');
 			} else {

@@ -165,6 +165,19 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
+-- Struktur tabel `user_roles`
+-- --------------------------------------------------------
+
+CREATE TABLE `user_roles` (
+  `user_id` int(11) NOT NULL,
+  `role_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_id`, `role_id`),
+  KEY `user_roles_role_id` (`role_id`),
+  CONSTRAINT `user_roles_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_roles_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
 -- Struktur tabel `user_profiles`
 -- --------------------------------------------------------
 
@@ -658,6 +671,9 @@ INSERT INTO `users`
 (1, '00000000-0000-4000-8000-000000000001', 1, 'Super Admin', 'superadmin',
  '$2y$10$nntygBg3bburFDsTZiob3eXrXqBd1Q7mq1leIqxwDxT4pbziFKOJi',
  'superadmin@sekolah.ac.id', 'aktif');
+
+INSERT INTO `user_roles` (`user_id`, `role_id`)
+SELECT `id`, `role_id` FROM `users`;
 
 -- Catatan: profil (user_profiles) dibuat otomatis saat superadmin membuat user
 -- melalui menu Master Data > User, jadi tidak perlu diisi manual di sini.

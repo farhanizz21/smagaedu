@@ -61,13 +61,16 @@ class auth_model extends CI_Model
 			return FALSE;
 		}
 
+		$role_names = $this->get_user_roles($user->id);
+
 		// Set session data
 		$this->session->set_userdata([
 			self::SESSION_KEY => $user->uuid, 
 			'username' => $user->username, 
 			'nama' => $user->nama, 
 			'role' => $user->role_nama,
-			'role_id' => $user->role_id
+			'role_id' => $user->role_id,
+			'roles' => $role_names
 		]);
 		
 		return $this->session->has_userdata(self::SESSION_KEY);
@@ -83,8 +86,6 @@ class auth_model extends CI_Model
 		}
 		
 		$user_uuid = $this->session->userdata(self::SESSION_KEY);
-		$role = $this->session->userdata('role');
-
 		// Query dari tabel users dengan join roles
 		$this->db->select('users.*, roles.nama as role_nama');
 		$this->db->from($this->_table_users);
@@ -98,6 +99,12 @@ class auth_model extends CI_Model
 		}
 
 		$user = $query->row();
+		$role_names = $this->get_user_roles($user->id);
+		$this->session->set_userdata(array(
+			'role' => $user->role_nama,
+			'role_id' => $user->role_id,
+			'roles' => $role_names
+		));
 		
 		// Tambahkan data profile jika ada
 		$this->db->where('user_id', $user->id);
@@ -125,8 +132,7 @@ class auth_model extends CI_Model
 			return false;
 		}
 
-		// Get user role
-		$this->db->select('role_id');
+		$this->db->select('users.id');
 		$this->db->from($this->_table_users);
 		$this->db->where('uuid', $user_uuid);
 		$user = $this->db->get()->row();
@@ -137,8 +143,9 @@ class auth_model extends CI_Model
 
 		// Check permission
 		$this->db->from('role_permissions');
+		$this->db->join('user_roles', 'user_roles.role_id = role_permissions.role_id');
 		$this->db->join('permissions', 'role_permissions.permission_id = permissions.id');
-		$this->db->where('role_permissions.role_id', $user->role_id);
+		$this->db->where('user_roles.user_id', $user->id);
 		$this->db->where('permissions.nama', $permission_name);
 		
 		return $this->db->get()->num_rows() > 0;
@@ -158,12 +165,89 @@ class auth_model extends CI_Model
 		}
 
 		$this->db->select('roles.nama');
-		$this->db->from($this->_table_users);
-		$this->db->join($this->_table_roles, 'users.role_id = roles.id');
+		$this->db->from('user_roles');
+		$this->db->join($this->_table_roles, 'user_roles.role_id = roles.id');
+		$this->db->join($this->_table_users, 'users.id = user_roles.user_id');
 		$this->db->where('users.uuid', $user_uuid);
 		$this->db->where('roles.nama', 'superadmin');
 		
 		return $this->db->get()->num_rows() > 0;
+	}
+
+	public function get_user_roles($user_id)
+	{
+		$this->db->select('roles.nama');
+		$this->db->from('user_roles');
+		$this->db->join($this->_table_roles, 'user_roles.role_id = roles.id');
+		$this->db->where('user_roles.user_id', $user_id);
+		$this->db->order_by('roles.id', 'ASC');
+		return array_column($this->db->get()->result_array(), 'nama');
+	}
+
+	public function user_has_role($user_uuid, $role_name)
+	{
+		$query = $this->db->query(
+			'SELECT 1 FROM user_roles '
+			. 'INNER JOIN roles ON user_roles.role_id = roles.id '
+			. 'INNER JOIN users ON users.id = user_roles.user_id '
+			. 'WHERE users.uuid = ? AND roles.nama = ? LIMIT 1',
+			array($user_uuid, $role_name)
+		);
+
+		return $query->num_rows() > 0;
+	}
+
+	public function set_user_role($user_uuid, $role_name, $enabled)
+	{
+		$user = $this->db->get_where($this->_table_users, array('uuid' => $user_uuid))->row();
+		$role = $this->db->get_where($this->_table_roles, array('nama' => $role_name))->row();
+		if (!$user || !$role) {
+			return false;
+		}
+
+		if ($enabled) {
+			if ($this->user_has_role($user_uuid, $role_name)) {
+				return true;
+			}
+
+			$this->db->insert('user_roles', array(
+				'user_id' => $user->id,
+				'role_id' => $role->id
+			));
+			return $this->db->affected_rows() > 0 || $this->user_has_role($user_uuid, $role_name);
+		}
+
+		$replacement_role = null;
+		if ((int) $user->role_id === (int) $role->id) {
+			$this->db->select('role_id');
+			$this->db->where('user_id', $user->id);
+			$this->db->where('role_id !=', $role->id);
+			$this->db->order_by('role_id', 'ASC');
+			$replacement_role = $this->db->get('user_roles')->row();
+			if (!$replacement_role) {
+				return false;
+			}
+		}
+
+		$this->db->delete('user_roles', array(
+			'user_id' => $user->id,
+			'role_id' => $role->id
+		));
+		if ($this->user_has_role($user_uuid, $role_name)) {
+			return false;
+		}
+
+		if ($replacement_role) {
+			$this->db->update($this->_table_users, array(
+				'role_id' => $replacement_role->role_id,
+				'modified_at' => date('Y-m-d H:i:s')
+			), array('id' => $user->id));
+			if ($this->db->affected_rows() === 0 && (int) $replacement_role->role_id !== (int) $user->role_id) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**
@@ -171,7 +255,14 @@ class auth_model extends CI_Model
 	 */
 	public function logout()
 	{
-		$this->session->unset_userdata(self::SESSION_KEY);
+		$this->session->unset_userdata(array(
+			self::SESSION_KEY,
+			'username',
+			'nama',
+			'role',
+			'role_id',
+			'roles'
+		));
 		return !$this->session->has_userdata(self::SESSION_KEY);
 	}
 
@@ -180,7 +271,15 @@ class auth_model extends CI_Model
 	 */
 	public function create_user($data)
 	{
-		return $this->db->insert($this->_table_users, $data);
+		if (!$this->db->insert($this->_table_users, $data)) {
+			return false;
+		}
+
+		$user_id = $this->db->insert_id();
+		return $this->db->insert('user_roles', array(
+			'user_id' => $user_id,
+			'role_id' => $data['role_id']
+		));
 	}
 
 	/**

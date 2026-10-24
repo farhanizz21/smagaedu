@@ -62,7 +62,7 @@
             <!-- Pencarian -->
             <div class="xl:col-span-4 relative">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 pointer-events-none">
-                    <i data-lucide="search" class="w-4 h-4"></i>
+                    <i data-lucide="search" cclass="w-4 h-4"></i>
                 </span>
                 <input type="text" name="q" value="<?= html_escape($filters['q']) ?>"
                     placeholder="Cari nama, username, atau NIP..."
@@ -86,9 +86,12 @@
                 <select name="admin_uuid" onchange="this.form.submit()"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
                     <option value="">Semua Admin</option>
-                    <option value="__unassigned__" <?= ($filters['admin_uuid'] === '__unassigned__') ? 'selected' : '' ?>>Belum ditugaskan</option>
+                    <option value="__unassigned__"
+                        <?= ($filters['admin_uuid'] === '__unassigned__') ? 'selected' : '' ?>>Belum ditugaskan</option>
                     <?php foreach($admins as $admin): ?>
-                    <option value="<?= html_escape($admin->uuid) ?>" <?= ($filters['admin_uuid'] === $admin->uuid) ? 'selected' : '' ?>><?= html_escape($admin->nama) ?></option>
+                    <option value="<?= html_escape($admin->uuid) ?>"
+                        <?= ($filters['admin_uuid'] === $admin->uuid) ? 'selected' : '' ?>>
+                        <?= html_escape($admin->nama) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -109,7 +112,8 @@
                 <select name="per_page" onchange="this.form.submit()"
                     class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm bg-white">
                     <?php foreach($per_page_options as $opt): ?>
-                    <option value="<?= $opt ?>" <?= ($per_page == $opt) ? 'selected' : '' ?>><?= $opt ?> / halaman</option>
+                    <option value="<?= $opt ?>" <?= ($per_page == $opt) ? 'selected' : '' ?>><?= $opt ?> / halaman
+                    </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -136,15 +140,16 @@
     <form id="bulkDeleteForm" method="POST" action="<?= base_url('guru/bulk_hapus') ?>"></form>
     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
         <!-- Bulk action bar -->
-        <div id="bulkActionBar" class="hidden items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+        <div id="bulkActionBar"
+            class="hidden items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
             <div class="flex items-center gap-3">
                 <span id="selectedCount" class="text-sm font-medium text-gray-700">0 data dipilih</span>
             </div>
             <div>
                 <?php if(is_superadmin()): ?>
-                <button type="button" id="bulkAssignAdminBtn"
+                <button type="button" id="bulkAddAdminRoleBtn"
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-all text-sm">
-                    <i data-lucide="user-cog" class="w-4 h-4"></i> Tugaskan Admin
+                    <i data-lucide="user-cog" class="w-4 h-4"></i> Jadikan Admin
                 </button>
                 <?php endif; ?>
                 <button type="button" id="bulkHapusBtn"
@@ -159,7 +164,8 @@
             <table class="w-full text-sm">
                 <thead>
                     <tr class="bg-gray-50 border-b border-gray-200">
-                        <th class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-12">
+                        <th
+                            class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-12">
                             <input type="checkbox" id="checkboxAll"
                                 class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer">
                         </th>
@@ -167,7 +173,8 @@
                             Nama</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Username</th>
-                        <th class="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-56">
+                        <th
+                            class="text-left px-4 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-56">
                             Admin / Pembuat</th>
                         <th class="text-left px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider">
                             Mata Pelajaran & Kelas</th>
@@ -189,7 +196,8 @@
                         <td class="px-6 py-4 font-medium text-gray-900"><?= $val->nama; ?></td>
                         <td class="px-6 py-4 text-gray-600"><?= $val->username; ?></td>
                         <td class="px-4 py-4">
-                            <span class="block max-w-56 truncate text-gray-600" title="<?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>">
+                            <span class="block max-w-56 truncate text-gray-600"
+                                title="<?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>">
                                 <?= html_escape($val->admin_nama ?? 'Belum ditugaskan'); ?>
                             </span>
                         </td>
@@ -222,14 +230,19 @@
                         <td class="px-6 py-4">
                             <div class="flex items-center justify-center gap-1.5">
                                 <?php if(is_superadmin()): ?>
-                                <button type="button" data-assign-admin
-                                    data-guru-uuid="<?= html_escape($val->uuid); ?>"
-                                    data-guru-name="<?= html_escape($val->nama); ?>"
-                                    data-admin-uuid="<?= html_escape($val->created_by ?? ''); ?>"
-                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
-                                    title="Atur admin pengelola" aria-label="Atur admin pengelola untuk <?= html_escape($val->nama); ?>">
-                                    <i data-lucide="user-cog" class="h-4 w-4"></i>
+                                <?= form_open('guru/toggle_admin_role', array('class' => 'inline-flex')); ?>
+                                <input type="hidden" name="guru_uuid" value="<?= html_escape($val->uuid); ?>">
+                                <input type="hidden" name="make_admin"
+                                    value="<?= !empty($val->is_admin) ? '0' : '1'; ?>">
+                                <button type="submit"
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-lg border <?= !empty($val->is_admin) ? 'border-green-200 bg-green-50 text-green-700 hover:bg-green-100' : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100' ?>"
+                                    title="<?= !empty($val->is_admin) ? 'Hapus role admin' : 'Jadikan admin'; ?>"
+                                    aria-label="<?= !empty($val->is_admin) ? 'Hapus role admin dari' : 'Jadikan admin'; ?> <?= html_escape($val->nama); ?>"
+                                    onclick="return confirm('<?= !empty($val->is_admin) ? 'Hapus role admin dari' : 'Jadikan'; ?> <?= html_escape($val->nama); ?> <?= !empty($val->is_admin) ? '? Role guru tetap aktif.' : 'sebagai admin?'; ?>')">
+                                    <i data-lucide="<?= !empty($val->is_admin) ? 'user-check' : 'user-cog'; ?>"
+                                        class="h-4 w-4"></i>
                                 </button>
+                                <?= form_close(); ?>
                                 <?php endif; ?>
                                 <a href="<?=base_url('guru/edit/'.$val->uuid)?>"
                                     class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
@@ -285,64 +298,33 @@
 </div>
 
 <?php if(is_superadmin()): ?>
-<dialog id="bulkAssignAdminDialog" class="w-[min(28rem,calc(100%-2rem))] rounded-xl border border-gray-200 p-0 shadow-2xl backdrop:bg-gray-900/40">
-    <?= form_open('guru/bulk_assign_admin', array('id' => 'bulkAssignAdminForm')); ?>
-    <div id="bulkAssignGuruUuids"></div>
+<dialog id="bulkAddAdminRoleDialog"
+    class="w-[min(28rem,calc(100%-2rem))] rounded-xl border border-gray-200 p-0 shadow-2xl backdrop:bg-gray-900/40">
+    <?= form_open('guru/bulk_add_admin_role', array('id' => 'bulkAddAdminRoleForm')); ?>
+    <div id="bulkAddAdminGuruUuids"></div>
     <div class="border-b border-gray-100 px-5 py-4">
         <div class="flex items-start justify-between gap-4">
             <div>
-                <h2 class="text-lg font-semibold text-gray-900">Tugaskan Admin</h2>
-                <p id="bulkAssignGuruCount" class="mt-1 text-sm text-gray-500"></p>
+                <h2 class="text-lg font-semibold text-gray-900">Jadikan Admin</h2>
+                <p id="bulkAddAdminGuruCount" class="mt-1 text-sm text-gray-500"></p>
             </div>
-            <button type="button" id="closeBulkAssignAdmin" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100" title="Tutup" aria-label="Tutup dialog">
+            <button type="button" id="closeBulkAddAdminRole"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100"
+                title="Tutup" aria-label="Tutup dialog">
                 <i data-lucide="x" class="h-4 w-4"></i>
             </button>
         </div>
     </div>
     <div class="px-5 py-5">
-        <label for="bulkAssignAdminUuid" class="mb-2 block text-sm font-medium text-gray-700">Pilih admin</label>
-        <select name="admin_uuid" id="bulkAssignAdminUuid" class="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
-            <option value="">Belum ditugaskan</option>
-            <?php foreach($admins as $admin): ?>
-            <option value="<?= html_escape($admin->uuid); ?>"><?= html_escape($admin->nama . ' (' . $admin->username . ')'); ?></option>
-            <?php endforeach; ?>
-        </select>
+        <p class="text-sm text-gray-600">Guru yang dipilih akan memperoleh role Admin. Role Guru dan data mengajarnya
+            tetap aktif.</p>
     </div>
     <div class="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4">
-        <button type="button" id="cancelBulkAssignAdmin" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
-        <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-            <i data-lucide="save" class="h-4 w-4"></i> Simpan
-        </button>
-    </div>
-    <?= form_close(); ?>
-</dialog>
-<dialog id="assignAdminDialog" class="w-[min(28rem,calc(100%-2rem))] rounded-xl border border-gray-200 p-0 shadow-2xl backdrop:bg-gray-900/40">
-    <?= form_open('guru/assign_admin', array('id' => 'assignAdminForm')); ?>
-    <input type="hidden" name="guru_uuid" id="assignGuruUuid">
-    <div class="border-b border-gray-100 px-5 py-4">
-        <div class="flex items-start justify-between gap-4">
-            <div>
-                <h2 class="text-lg font-semibold text-gray-900">Admin Pengelola</h2>
-                <p id="assignGuruName" class="mt-1 text-sm text-gray-500"></p>
-            </div>
-            <button type="button" id="closeAssignAdmin" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100" title="Tutup" aria-label="Tutup dialog">
-                <i data-lucide="x" class="h-4 w-4"></i>
-            </button>
-        </div>
-    </div>
-    <div class="px-5 py-5">
-        <label for="assignAdminUuid" class="mb-2 block text-sm font-medium text-gray-700">Pilih admin</label>
-        <select name="admin_uuid" id="assignAdminUuid" class="w-full rounded-md border border-gray-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
-            <option value="">Belum ditugaskan</option>
-            <?php foreach($admins as $admin): ?>
-            <option value="<?= html_escape($admin->uuid); ?>"><?= html_escape($admin->nama . ' (' . $admin->username . ')'); ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-    <div class="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4">
-        <button type="button" id="cancelAssignAdmin" class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
-        <button type="submit" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-            <i data-lucide="save" class="h-4 w-4"></i> Simpan
+        <button type="button" id="cancelBulkAddAdminRole"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
+        <button type="submit"
+            class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            <i data-lucide="user-cog" class="h-4 w-4"></i> Jadikan Admin
         </button>
     </div>
     <?= form_close(); ?>
@@ -354,58 +336,40 @@
 <?php endif; ?>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
     var checkboxAll = document.getElementById('checkboxAll');
     var checkboxes = document.querySelectorAll('.guru-checkbox');
     var bulkActionBar = document.getElementById('bulkActionBar');
     var selectedCountEl = document.getElementById('selectedCount');
     var bulkHapusBtn = document.getElementById('bulkHapusBtn');
     var bulkDeleteForm = document.getElementById('bulkDeleteForm');
-    var assignAdminDialog = document.getElementById('assignAdminDialog');
-    var bulkAssignAdminDialog = document.getElementById('bulkAssignAdminDialog');
+    var bulkAssignAdminDialog = document.getElementById('bulkAddAdminRoleDialog');
 
-    var bulkAssignAdminBtn = document.getElementById('bulkAssignAdminBtn');
+    var bulkAssignAdminBtn = document.getElementById('bulkAddAdminRoleBtn');
     if (bulkAssignAdminBtn) {
-        bulkAssignAdminBtn.addEventListener('click', function () {
+        bulkAssignAdminBtn.addEventListener('click', function() {
             var selected = getSelected();
             if (selected.length === 0) return;
-            var target = document.getElementById('bulkAssignGuruUuids');
+            var target = document.getElementById('bulkAddAdminGuruUuids');
             target.innerHTML = '';
-            selected.forEach(function (checkbox) {
+            selected.forEach(function(checkbox) {
                 var input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = 'guru_uuids[]';
                 input.value = checkbox.value;
                 target.appendChild(input);
             });
-            document.getElementById('bulkAssignGuruCount').textContent = selected.length + ' guru dipilih';
+            document.getElementById('bulkAddAdminGuruCount').textContent = selected.length +
+                ' guru dipilih';
             bulkAssignAdminDialog.showModal();
         });
     }
 
-    ['closeBulkAssignAdmin', 'cancelBulkAssignAdmin'].forEach(function (id) {
+    ['closeBulkAddAdminRole', 'cancelBulkAddAdminRole'].forEach(function(id) {
         var button = document.getElementById(id);
         if (button) {
-            button.addEventListener('click', function () {
+            button.addEventListener('click', function() {
                 bulkAssignAdminDialog.close();
-            });
-        }
-    });
-
-    document.querySelectorAll('[data-assign-admin]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            document.getElementById('assignGuruUuid').value = button.dataset.guruUuid;
-            document.getElementById('assignGuruName').textContent = button.dataset.guruName;
-            document.getElementById('assignAdminUuid').value = button.dataset.adminUuid;
-            assignAdminDialog.showModal();
-        });
-    });
-
-    ['closeAssignAdmin', 'cancelAssignAdmin'].forEach(function (id) {
-        var button = document.getElementById(id);
-        if (button) {
-            button.addEventListener('click', function () {
-                assignAdminDialog.close();
             });
         }
     });
@@ -427,23 +391,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (checkboxAll) {
-        checkboxAll.addEventListener('change', function () {
-            checkboxes.forEach(function (cb) {
+        checkboxAll.addEventListener('change', function() {
+            checkboxes.forEach(function(cb) {
                 cb.checked = checkboxAll.checked;
             });
             updateBulkState();
         });
     }
 
-    checkboxes.forEach(function (cb) {
+    checkboxes.forEach(function(cb) {
         cb.addEventListener('change', updateBulkState);
     });
 
     if (bulkHapusBtn) {
-        bulkHapusBtn.addEventListener('click', function () {
+        bulkHapusBtn.addEventListener('click', function() {
             var selected = getSelected();
             if (selected.length === 0) return;
-            if (confirm('Hapus ' + selected.length + ' guru terpilih? Data yang sudah dihapus tidak dapat dikembalikan.')) {
+            if (confirm('Hapus ' + selected.length +
+                    ' guru terpilih? Data yang sudah dihapus tidak dapat dikembalikan.')) {
                 bulkDeleteForm.submit();
             }
         });

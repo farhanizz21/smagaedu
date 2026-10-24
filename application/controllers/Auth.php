@@ -117,7 +117,7 @@ class Auth extends CI_Controller {
 
 		// Hanya admin dan superadmin yang bisa reset password
 		$user = $this->auth_model->current_user();
-		if (!in_array($user->role_nama, ['admin', 'superadmin'])) {
+		if (!has_role(['admin', 'superadmin'])) {
 			$this->session->set_flashdata('error_msg', 'Akses ditolak!');
 			redirect(base_url());
 		}

@@ -1,8 +1,14 @@
-# Panduan Migrasi ke Role-Based Access Control (RBAC)
+# Panduan Migrasi Role-Based Access Control (RBAC)
 
 ## Ringkasan Perubahan
 
 Untuk mempermudah pengaturan role dan hak akses, telah dibuat sistem role terpusat dengan tabel `users`, `roles`, `user_profiles`, dan `permissions`.
+
+Satu akun dapat memiliki lebih dari satu role melalui tabel penghubung `user_roles`. Kolom `users.role_id` tetap dipertahankan sebagai role utama untuk kompatibilitas data lama. Pada instalasi yang sudah berjalan, jalankan `USER_ROLES_MIGRATION.sql` sebelum menggunakan kode aplikasi terbaru. Skrip tersebut membuat relasi role, menyalin role utama yang sudah ada, dan memulihkan role guru untuk akun admin yang masih memiliki profil guru.
+
+Untuk menjadikan guru sebagai admin, buka **Data Guru > Edit**, lalu centang **Guru ini juga Admin**. Akun dan password tetap sama, dan guru tetap tercatat di master guru.
+
+Jika sebelumnya ada dua akun terpisah untuk orang yang sama, role tidak digabung otomatis. Pilih akun guru yang akan dipertahankan, berikan role Admin padanya, lalu verifikasi data akun admin lama sebelum menonaktifkannya.
 
 ### Role yang Tersedia:
 1. **superadmin** - Akses penuh ke semua fitur sistem
@@ -12,19 +18,13 @@ Untuk mempermudah pengaturan role dan hak akses, telah dibuat sistem role terpus
 
 ## Langkah Migrasi
 
-### 1. Jalankan SQL Migration
+### 1. Siapkan skema multi-role
 
-Eksekusi file `smartedu_updated.sql` di database Anda untuk membuat tabel baru:
+Untuk database aplikasi yang sudah berjalan, backup database lalu jalankan `USER_ROLES_MIGRATION.sql` melalui phpMyAdmin atau klien MySQL. Jangan import ulang dump penuh ke database aktif. Untuk instalasi baru, gunakan `smagaedu_full.sql`; dump tersebut sudah berisi tabel `user_roles` dan relasi role awal.
 
-```bash
-mysql -u username -p database_name < smartedu_updated.sql
-```
+### 2. Jika masih menggunakan tabel user lama
 
-Atau import via phpMyAdmin.
-
-### 2. Migrasi Data User Lama ke Tabel Baru
-
-Jalankan query berikut untuk memindahkan data user lama:
+Bagian ini hanya untuk instalasi lama yang belum memiliki data pengguna terpusat di tabel `users`. Jalankan query berikut untuk memindahkan data user lama:
 
 ```sql
 -- Migrasi admin lama ke users

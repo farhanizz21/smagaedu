@@ -22,7 +22,7 @@ class Mapel extends MY_Controller {
 	public function index()
 	{
 		$user_uuid = $this->session->userdata('uuid');
-		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
 
 		// ----- Pencarian & filter (query string) -----
 		$filters = array(
@@ -182,7 +182,7 @@ class Mapel extends MY_Controller {
 			show_error('Data mata pelajaran tidak ditemukan.', 404);
 		}
 		
-		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
 		$user_uuid = $this->session->userdata('uuid');
 		if ($user_role === 'guru') {
 			$guru = $this->guru_model->get_by_uuid($user_uuid);
@@ -234,7 +234,7 @@ class Mapel extends MY_Controller {
 				show_error('Data mata pelajaran tidak ditemukan.', 404);
 			}
 			
-			$user_role = $this->session->userdata('role');
+			$user_role = user_role();
 			$user_uuid = $this->session->userdata('uuid');
 			if ($user_role === 'guru') {
 				$guru = $this->guru_model->get_by_uuid($user_uuid);

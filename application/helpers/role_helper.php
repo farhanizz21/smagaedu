@@ -23,14 +23,31 @@ if (!function_exists('has_role')) {
      */
     function has_role($role) {
         $CI =& get_instance();
+        if (!$CI->session->userdata('uuid')) {
+            return false;
+        }
         
         if (!is_array($role)) {
             $role = [$role];
         }
         
-        $user_role = $CI->session->userdata('role');
-        
-        return in_array($user_role, $role);
+        $user_roles = (array) $CI->session->userdata('roles');
+        $primary_role = $CI->session->userdata('role');
+        if ($primary_role && !in_array($primary_role, $user_roles, TRUE)) {
+            $user_roles[] = $primary_role;
+        }
+
+        foreach ($role as $role_name) {
+            if (in_array($role_name, $user_roles, TRUE)) {
+                return true;
+            }
+
+            if ($CI->session->userdata('uuid') && $CI->auth_model->user_has_role($CI->session->userdata('uuid'), $role_name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 
@@ -68,6 +85,13 @@ if (!function_exists('user_role')) {
      */
     function user_role() {
         $CI =& get_instance();
+        $roles = (array) $CI->session->userdata('roles');
+        $roles[] = $CI->session->userdata('role');
+        foreach (array('superadmin', 'admin', 'kepala_sekolah', 'guru', 'siswa') as $role_name) {
+            if (in_array($role_name, $roles, TRUE)) {
+                return $role_name;
+            }
+        }
         return $CI->session->userdata('role');
     }
 }
@@ -101,14 +125,12 @@ if (!function_exists('require_role_access')) {
             $roles = [$roles];
         }
         
-        $user_role = user_role();
-        
         // Superadmin always has access
-        if ($user_role === 'superadmin') {
+        if (has_role('superadmin')) {
             return true;
         }
         
-        return in_array($user_role, $roles);
+        return has_role($roles);
     }
 }
 
@@ -119,12 +141,12 @@ if (!function_exists('admin_visible_creator_uuids')) {
         $admin_uuid = $CI->session->userdata('uuid');
         $visible_uuids = array($admin_uuid);
 
-        if (user_role() !== 'admin' || empty($admin_uuid)) {
+        if (!has_role('admin') || empty($admin_uuid)) {
             return $visible_uuids;
         }
 
         $CI->db->select('uuid');
-        $CI->db->where('role_id', 3);
+        $CI->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
         $CI->db->where('created_by', $admin_uuid);
         $teachers = $CI->db->get('users')->result();
         foreach ($teachers as $teacher) {
@@ -143,7 +165,7 @@ if (!function_exists('admin_can_access_creator')) {
             return true;
         }
 
-        if ($role !== 'admin') {
+        if (!has_role('admin')) {
             return $creator_uuid === get_instance()->session->userdata('uuid');
         }
 
@@ -154,11 +176,11 @@ if (!function_exists('admin_can_access_creator')) {
 if (!function_exists('apply_admin_creator_scope')) {
     /** Apply creator ownership filtering to the current query builder. */
     function apply_admin_creator_scope($column) {
-        if (user_role() === 'admin') {
+        if (has_role('admin')) {
             $CI =& get_instance();
             $admin_uuid = $CI->db->escape($CI->session->userdata('uuid'));
             $condition = '(' . $column . ' = ' . $admin_uuid
-                . ' OR ' . $column . ' IN (SELECT uuid FROM users WHERE role_id = 3 AND created_by = ' . $admin_uuid . '))';
+                . ' OR ' . $column . ' IN (SELECT users.uuid FROM users WHERE EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3) AND users.created_by = ' . $admin_uuid . '))';
             $CI->db->where($condition, NULL, FALSE);
         }
     }

@@ -59,7 +59,7 @@
                             class="block px-4 py-2 text-sm <?= $active_nav == 'kepala_sekolah_admin' ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-600 hover:bg-gray-50' ?>">Data
                             Kepala Sekolah</a>
                         <?php endif; ?>
-                        <?php if(in_array(user_role(), ['superadmin', 'admin'])): ?>
+                        <?php if(has_role(['superadmin', 'admin'])): ?>
                         <div class="border-t border-gray-100 my-1"></div>
                         <a href="<?= base_url('admin/admins') ?>"
                             class="block px-4 py-2 text-sm <?= $active_nav == 'admins' ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-600 hover:bg-gray-50' ?>">Data
@@ -90,7 +90,7 @@
                         <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
                     </span>
                     <span class="text-sm font-medium text-gray-700 hidden sm:block">Hai,
-                        <?= $this->session->userdata('nama'); ?> (<?= user_role(); ?>)</span>
+                        <?= $this->session->userdata('nama'); ?> (<?= html_escape(implode(', ', (array) $this->session->userdata('roles'))); ?>)</span>
                 </span>
                 <div
                     class="nav-dropdown-menu hidden absolute top-full right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-2 min-w-[160px]">
@@ -171,7 +171,7 @@
                 class="flex items-center min-h-[44px] px-3 rounded-lg <?= ($active_nav ?? '') == 'kepala_sekolah_admin' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Data
                 Kepala Sekolah</a>
             <?php endif; ?>
-            <?php if(in_array(user_role(), ['superadmin', 'admin'])): ?>
+            <?php if(has_role(['superadmin', 'admin'])): ?>
             <a href="<?= base_url('admin/admins') ?>"
                 class="flex items-center min-h-[44px] px-3 rounded-lg <?= ($active_nav ?? '') == 'admins' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Data
                 Admin</a>

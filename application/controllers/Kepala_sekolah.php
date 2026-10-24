@@ -196,12 +196,14 @@ class Kepala_sekolah extends MY_Controller {
 
 		$admins = array();
 		if ($admin_filter_enabled) {
-			$this->db->select('uuid, nama, username');
-			$this->db->where('role_id', 2);
-			$this->db->where('deleted_at', NULL);
-			$this->db->where('status', 'aktif');
+			$this->db->select('users.uuid, users.nama, users.username');
+			$this->db->from('users');
+			$this->db->join('user_roles', 'user_roles.user_id = users.id');
+			$this->db->where('user_roles.role_id', 2);
+			$this->db->where('users.deleted_at', NULL);
+			$this->db->where('users.status', 'aktif');
 			$this->db->order_by('nama', 'ASC');
-			$admins = $this->db->get('users')->result();
+			$admins = $this->db->get()->result();
 		}
 
 		$data = array(

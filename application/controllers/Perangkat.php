@@ -13,7 +13,7 @@ class Perangkat extends MY_Controller {
 
     public function index()
     {
-        $user_role = $this->session->userdata('role');
+        $user_role = user_role();
         $user_uuid = $this->session->userdata('uuid');
         
         if (in_array($user_role, ['superadmin', 'admin'])) {
@@ -48,7 +48,7 @@ class Perangkat extends MY_Controller {
             show_404();
         }
 
-        $user_role = $this->session->userdata('role');
+        $user_role = user_role();
         $user_uuid = $this->session->userdata('uuid');
         
         if (in_array($user_role, ['superadmin', 'admin'])) {
@@ -141,7 +141,7 @@ class Perangkat extends MY_Controller {
 
         // Cek akses: superadmin/admin/pemilik
         $can_delete = is_superadmin()
-            || (user_role() === 'admin' && admin_can_access_creator($perangkat->guru_uuid))
+            || (has_role('admin') && admin_can_access_creator($perangkat->guru_uuid))
             || ($perangkat->guru_uuid == $this->session->userdata('uuid'));
         
         if (!$can_delete) {

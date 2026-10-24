@@ -25,7 +25,7 @@ class Materi extends MY_Controller {
 
 	public function index()
 	{
-		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
 		$user_uuid = $this->session->userdata('uuid');
 		$kelas_per_mapel = [];
 		
@@ -67,7 +67,7 @@ class Materi extends MY_Controller {
 			show_404();
 		}
 
-		if (user_role() === 'admin' && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
+		if (has_role('admin') && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
 			show_404();
 		}
 
@@ -124,7 +124,7 @@ class Materi extends MY_Controller {
 
 	public function semester($mapel_uuid)
 	{
-		if (user_role() === 'admin' && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
+		if (has_role('admin') && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
 			show_404();
 		}
 
@@ -156,7 +156,7 @@ class Materi extends MY_Controller {
 
     public function tambah($mapel_uuid)
 	{
-		$mapel_valid = user_role() === 'admin'
+		$mapel_valid = has_role('admin')
 			? $this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))
 			: (bool) $this->mapel_model->get_by_uuid($mapel_uuid);
 		if (!$mapel_valid) {

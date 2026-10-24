@@ -65,12 +65,14 @@ class Guru extends MY_Controller {
 		$guru = $this->guru_model->get_all($filters, $per_page, $offset);
 		$admins = array();
 		if (is_superadmin()) {
-			$this->db->select('uuid, nama, username');
-			$this->db->where('role_id', 2);
-			$this->db->where('deleted_at', NULL);
-			$this->db->where('status', 'aktif');
+			$this->db->select('users.uuid, users.nama, users.username');
+			$this->db->from('users');
+			$this->db->join('user_roles', 'user_roles.user_id = users.id');
+			$this->db->where('user_roles.role_id', 2);
+			$this->db->where('users.deleted_at', NULL);
+			$this->db->where('users.status', 'aktif');
 			$this->db->order_by('nama', 'ASC');
-			$admins = $this->db->get('users')->result();
+			$admins = $this->db->get()->result();
 		}
 
 		// ----- Konfigurasi pagination (library CI3, mode query string) -----
@@ -133,7 +135,7 @@ class Guru extends MY_Controller {
 		$this->load->view('partials/footer_tailwind');
 	}
 
-	public function assign_admin()
+	public function toggle_admin_role()
 	{
 		$this->require_superadmin();
 		if ($this->input->method(TRUE) !== 'POST') {
@@ -141,28 +143,33 @@ class Guru extends MY_Controller {
 		}
 
 		$guru_uuid = trim((string) $this->input->post('guru_uuid'));
-		$admin_uuid = trim((string) $this->input->post('admin_uuid'));
-		$guru = $this->db->get_where('users', array('uuid' => $guru_uuid, 'role_id' => 3, 'deleted_at' => NULL))->row();
-		$admin = $admin_uuid === '' ? NULL : $this->db->get_where('users', array('uuid' => $admin_uuid, 'role_id' => 2, 'status' => 'aktif', 'deleted_at' => NULL))->row();
+		$this->db->where('uuid', $guru_uuid);
+		$this->db->where('deleted_at', NULL);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
+		$guru = $this->db->get('users')->row();
 
-		if (!$guru || ($admin_uuid !== '' && !$admin)) {
-			$this->session->set_flashdata('error_msg', 'Guru atau admin yang dipilih tidak valid.');
+		if (!$guru) {
+			$this->session->set_flashdata('error_msg', 'Data guru tidak valid.');
 			redirect('guru');
 			return;
 		}
 
-		$this->db->where('uuid', $guru_uuid);
-		$this->db->where('role_id', 3);
-		$this->db->update('users', array(
-			'created_by' => $admin_uuid === '' ? NULL : $admin_uuid,
-			'modified_at' => date('Y-m-d H:i:s')
-		));
+		$make_admin = $this->input->post('make_admin') === '1';
+		$this->db->trans_start();
+		$updated = $this->auth_model->set_user_role($guru_uuid, 'admin', $make_admin);
+		$this->db->trans_complete();
 
-		$this->session->set_flashdata('success_msg', 'Penanggung jawab guru berhasil diperbarui.');
+		if (!$updated || !$this->db->trans_status()) {
+			$this->session->set_flashdata('error_msg', 'Role admin guru gagal diperbarui.');
+		} else {
+			$this->session->set_flashdata('success_msg', $make_admin
+				? 'Guru berhasil ditambahkan sebagai admin.'
+				: 'Role admin berhasil dihapus. Role guru tetap aktif.');
+		}
 		redirect('guru');
 	}
 
-	public function bulk_assign_admin()
+	public function bulk_add_admin_role()
 	{
 		$this->require_superadmin();
 		if ($this->input->method(TRUE) !== 'POST') {
@@ -170,17 +177,14 @@ class Guru extends MY_Controller {
 		}
 
 		$guru_uuids = array_values(array_unique(array_filter(array_map('trim', (array) $this->input->post('guru_uuids')))));
-		$admin_uuid = trim((string) $this->input->post('admin_uuid'));
-		$admin = $admin_uuid === '' ? NULL : $this->db->get_where('users', array('uuid' => $admin_uuid, 'role_id' => 2, 'status' => 'aktif', 'deleted_at' => NULL))->row();
-
-		if (empty($guru_uuids) || ($admin_uuid !== '' && !$admin)) {
-			$this->session->set_flashdata('error_msg', 'Guru atau admin yang dipilih tidak valid.');
+		if (empty($guru_uuids)) {
+			$this->session->set_flashdata('error_msg', 'Pilih minimal satu guru.');
 			redirect('guru');
 			return;
 		}
 
 		$this->db->where_in('uuid', $guru_uuids);
-		$this->db->where('role_id', 3);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
 		$this->db->where('deleted_at', NULL);
 		if ($this->db->count_all_results('users') !== count($guru_uuids)) {
 			$this->session->set_flashdata('error_msg', 'Sebagian data guru yang dipilih tidak valid. Tidak ada perubahan yang disimpan.');
@@ -189,19 +193,19 @@ class Guru extends MY_Controller {
 		}
 
 		$this->db->trans_start();
-		$this->db->where_in('uuid', $guru_uuids);
-		$this->db->where('role_id', 3);
-		$this->db->where('deleted_at', NULL);
-		$this->db->update('users', array(
-			'created_by' => $admin_uuid === '' ? NULL : $admin_uuid,
-			'modified_at' => date('Y-m-d H:i:s')
-		));
+		$roles_added = true;
+		foreach ($guru_uuids as $guru_uuid) {
+			if (!$this->auth_model->set_user_role($guru_uuid, 'admin', TRUE)) {
+				$roles_added = false;
+				break;
+			}
+		}
 		$this->db->trans_complete();
 
-		if ($this->db->trans_status() === FALSE) {
-			$this->session->set_flashdata('error_msg', 'Penugasan admin gagal disimpan.');
+		if (!$roles_added || $this->db->trans_status() === FALSE) {
+			$this->session->set_flashdata('error_msg', 'Role admin gagal ditambahkan ke guru yang dipilih.');
 		} else {
-			$this->session->set_flashdata('success_msg', 'Admin pengelola berhasil ditetapkan untuk ' . count($guru_uuids) . ' guru.');
+			$this->session->set_flashdata('success_msg', count($guru_uuids) . ' guru berhasil ditambahkan sebagai admin.');
 		}
 		redirect('guru');
 	}
@@ -263,7 +267,13 @@ class Guru extends MY_Controller {
 
 		if ($this->form_validation->run() == TRUE) {
 			$this->_validate_admin_teacher_assignments();
+			$this->db->trans_start();
 			$update = $this->guru_model->update($uuid);
+			if ($update && is_superadmin()) {
+				$update = $this->auth_model->set_user_role($uuid, 'admin', $this->input->post('is_admin') === '1');
+			}
+			$this->db->trans_complete();
+			$update = $update && $this->db->trans_status();
 			if ($update) {
 				$this->session->set_flashdata('success_msg', 'Data Guru berhasil di Update');
 				redirect('guru');
@@ -275,6 +285,7 @@ class Guru extends MY_Controller {
 
 		$data = array(
 			'guru' => $guru,
+			'is_admin' => $this->auth_model->user_has_role($uuid, 'admin'),
 			'mapel_list' => $guru->mapel_list ?? [],
 			'kelas_map' => $guru->kelas_map ?? [],
 			'mapel' => $this->mapel_model->get_all(array(), NULL, 0, FALSE),
@@ -304,7 +315,7 @@ class Guru extends MY_Controller {
 
 	private function _validate_admin_teacher_assignments()
 	{
-		if (user_role() !== 'admin') {
+		if (!has_role('admin')) {
 			return;
 		}
 
