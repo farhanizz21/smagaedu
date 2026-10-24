@@ -57,6 +57,8 @@ $route['login'] = 'auth/login';
 $route['logout'] = 'auth/logout';
 $route['ganti_password'] = 'auth/ganti_password';
 $route['reset_password/(:any)'] = 'auth/reset_password/$1';
+$route['periode_akademik'] = 'periode_akademik/index';
+$route['periode_akademik/simpan'] = 'periode_akademik/simpan';
 
 // Mapel routes (import / format Excel / bulk delete)
 $route['mapel/import'] = 'mapel/import_excel';

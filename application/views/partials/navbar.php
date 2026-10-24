@@ -1,4 +1,10 @@
 <!-- Navbar -->
+<?php
+$CI =& get_instance();
+$CI->load->model('periode_akademik_model');
+$periode_akademik = $CI->periode_akademik_model->get_current();
+?>
+
 <nav class="w-full sticky top-0 z-50 border-b border-gray-100"
     style="backdrop-filter:blur(16px);background:rgba(255,255,255,0.85)">
     <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
@@ -90,7 +96,8 @@
                         <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
                     </span>
                     <span class="text-sm font-medium text-gray-700 hidden sm:block">Hai,
-                        <?= $this->session->userdata('nama'); ?> (<?= html_escape(implode(', ', (array) $this->session->userdata('roles'))); ?>)</span>
+                        <?= $this->session->userdata('nama'); ?>
+                        (<?= html_escape(implode(', ', (array) $this->session->userdata('roles'))); ?>)</span>
                 </span>
                 <div
                     class="nav-dropdown-menu hidden absolute top-full right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-2 min-w-[160px]">
@@ -105,9 +112,8 @@
             <button type="button" id="navbarToggle"
                 class="md:hidden inline-flex items-center justify-center w-11 h-11 -mr-2 rounded-xl text-gray-600 hover:bg-gray-50 active:bg-gray-100"
                 aria-label="Buka menu navigasi" aria-expanded="false" aria-controls="navbarMobileMenu">
-                <svg id="navbarIconOpen" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round">
+                <svg id="navbarIconOpen" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="4" x2="20" y1="6" y2="6"></line>
                     <line x1="4" x2="20" y1="12" y2="12"></line>
                     <line x1="4" x2="20" y1="18" y2="18"></line>
@@ -197,6 +203,27 @@
         </div>
     </div>
 </nav>
+
+
+<?php if ($periode_akademik): ?>
+<div class="border-b border-red-100 bg-red-50/70">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-6 py-2">
+        <div class="flex min-w-0 items-center gap-2 text-sm text-red-800">
+            <i data-lucide="calendar-days" class="h-4 w-4 shrink-0 text-red-600"></i>
+            <span class="truncate text-red-600">Periode pembelajaran saat ini</span>
+            <span class="hidden text-red-300 sm:inline">·</span>
+            <span class="shrink-0 font-semibold">Pekan <?= html_escape($periode_akademik->pekan); ?></span>
+            <span class="text-red-300">·</span>
+            <span class="shrink-0 font-semibold">Semester <?= html_escape($periode_akademik->semester); ?></span>
+        </div>
+        <a href="<?= base_url('periode_akademik'); ?>"
+            class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100">
+            Lihat
+        </a>
+    </div>
+</div>
+<?php endif; ?>
+
 
 <script>
 (function() {
