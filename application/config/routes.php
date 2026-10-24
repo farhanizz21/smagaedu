@@ -88,6 +88,7 @@ $route['mata_pelajaran/hapus/(:any)'] = 'materi/hapus/$1';
 // Bab routes
 $route['bab/tambah/(:any)'] = 'materi/tambah/$1';
 $route['bab/edit/(:any)'] = 'materi/edit/$1';
+$route['bab/selesai_baca/(:any)'] = 'bab/selesai_baca/$1';
 
 // Siswa routes (import / format Excel / bulk delete)
 $route['siswa/import'] = 'siswa/import_excel';

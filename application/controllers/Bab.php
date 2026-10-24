@@ -43,6 +43,7 @@ class Bab extends MY_Controller {
   		$ujian_per_bab = [];
   		$bab_unlocked = [];
 	$bab_completed = [];
+	$bab_read_completed = [];
 	$bab_activity_count = [];
 	$bab_completed_count = [];
   		$bab_has_ujian = [];
@@ -97,6 +98,7 @@ class Bab extends MY_Controller {
 			]);
 			$bab_unlocked[$b->uuid] = $state['unlocked'];
 			$bab_completed[$b->uuid] = $state['completed'];
+			$bab_read_completed[$b->uuid] = !empty($state['read_completed']);
 			$bab_activity_count[$b->uuid] = $state['activity_count'];
 			$bab_completed_count[$b->uuid] = $state['completed_count'];
 			$bab_has_ujian[$b->uuid] = $state['activity_count'] > 0;
@@ -112,10 +114,12 @@ class Bab extends MY_Controller {
   			'ujian_per_bab' => $ujian_per_bab,
   			'bab_unlocked' => $bab_unlocked,
 			'bab_completed' => $bab_completed,
+			'bab_read_completed' => $bab_read_completed,
 			'bab_activity_count' => $bab_activity_count,
 			'bab_completed_count' => $bab_completed_count,
   			'bab_has_ujian' => $bab_has_ujian,
   			'is_admin' => is_admin_or_superadmin(),
+			'is_student' => has_role('siswa'),
 			'can_manage' => $can_manage,
 			'pertemuan_count' => $pertemuan_count,
 			'can_add_meeting' => $can_manage || $is_mapel_pengampu,
@@ -127,6 +131,43 @@ class Bab extends MY_Controller {
          $this->load->view('mapel/sub_bab', array_merge($data, ['from_controller' => true]));
  		$this->load->view('partials/footer_tailwind');
  	}
+
+	public function selesai_baca($bab_uuid)
+	{
+		if (!has_role('siswa')) {
+			show_error('Tanda selesai baca hanya tersedia untuk siswa.', 403);
+		}
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_error('Metode permintaan tidak diizinkan.', 405);
+		}
+
+		$bab = $this->bab_model->get_by_uuid($bab_uuid);
+		if (!$bab) {
+			show_404();
+		}
+		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		if (!$materi) {
+			show_404();
+		}
+
+		$siswa_uuid = $this->session->userdata('uuid');
+		$siswa = $this->siswa_model->get_by_uuid($siswa_uuid);
+		$allowed_mapel = $siswa
+			? $this->mapel_model->get_mapel_uuids_by_kelas($siswa->kelas_uuid)
+			: [];
+		if (!$siswa || !in_array($materi->mapel_uuid, $allowed_mapel, TRUE)) {
+			show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
+		}
+		if (!$this->bab_model->is_materi_unlocked_for_student($materi->uuid, $siswa_uuid)) {
+			show_error('Pekan terkunci. Selesaikan pekan sebelumnya terlebih dahulu.', 403);
+		}
+		if (!$this->bab_model->mark_bab_as_read($bab_uuid, $siswa_uuid)) {
+			show_error('Status selesai baca gagal disimpan.', 500);
+		}
+
+		$this->session->set_flashdata('success_msg', 'Pertemuan ditandai selesai dibaca.');
+		redirect('sub_bab/index/' . $materi->uuid);
+	}
 
 	public function tambah($materi_uuid)
 	{

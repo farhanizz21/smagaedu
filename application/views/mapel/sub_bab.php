@@ -201,7 +201,8 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
             $icons = ['file-text', 'file-spreadsheet', 'book-open', 'library', 'scroll', 'clipboard-list'];
             $icon = $icons[$no % count($icons)];
             $is_locked = isset($bab_unlocked[$val->uuid]) && !$bab_unlocked[$val->uuid];
-            $is_completed = !empty($bab_completed[$val->uuid]);
+            $is_read_completed = !empty($bab_read_completed[$val->uuid]);
+            $is_completed = !empty($is_student) ? $is_read_completed : !empty($bab_completed[$val->uuid]);
             $has_ujian = isset($bab_has_ujian[$val->uuid]) && $bab_has_ujian[$val->uuid];
             $activity_count = (int) ($bab_activity_count[$val->uuid] ?? 0);
             $completed_count = (int) ($bab_completed_count[$val->uuid] ?? 0);
@@ -265,7 +266,13 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                             <?php if ($is_completed): ?>
                                             <span
                                                 class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold whitespace-nowrap">
-                                                <i data-lucide="check-circle-2" class="w-3 h-3"></i> Selesai
+                                                <i data-lucide="check-circle-2" class="w-3 h-3"></i>
+                                                <?= !empty($is_student) ? 'Selesai baca' : 'Selesai' ?>
+                                            </span>
+                                            <?php elseif (!empty($is_student)): ?>
+                                            <span
+                                                class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-semibold whitespace-nowrap">
+                                                <i data-lucide="book-open" class="w-3 h-3"></i> Belum selesai baca
                                             </span>
                                             <?php elseif (!$is_locked && $has_ujian): ?>
                                             <span
@@ -373,6 +380,22 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                             <i data-lucide="external-link" class="w-4 h-4"></i>
                                             Buka Link
                                         </a>
+                                        <?php endif; ?>
+                                        <?php if (!empty($is_student) && !$is_locked): ?>
+                                            <?php if (!empty($bab_read_completed[$val->uuid])): ?>
+                                        <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                                            Selesai baca
+                                        </span>
+                                            <?php else: ?>
+                                        <form method="post" action="<?= base_url('bab/selesai_baca/' . rawurlencode($val->uuid)) ?>">
+                                            <button type="submit"
+                                                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
+                                                <i data-lucide="check" class="w-4 h-4"></i>
+                                                Selesai baca
+                                            </button>
+                                        </form>
+                                            <?php endif; ?>
                                         <?php endif; ?>
                                     </div>
 

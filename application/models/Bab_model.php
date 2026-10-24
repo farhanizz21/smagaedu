@@ -57,6 +57,23 @@ class bab_model extends CI_Model {
         return $this->db->get('bab')->row();
     }
 
+    public function is_bab_read_by_student($bab_uuid, $siswa_uuid)
+    {
+        return $this->db
+            ->where('bab_uuid', $bab_uuid)
+            ->where('siswa_uuid', $siswa_uuid)
+            ->count_all_results('bab_selesai_baca') > 0;
+    }
+
+    public function mark_bab_as_read($bab_uuid, $siswa_uuid)
+    {
+        return $this->db->query(
+            'INSERT INTO bab_selesai_baca (bab_uuid, siswa_uuid) VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE bab_uuid = VALUES(bab_uuid)',
+            array($bab_uuid, $siswa_uuid)
+        );
+    }
+
     public function get_progress_for_materi($materi_uuid, $siswa_uuid)
     {
         $progress = [];
@@ -93,6 +110,7 @@ class bab_model extends CI_Model {
             $progress[$item->uuid] = [
                 'unlocked' => $previous_completed,
                 'completed' => $completed,
+                'read_completed' => $this->is_bab_read_by_student($item->uuid, $siswa_uuid),
                 'activity_count' => $activity_count,
                 'completed_count' => $completed_count
             ];
@@ -120,7 +138,7 @@ class bab_model extends CI_Model {
         }
 
         $current_bab = $bab_uuid ? $this->get_by_uuid($bab_uuid) : null;
-        if (!$current_bab || !$this->is_materi_accessible_by_period($current_bab->materi_uuid)) {
+        if (!$current_bab || !$this->is_materi_unlocked_for_student($current_bab->materi_uuid, $siswa_uuid)) {
             return false;
         }
 
@@ -138,44 +156,46 @@ class bab_model extends CI_Model {
         $materi = $this->db->get('materi')->result();
         $progress = [];
         $periode = $this->db->where('id', 1)->get('periode_akademik')->row();
-        $previous_week_completed = $periode
-            ? $this->is_week_completed_for_student(
-                $mapel_uuid,
-                (int) $periode->semester,
-                (int) $periode->pekan - 1,
-                $siswa_uuid
-            )
-            : false;
+        $previous_group_completed = true;
+        $current_group = null;
+        $current_group_completed = true;
 
         foreach ($materi as $item) {
+            $item_semester = (int) $item->semester;
+            $item_week = (int) $item->pekan_ke;
+            $group_key = $item_semester . ':' . $item_week;
+
+            if ($current_group !== null && $group_key !== $current_group) {
+                $previous_group_completed = $current_group_completed;
+                $current_group_completed = true;
+            }
+            $current_group = $group_key;
+
             $sub_progress = $this->get_progress_for_materi($item->uuid, $siswa_uuid);
+            $read_completed = true;
             $completed = empty($sub_progress);
             foreach ($sub_progress as $state) {
                 if (!$state['completed']) {
                     $completed = false;
-                    break;
+                }
+                if (!$state['read_completed']) {
+                    $read_completed = false;
                 }
             }
+            $current_group_completed = $current_group_completed && $read_completed;
 
-            $item_semester = (int) $item->semester;
-            $item_week = (int) $item->pekan_ke;
             $progress[$item->uuid] = [
                 'unlocked' => false,
                 'completed' => $completed,
                 'semester' => $item_semester,
                 'week' => $item_week
             ];
-            $is_past = $periode && (
+            $within_period = $periode && $item_week >= 1 && (
                 $item_semester < (int) $periode->semester
                 || ($item_semester === (int) $periode->semester
-                    && $item_week < (int) $periode->pekan)
+                    && $item_week <= (int) $periode->pekan)
             );
-            $is_current = $periode
-                && $item_semester === (int) $periode->semester
-                && $item_week === (int) $periode->pekan;
-
-            $progress[$item->uuid]['unlocked'] = $is_past
-                || ($is_current && $previous_week_completed);
+            $progress[$item->uuid]['unlocked'] = $within_period && $previous_group_completed;
         }
 
         foreach ($progress as &$state) {
@@ -217,39 +237,13 @@ class bab_model extends CI_Model {
             return true;
         }
 
-        $ujian_uuids = [];
-        foreach ($bab as $item) {
-            $ujian = $this->db
-                ->select('u.uuid')
-                ->distinct()
-                ->from('ujian u')
-                ->join('sub_materi sm', 'sm.uuid = u.sub_materi_uuid AND sm.deleted_at IS NULL', 'left')
-                ->where('u.deleted_at', NULL, FALSE)
-                ->group_start()
-                    ->where('u.bab_uuid', $item->uuid)
-                    ->or_where('sm.bab_uuid', $item->uuid)
-                ->group_end()
-                ->get()
-                ->result();
-
-            foreach ($ujian as $exam) {
-                $ujian_uuids[$exam->uuid] = true;
-            }
-        }
-
-        foreach (array_keys($ujian_uuids) as $ujian_uuid) {
-            $submitted = $this->db
-                ->where('ujian_uuid', $ujian_uuid)
-                ->where('created_by', $siswa_uuid)
-                ->where('deleted_at', NULL, FALSE)
-                ->count_all_results('ujian_jawaban') > 0;
-
-            if (!$submitted) {
-                return false;
-            }
-        }
-
-        return true;
+        $bab_uuids = array_map(function ($item) {
+            return $item->uuid;
+        }, $bab);
+        return $this->db
+            ->where('siswa_uuid', $siswa_uuid)
+            ->where_in('bab_uuid', $bab_uuids)
+            ->count_all_results('bab_selesai_baca') === count($bab_uuids);
     }
 
     public function is_materi_unlocked_for_student($materi_uuid, $siswa_uuid)
