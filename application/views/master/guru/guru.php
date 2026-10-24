@@ -145,11 +145,15 @@
             <div class="flex items-center gap-3">
                 <span id="selectedCount" class="text-sm font-medium text-gray-700">0 data dipilih</span>
             </div>
-            <div>
+            <div class="flex items-center gap-2">
                 <?php if(is_superadmin()): ?>
                 <button type="button" id="bulkAddAdminRoleBtn"
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-all text-sm">
                     <i data-lucide="user-cog" class="w-4 h-4"></i> Jadikan Admin
+                </button>
+                <button type="button" id="bulkMoveGuruBtn"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-all text-sm">
+                    <i data-lucide="move-right" class="w-4 h-4"></i> Pindahkan ke Admin
                 </button>
                 <?php endif; ?>
                 <button type="button" id="bulkHapusBtn"
@@ -329,6 +333,45 @@
     </div>
     <?= form_close(); ?>
 </dialog>
+
+<dialog id="bulkMoveGuruDialog"
+    class="w-[min(28rem,calc(100%-2rem))] rounded-xl border border-gray-200 p-0 shadow-2xl backdrop:bg-gray-900/40">
+    <?= form_open('guru/bulk_pindahkan_admin', array('id' => 'bulkMoveGuruForm')); ?>
+    <div id="bulkMoveGuruUuids"></div>
+    <div class="border-b border-gray-100 px-5 py-4">
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h2 class="text-lg font-semibold text-gray-900">Pindahkan Guru ke Admin</h2>
+                <p id="bulkMoveGuruCount" class="mt-1 text-sm text-gray-500"></p>
+            </div>
+            <button type="button" id="closeBulkMoveGuru"
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100"
+                title="Tutup" aria-label="Tutup dialog">
+                <i data-lucide="x" class="h-4 w-4"></i>
+            </button>
+        </div>
+    </div>
+    <div class="px-5 py-5">
+        <label for="bulkMoveAdminUuid" class="mb-2 block text-sm font-medium text-gray-700">Admin yang bertanggung jawab</label>
+        <select id="bulkMoveAdminUuid" name="admin_uuid" required
+            class="w-full rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200">
+            <option value="">Pilih admin</option>
+            <?php foreach($admins as $admin): ?>
+            <option value="<?= html_escape($admin->uuid) ?>"><?= html_escape($admin->nama) ?></option>
+            <?php endforeach; ?>
+        </select>
+        <p class="mt-2 text-xs text-gray-500">Admin terpilih akan dapat melihat dan mengelola data guru yang dipindahkan.</p>
+    </div>
+    <div class="flex justify-end gap-2 border-t border-gray-100 bg-gray-50 px-5 py-4">
+        <button type="button" id="cancelBulkMoveGuru"
+            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Batal</button>
+        <button type="submit"
+            class="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+            <i data-lucide="move-right" class="h-4 w-4"></i> Pindahkan
+        </button>
+    </div>
+    <?= form_close(); ?>
+</dialog>
 <?php endif; ?>
 
 <?php if(!isset($from_controller)): ?>
@@ -344,6 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var bulkHapusBtn = document.getElementById('bulkHapusBtn');
     var bulkDeleteForm = document.getElementById('bulkDeleteForm');
     var bulkAssignAdminDialog = document.getElementById('bulkAddAdminRoleDialog');
+    var bulkMoveGuruDialog = document.getElementById('bulkMoveGuruDialog');
 
     var bulkAssignAdminBtn = document.getElementById('bulkAddAdminRoleBtn');
     if (bulkAssignAdminBtn) {
@@ -365,11 +409,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    var bulkMoveGuruBtn = document.getElementById('bulkMoveGuruBtn');
+    if (bulkMoveGuruBtn) {
+        bulkMoveGuruBtn.addEventListener('click', function() {
+            var selected = getSelected();
+            if (selected.length === 0) return;
+            var target = document.getElementById('bulkMoveGuruUuids');
+            target.innerHTML = '';
+            selected.forEach(function(checkbox) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'guru_uuids[]';
+                input.value = checkbox.value;
+                target.appendChild(input);
+            });
+            document.getElementById('bulkMoveGuruCount').textContent = selected.length +
+                ' guru dipilih';
+            bulkMoveGuruDialog.showModal();
+        });
+    }
+
     ['closeBulkAddAdminRole', 'cancelBulkAddAdminRole'].forEach(function(id) {
         var button = document.getElementById(id);
         if (button) {
             button.addEventListener('click', function() {
                 bulkAssignAdminDialog.close();
+            });
+        }
+    });
+
+    ['closeBulkMoveGuru', 'cancelBulkMoveGuru'].forEach(function(id) {
+        var button = document.getElementById(id);
+        if (button) {
+            button.addEventListener('click', function() {
+                bulkMoveGuruDialog.close();
             });
         }
     });

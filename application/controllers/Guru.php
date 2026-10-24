@@ -210,6 +210,69 @@ class Guru extends MY_Controller {
 		redirect('guru');
 	}
 
+	public function bulk_pindahkan_admin()
+	{
+		$this->require_superadmin();
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_error('Metode permintaan tidak diizinkan.', 405);
+		}
+
+		$guru_uuids = array_values(array_unique(array_filter(
+			array_map(function ($uuid) {
+				return is_string($uuid) ? trim($uuid) : '';
+			}, (array) $this->input->post('guru_uuids')),
+			function ($uuid) {
+				return $uuid !== '';
+			}
+		)));
+		$admin_uuid_input = $this->input->post('admin_uuid');
+		$admin_uuid = is_string($admin_uuid_input) ? trim($admin_uuid_input) : '';
+
+		if (empty($guru_uuids)) {
+			$this->session->set_flashdata('error_msg', 'Pilih minimal satu guru.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->from('users');
+		$this->db->join('user_roles', 'user_roles.user_id = users.id');
+		$this->db->where('users.uuid', $admin_uuid);
+		$this->db->where('user_roles.role_id', 2);
+		$this->db->where('users.status', 'aktif');
+		$this->db->where('users.deleted_at', NULL);
+		if ($this->db->count_all_results() !== 1) {
+			$this->session->set_flashdata('error_msg', 'Admin tujuan tidak valid atau tidak aktif.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->where_in('uuid', $guru_uuids);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
+		$this->db->where('deleted_at', NULL);
+		if ($this->db->count_all_results('users') !== count($guru_uuids)) {
+			$this->session->set_flashdata('error_msg', 'Sebagian data guru yang dipilih tidak valid. Tidak ada perubahan yang disimpan.');
+			redirect('guru');
+			return;
+		}
+
+		$this->db->trans_start();
+		$this->db->where_in('uuid', $guru_uuids);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
+		$this->db->where('deleted_at', NULL);
+		$this->db->update('users', array(
+			'created_by' => $admin_uuid,
+			'modified_at' => date('Y-m-d H:i:s'),
+		));
+		$this->db->trans_complete();
+
+		if ($this->db->trans_status() === FALSE) {
+			$this->session->set_flashdata('error_msg', 'Data guru gagal dipindahkan. Tidak ada perubahan yang disimpan.');
+		} else {
+			$this->session->set_flashdata('success_msg', count($guru_uuids) . ' guru berhasil dipindahkan ke admin yang dipilih.');
+		}
+		redirect('guru');
+	}
+
 	public function tambah()
 	{
         $rules = $this->guru_model->rules();
