@@ -165,6 +165,19 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
+-- Struktur tabel `user_roles`
+-- --------------------------------------------------------
+
+CREATE TABLE `user_roles` (
+  `user_id` int(11) NOT NULL,
+  `role_id` int(11) NOT NULL,
+  PRIMARY KEY (`user_id`, `role_id`),
+  KEY `user_roles_role_id` (`role_id`),
+  CONSTRAINT `user_roles_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `user_roles_role_id` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
 -- Struktur tabel `user_profiles`
 -- --------------------------------------------------------
 
@@ -302,6 +315,18 @@ CREATE TABLE `bab` (
   `modified_at` datetime NOT NULL DEFAULT current_timestamp(),
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- Struktur tabel `bab_selesai_baca`
+-- --------------------------------------------------------
+
+CREATE TABLE `bab_selesai_baca` (
+  `bab_uuid` varchar(100) NOT NULL,
+  `siswa_uuid` varchar(100) NOT NULL,
+  `completed_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`bab_uuid`, `siswa_uuid`),
+  KEY `idx_bab_selesai_baca_siswa` (`siswa_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -582,6 +607,34 @@ CREATE TABLE `password_resets` (
   KEY `user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+-- Struktur tabel `chat_messages`
+-- --------------------------------------------------------
+
+CREATE TABLE `chat_messages` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `sender_uuid` varchar(100) NOT NULL,
+  `recipient_uuid` varchar(100) NOT NULL,
+  `message` text NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `chat_messages_sender_recipient_id` (`sender_uuid`, `recipient_uuid`, `id`),
+  KEY `chat_messages_recipient_sender_id` (`recipient_uuid`, `sender_uuid`, `id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- Struktur tabel `chat_reads`
+-- --------------------------------------------------------
+
+CREATE TABLE `chat_reads` (
+  `user_uuid` varchar(100) NOT NULL,
+  `contact_uuid` varchar(100) NOT NULL,
+  `last_read_message_id` bigint(20) unsigned NOT NULL DEFAULT 0,
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`user_uuid`, `contact_uuid`),
+  KEY `chat_reads_last_read_message_id` (`last_read_message_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- ============================================================================
 -- 3. VIEW KOMPATIBILITAS (dipakai kode lama yang masih mengakses admin/guru/siswa)
 -- ============================================================================
@@ -658,6 +711,9 @@ INSERT INTO `users`
 (1, '00000000-0000-4000-8000-000000000001', 1, 'Super Admin', 'superadmin',
  '$2y$10$nntygBg3bburFDsTZiob3eXrXqBd1Q7mq1leIqxwDxT4pbziFKOJi',
  'superadmin@sekolah.ac.id', 'aktif');
+
+INSERT INTO `user_roles` (`user_id`, `role_id`)
+SELECT `id`, `role_id` FROM `users`;
 
 -- Catatan: profil (user_profiles) dibuat otomatis saat superadmin membuat user
 -- melalui menu Master Data > User, jadi tidak perlu diisi manual di sini.

@@ -71,30 +71,33 @@ class guru_model extends CI_Model {
 			'modified_at' => date("Y-m-d H:i:s")
 		);
 
+		$this->db->trans_start();
 		$this->db->insert('users', $data_user);
+		$profile_inserted = false;
 		if ($this->db->affected_rows() > 0) {
 			// Dapatkan ID user yang baru saja diinsert
 			$user_id = $this->db->insert_id();
-
-			// Insert ke tabel user_profiles
-			$jenis_kelamin_map = [
-				1 => 'L',
-				2 => 'P'
-			];
-
-			$data_profile = array(
-				'user_id' => $user_id,
-				'mapel_uuid' => $mapel_json,
-				'jenis_kelamin' => isset($jenis_kelamin_map[$jenisKelamin]) ? $jenis_kelamin_map[$jenisKelamin] : null
-			);
-
-			$this->db->insert('user_profiles', $data_profile);
+			$this->db->insert('user_roles', array('user_id' => $user_id, 'role_id' => 3));
 			if ($this->db->affected_rows() > 0) {
-				return true;
+				// Insert ke tabel user_profiles
+				$jenis_kelamin_map = [
+					1 => 'L',
+					2 => 'P'
+				];
+
+				$data_profile = array(
+					'user_id' => $user_id,
+					'mapel_uuid' => $mapel_json,
+					'jenis_kelamin' => isset($jenis_kelamin_map[$jenisKelamin]) ? $jenis_kelamin_map[$jenisKelamin] : null
+				);
+
+				$this->db->insert('user_profiles', $data_profile);
+				$profile_inserted = $this->db->affected_rows() > 0;
 			}
 		}
-		
-		return false;
+		$this->db->trans_complete();
+
+		return $profile_inserted && $this->db->trans_status();
 	}
 
 	public function update($uuid)
@@ -204,12 +207,16 @@ class guru_model extends CI_Model {
 	public function get_all($filters = array(), $limit = NULL, $offset = 0)
 	{
 		$this->db->select('users.*, user_profiles.mapel_uuid, user_profiles.jenis_kelamin, guru_creator.nama AS admin_nama');
+		$this->db->select('EXISTS (SELECT 1 FROM user_roles AS admin_role WHERE admin_role.user_id = users.id AND admin_role.role_id = 2) AS is_admin', FALSE);
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
 		$this->db->join('users AS guru_creator', 'users.created_by = guru_creator.uuid', 'left');
 		$this->_apply_filters($filters);
-		if (user_role() === 'admin') {
+		if (has_role('admin')) {
+			$this->db->group_start();
 			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+			$this->db->or_where('users.uuid', $this->session->userdata('uuid'));
+			$this->db->group_end();
 		}
 		$this->db->order_by('users.nama', 'ASC');
 
@@ -252,8 +259,11 @@ class guru_model extends CI_Model {
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
 		$this->_apply_filters($filters);
-		if (user_role() === 'admin') {
+		if (has_role('admin')) {
+			$this->db->group_start();
 			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+			$this->db->or_where('users.uuid', $this->session->userdata('uuid'));
+			$this->db->group_end();
 		}
 
 		return $this->db->count_all_results();
@@ -268,7 +278,7 @@ class guru_model extends CI_Model {
 	 */
 	private function _apply_filters($filters = array())
 	{
-		$this->db->where('users.role_id', 3);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
 		$this->db->where('users.deleted_at', NULL, FALSE);
 
 		// Pencarian bebas: cocokkan nama, username, atau NIP.
@@ -296,7 +306,7 @@ class guru_model extends CI_Model {
 			if ($filters['admin_uuid'] === '__unassigned__') {
 				$this->db->group_start();
 				$this->db->where('users.created_by IS NULL', NULL, FALSE);
-				$this->db->or_where("users.created_by NOT IN (SELECT uuid FROM users WHERE role_id = 2 AND status = 'aktif' AND deleted_at IS NULL)", NULL, FALSE);
+				$this->db->or_where("users.created_by NOT IN (SELECT admin_user.uuid FROM users AS admin_user INNER JOIN user_roles AS admin_roles ON admin_roles.user_id = admin_user.id WHERE admin_roles.role_id = 2 AND admin_user.status = 'aktif' AND admin_user.deleted_at IS NULL)", NULL, FALSE);
 				$this->db->group_end();
 			} else {
 				$this->db->where('users.created_by', $filters['admin_uuid']);
@@ -424,6 +434,7 @@ class guru_model extends CI_Model {
 			'modified_at' => $now
 		));
 		$user_id = $this->db->insert_id();
+		$this->db->insert('user_roles', array('user_id' => $user_id, 'role_id' => 3));
 
 		// Insert ke tabel user_profiles (nip, mapel_uuid, jenis_kelamin)
 		$this->db->insert('user_profiles', array(
@@ -494,8 +505,8 @@ class guru_model extends CI_Model {
 		$this->db->select('uuid');
 		$this->db->where_in('uuid', $uuids);
 		$this->db->where('deleted_at', NULL);
-		$this->db->where('role_id', 3);
-		if (user_role() === 'admin') {
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
+		if (has_role('admin')) {
 			$this->db->where('created_by', $this->session->userdata('uuid'));
 		}
 		$targets = $this->db->get('users')->result();
@@ -504,10 +515,25 @@ class guru_model extends CI_Model {
 			return 0;
 		}
 
-		// Nonaktifkan akun, lepaskan username, dan isi deleted_at sekaligus
-		$this->_lepas_akun_users(array_map(function ($row) {
+		$target_uuids = array_map(function ($row) {
 			return $row->uuid;
-		}, $targets));
+		}, $targets);
+		$dual_role_uuids = $this->_get_users_with_role($target_uuids, 2);
+		$teacher_only_uuids = array_values(array_diff($target_uuids, $dual_role_uuids));
+
+		$this->db->trans_start();
+		if (!empty($dual_role_uuids)) {
+			$this->db->where_in('user_id', $this->_get_user_ids($dual_role_uuids));
+			$this->db->where('role_id', 3);
+			$this->db->delete('user_roles');
+			$this->db->where_in('uuid', $dual_role_uuids);
+			$this->db->update('users', array('role_id' => 2));
+		}
+		$this->_lepas_akun_users($teacher_only_uuids);
+		$this->db->trans_complete();
+		if ($this->db->trans_status() === FALSE) {
+			return 0;
+		}
 
 		return count($targets);
 	}
@@ -517,18 +543,29 @@ class guru_model extends CI_Model {
 		// Pastikan akun masih aktif sebelum dihapus
 		$this->db->where('uuid', $uuid);
 		$this->db->where('deleted_at', NULL);
-		$this->db->where('role_id', 3);
-		if (user_role() === 'admin') {
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
+		if (has_role('admin')) {
 			$this->db->where('created_by', $this->session->userdata('uuid'));
 		}
-		if ($this->db->count_all_results('users') === 0) {
+		$teacher = $this->db->get('users')->row();
+		if (!$teacher) {
 			return false;
 		}
 
-		// Nonaktifkan akun, lepaskan username, dan isi deleted_at sekaligus
-		$this->_lepas_akun_users(array($uuid));
+		$this->db->trans_start();
+		$role_removed = true;
+		if ($this->_user_has_role_id($teacher->id, 2)) {
+			$this->db->delete('user_roles', array('user_id' => $teacher->id, 'role_id' => 3));
+			$role_removed = $this->db->affected_rows() > 0;
+			if ($role_removed) {
+				$this->db->update('users', array('role_id' => 2), array('id' => $teacher->id));
+			}
+		} else {
+			$this->_lepas_akun_users(array($uuid));
+		}
+		$this->db->trans_complete();
 
-		return true;
+		return $role_removed && $this->db->trans_status();
 	}
 
 	public function get_by_uuid($uuid)
@@ -537,9 +574,12 @@ class guru_model extends CI_Model {
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
 		$this->db->where('users.uuid', $uuid);
-		$this->db->where('users.role_id', 3);
-		if (user_role() === 'admin') {
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
+		if (has_role('admin')) {
+			$this->db->group_start();
 			$this->db->where('users.created_by', $this->session->userdata('uuid'));
+			$this->db->or_where('users.uuid', $this->session->userdata('uuid'));
+			$this->db->group_end();
 		}
 		$data = $this->db->get()->row();
 
@@ -621,13 +661,45 @@ class guru_model extends CI_Model {
 		return $this->db->get('kelas')->result();
 	}
 
+	private function _get_users_with_role($uuids, $role_id)
+	{
+		if (empty($uuids)) {
+			return array();
+		}
+
+		$this->db->select('users.uuid');
+		$this->db->from('users');
+		$this->db->join('user_roles', 'user_roles.user_id = users.id');
+		$this->db->where_in('users.uuid', $uuids);
+		$this->db->where('user_roles.role_id', $role_id);
+		return array_column($this->db->get()->result_array(), 'uuid');
+	}
+
+	private function _get_user_ids($uuids)
+	{
+		if (empty($uuids)) {
+			return array();
+		}
+
+		$this->db->select('id');
+		$this->db->where_in('uuid', $uuids);
+		return array_column($this->db->get('users')->result_array(), 'id');
+	}
+
+	private function _user_has_role_id($user_id, $role_id)
+	{
+		$this->db->where('user_id', $user_id);
+		$this->db->where('role_id', $role_id);
+		return $this->db->count_all_results('user_roles') > 0;
+	}
+
 	public function get_mapel_pengampu($mapel_uuid, $guru_uuid)
 	{
 		$this->db->select('users.*, user_profiles.mapel_uuid');
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
 		$this->db->where('users.uuid', $guru_uuid);
-		$this->db->where('users.role_id', 3);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
 		$this->db->where('users.deleted_at', NULL, FALSE);
 		$data = $this->db->get()->row();
 
@@ -659,7 +731,7 @@ class guru_model extends CI_Model {
 		$this->db->select('user_profiles.mapel_uuid');
 		$this->db->from('users');
 		$this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
-		$this->db->where('users.role_id', 3);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
 		$this->db->where('users.deleted_at', NULL, FALSE);
 		$profiles = $this->db->get()->result();
 		$mapel_uuids = array();

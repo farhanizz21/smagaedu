@@ -7,6 +7,10 @@
         "/^php -l application/views/kepala_sekolah/kepala_sekolah\\.php$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^php -l application/models/Auth_model\\.php && php -l application/models/Guru_model\\.php && php -l application/models/Admin_model\\.php && php -l application/models/Siswa_model\\.php && php -l application/helpers/role_helper\\.php && php -l application/controllers/Guru\\.php && php -l application/controllers/Admin\\.php && php -l application/controllers/Auth\\.php && php -l application/controllers/Kepala_sekolah\\.php && php -l application/controllers/Materi\\.php && php -l application/controllers/Mapel\\.php && php -l application/controllers/Proyek\\.php && php -l application/controllers/Ujian\\.php && php -l application/controllers/Bab\\.php && php -l application/controllers/Perangkat\\.php && php -l application/models/Mapel_model\\.php && php -l application/models/Perangkat_model\\.php && php -l application/models/Proyek_model\\.php && php -l create_superadmin\\.php$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

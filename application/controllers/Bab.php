@@ -20,7 +20,7 @@ class Bab extends MY_Controller {
 	// Daftar bab untuk satu materi
  	public function index($materi_uuid)
  	{
- 		$materi = $this->materi_model->get_by_uuid($materi_uuid);
+		$materi = $this->get_accessible_materi($materi_uuid);
  		if (empty($materi)) {
  			show_404();
  		}
@@ -31,10 +31,10 @@ class Bab extends MY_Controller {
 		$mapel = $this->mapel_model->get_by_uuid($materi->mapel_uuid, FALSE);
 		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
 		$pertemuan_count = count($bab);
-		$is_mapel_pengampu = user_role() === 'guru'
+		$is_mapel_pengampu = has_role('guru')
 			? $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'))
 			: false;
-		$can_manage = admin_can_access_creator($materi->created_by);
+		$can_manage = admin_can_access_creator($materi->created_by) || $is_mapel_pengampu;
  
 		// Get comments for each bab
   		$komentar_data = [];
@@ -43,12 +43,13 @@ class Bab extends MY_Controller {
   		$ujian_per_bab = [];
   		$bab_unlocked = [];
 	$bab_completed = [];
+	$bab_read_completed = [];
 	$bab_activity_count = [];
 	$bab_completed_count = [];
   		$bab_has_ujian = [];
 
   		// Untuk siswa: cek apakah ujian sub bab sebelumnya sudah dikerjakan
-  		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
   		$user_login = $this->session->userdata('uuid');
 		$all_unlocked = is_admin_or_superadmin() || $can_manage || $is_mapel_pengampu;
 
@@ -97,6 +98,7 @@ class Bab extends MY_Controller {
 			]);
 			$bab_unlocked[$b->uuid] = $state['unlocked'];
 			$bab_completed[$b->uuid] = $state['completed'];
+			$bab_read_completed[$b->uuid] = !empty($state['read_completed']);
 			$bab_activity_count[$b->uuid] = $state['activity_count'];
 			$bab_completed_count[$b->uuid] = $state['completed_count'];
 			$bab_has_ujian[$b->uuid] = $state['activity_count'] > 0;
@@ -112,10 +114,12 @@ class Bab extends MY_Controller {
   			'ujian_per_bab' => $ujian_per_bab,
   			'bab_unlocked' => $bab_unlocked,
 			'bab_completed' => $bab_completed,
+			'bab_read_completed' => $bab_read_completed,
 			'bab_activity_count' => $bab_activity_count,
 			'bab_completed_count' => $bab_completed_count,
   			'bab_has_ujian' => $bab_has_ujian,
   			'is_admin' => is_admin_or_superadmin(),
+			'is_student' => has_role('siswa'),
 			'can_manage' => $can_manage,
 			'pertemuan_count' => $pertemuan_count,
 			'can_add_meeting' => $can_manage || $is_mapel_pengampu,
@@ -128,15 +132,52 @@ class Bab extends MY_Controller {
  		$this->load->view('partials/footer_tailwind');
  	}
 
+	public function selesai_baca($bab_uuid)
+	{
+		if (!has_role('siswa')) {
+			show_error('Tanda selesai baca hanya tersedia untuk siswa.', 403);
+		}
+		if ($this->input->method(TRUE) !== 'POST') {
+			show_error('Metode permintaan tidak diizinkan.', 405);
+		}
+
+		$bab = $this->bab_model->get_by_uuid($bab_uuid);
+		if (!$bab) {
+			show_404();
+		}
+		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		if (!$materi) {
+			show_404();
+		}
+
+		$siswa_uuid = $this->session->userdata('uuid');
+		$siswa = $this->siswa_model->get_by_uuid($siswa_uuid);
+		$allowed_mapel = $siswa
+			? $this->mapel_model->get_mapel_uuids_by_kelas($siswa->kelas_uuid)
+			: [];
+		if (!$siswa || !in_array($materi->mapel_uuid, $allowed_mapel, TRUE)) {
+			show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
+		}
+		if (!$this->bab_model->is_materi_unlocked_for_student($materi->uuid, $siswa_uuid)) {
+			show_error('Pekan terkunci. Selesaikan pekan sebelumnya terlebih dahulu.', 403);
+		}
+		if (!$this->bab_model->mark_bab_as_read($bab_uuid, $siswa_uuid)) {
+			show_error('Status selesai baca gagal disimpan.', 500);
+		}
+
+		$this->session->set_flashdata('success_msg', 'Pertemuan ditandai selesai dibaca.');
+		redirect('sub_bab/index/' . $materi->uuid);
+	}
+
 	public function tambah($materi_uuid)
 	{
-		$materi = $this->materi_model->get_by_uuid($materi_uuid);
+		$materi = $this->get_accessible_materi($materi_uuid);
 		if (empty($materi)) {
 			show_404();
 		}
 
 		// Superadmin, admin, pembuat pekan, atau guru pengampu dapat menambah pertemuan.
-		$is_mapel_pengampu = user_role() === 'guru'
+		$is_mapel_pengampu = has_role('guru')
 			? $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'))
 			: false;
 		if (!admin_can_access_creator($materi->created_by) && !$is_mapel_pengampu) {
@@ -241,13 +282,13 @@ class Bab extends MY_Controller {
 		if (empty($bab)) {
 			show_404();
 		}
-		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		$materi = $this->get_accessible_materi($bab->materi_uuid);
 		if (empty($materi)) {
 			show_404();
 		}
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh tambah ujian
-		if (!admin_can_access_creator($materi->created_by)) {
+		if (!admin_can_access_creator($materi->created_by) && !$this->is_mapel_pengampu($materi)) {
 			show_error('Anda tidak memiliki akses untuk menambah ujian pada pertemuan ini.', 403);
 		}
 
@@ -292,13 +333,13 @@ class Bab extends MY_Controller {
 		if (empty($bab)) {
 			show_404();
 		}
-		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		$materi = $this->get_accessible_materi($bab->materi_uuid);
 		if (empty($materi)) {
 			show_404();
 		}
 
 		// Superadmin, admin, atau pembuat pertemuan yang boleh edit
-		if (!admin_can_access_creator($materi->created_by)) {
+		if (!admin_can_access_creator($materi->created_by) && !$this->is_mapel_pengampu($materi)) {
 			show_error('Anda tidak memiliki akses untuk mengubah pertemuan ini.', 403);
 		}
 
@@ -351,9 +392,9 @@ class Bab extends MY_Controller {
 
 	public function komentar_tambah($bab_uuid)
 	{
-		if (user_role() === 'admin') {
+		if (has_role('admin')) {
 			$bab = $this->bab_model->get_by_uuid($bab_uuid);
-			$materi = $bab ? $this->materi_model->get_by_uuid($bab->materi_uuid) : NULL;
+			$materi = $bab ? $this->get_accessible_materi($bab->materi_uuid) : NULL;
 			if (!$materi) {
 				show_404();
 			}
@@ -374,10 +415,10 @@ class Bab extends MY_Controller {
 
 	public function komentar_hapus($uuid)
 	{
-		if (user_role() === 'admin') {
+		if (has_role('admin')) {
 			$komentar = $this->db->get_where('bab_komentar', array('uuid' => $uuid))->row();
 			$bab = $komentar ? $this->bab_model->get_by_uuid($komentar->bab_uuid) : NULL;
-			$materi = $bab ? $this->materi_model->get_by_uuid($bab->materi_uuid) : NULL;
+			$materi = $bab ? $this->get_accessible_materi($bab->materi_uuid) : NULL;
 			if (!$materi) {
 				show_404();
 			}
@@ -397,13 +438,13 @@ class Bab extends MY_Controller {
 		if (empty($bab)) {
 			show_404();
 		}
-		$materi = $this->materi_model->get_by_uuid($bab->materi_uuid);
+		$materi = $this->get_accessible_materi($bab->materi_uuid);
 		if (empty($materi)) {
 			show_404();
 		}
 
 		// Superadmin, admin, atau pengampu mata pelajaran yang boleh hapus
-		if (!admin_can_access_creator($materi->created_by)) {
+		if (!admin_can_access_creator($materi->created_by) && !$this->is_mapel_pengampu($materi)) {
 			show_error('Anda tidak memiliki akses untuk menghapus pertemuan ini.', 403);
 		}
 
@@ -414,6 +455,23 @@ class Bab extends MY_Controller {
 			$this->session->set_flashdata('error_msg', 'Gagal menghapus pertemuan');
 		}
 		redirect('sub_bab/index/' . $bab->materi_uuid);
+	}
+
+	private function is_mapel_pengampu($materi)
+	{
+		return has_role('guru')
+			&& $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'));
+	}
+
+	private function get_accessible_materi($materi_uuid)
+	{
+		$materi = $this->materi_model->get_by_uuid($materi_uuid);
+		if ($materi || !has_role('guru')) {
+			return $materi;
+		}
+
+		$materi = $this->materi_model->get_by_uuid($materi_uuid, FALSE);
+		return $materi && $this->is_mapel_pengampu($materi) ? $materi : NULL;
 	}
 
 	/**

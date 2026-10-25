@@ -55,8 +55,15 @@ $route['translate_uri_dashes'] = FALSE;
 
 $route['login'] = 'auth/login';
 $route['logout'] = 'auth/logout';
+$route['chat'] = 'chat/index';
+$route['chat/contacts'] = 'chat/contacts';
+$route['chat/send'] = 'chat/send';
+$route['chat/unread_count'] = 'chat/unread_count';
+$route['chat/messages/(:any)'] = 'chat/messages/$1';
 $route['ganti_password'] = 'auth/ganti_password';
 $route['reset_password/(:any)'] = 'auth/reset_password/$1';
+$route['periode_akademik'] = 'periode_akademik/index';
+$route['periode_akademik/simpan'] = 'periode_akademik/simpan';
 
 // Mapel routes (import / format Excel / bulk delete)
 $route['mapel/import'] = 'mapel/import_excel';
@@ -86,6 +93,7 @@ $route['mata_pelajaran/hapus/(:any)'] = 'materi/hapus/$1';
 // Bab routes
 $route['bab/tambah/(:any)'] = 'materi/tambah/$1';
 $route['bab/edit/(:any)'] = 'materi/edit/$1';
+$route['bab/selesai_baca/(:any)'] = 'bab/selesai_baca/$1';
 
 // Siswa routes (import / format Excel / bulk delete)
 $route['siswa/import'] = 'siswa/import_excel';

@@ -74,6 +74,7 @@ class siswa_model extends CI_Model {
 		$this->db->insert('users', $data_user);
 		if ($this->db->affected_rows() > 0) {
 			$user_id = $this->db->insert_id();
+			$this->db->insert('user_roles', array('user_id' => $user_id, 'role_id' => 4));
 
 			// Insert ke tabel user_profiles (nis, tgl_lahir, jenis_kelamin)
 			$jenis_kelamin_map = [
@@ -382,6 +383,7 @@ class siswa_model extends CI_Model {
 			'modified_at' => $now
 		));
 		$user_id = $this->db->insert_id();
+		$this->db->insert('user_roles', array('user_id' => $user_id, 'role_id' => 4));
 
 		// Insert ke tabel user_profiles (nis, tgl_lahir, jenis_kelamin)
 		$this->db->insert('user_profiles', array(

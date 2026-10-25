@@ -24,7 +24,7 @@ class Ujian extends MY_Controller {
 	public function index()
 	{
 		$user_login = $this->session->userdata('uuid'); 
-		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
 
 		// Siswa hanya melihat ujian yang sudah didaftarkan sebagai peserta
 		if ($user_role === 'siswa') {
@@ -105,7 +105,7 @@ class Ujian extends MY_Controller {
 		
 		}
 
-		if (in_array($this->session->userdata('role'), ['admin', 'superadmin'], true)) {
+		if (has_role(['admin', 'superadmin'])) {
 			$mapel = $this->mapel_model->get_all();
 		} else {
 			$guru = $this->guru_model->get_by_uuid($this->session->userdata('uuid'));
@@ -155,7 +155,7 @@ class Ujian extends MY_Controller {
 
 		$guru_uuid = $this->session->userdata('uuid');
 		$guru = $this->guru_model->get_by_uuid($guru_uuid);
-		if (in_array($this->session->userdata('role'), ['admin', 'superadmin'], true)) {
+		if (has_role(['admin', 'superadmin'])) {
 			$mapel = $this->mapel_model->get_all();
 		} elseif ($guru) {
 			$mapel = $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? []);
@@ -1209,7 +1209,7 @@ class Ujian extends MY_Controller {
 	public function get_soal($soal_uuid)
 	{
 		$soal = $this->soal_model->get_by_uuid($soal_uuid);
-		if ($soal && user_role() === 'admin' && !$this->ujian_model->get_by_uuid($soal->ujian_uuid)) {
+		if ($soal && has_role('admin') && !$this->ujian_model->get_by_uuid($soal->ujian_uuid)) {
 			$soal = NULL;
 		}
 		if ($soal) {
@@ -1227,7 +1227,7 @@ class Ujian extends MY_Controller {
 	public function get_soal_by_uuid($soal_uuid)
 	{
 		$soal = $this->soal_model->get_by_uuid($soal_uuid);
-		if ($soal && user_role() === 'admin' && !$this->ujian_model->get_by_uuid($soal->ujian_uuid)) {
+		if ($soal && has_role('admin') && !$this->ujian_model->get_by_uuid($soal->ujian_uuid)) {
 			$soal = NULL;
 		}
 		if ($soal) {

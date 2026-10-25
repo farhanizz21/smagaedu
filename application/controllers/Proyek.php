@@ -18,7 +18,7 @@ class Proyek extends MY_Controller {
 	public function index()
 	{
 		$user_login = $this->session->userdata('uuid'); 
-		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
 		
 		// Jika guru, hanya tampilkan proyek dari mata pelajaran yang dimiliki/diampu
 		if ($user_role === 'guru') {
@@ -107,7 +107,7 @@ class Proyek extends MY_Controller {
 			}
 		}
 		
-		if (in_array($this->session->userdata('role'), ['admin', 'superadmin'], true)) {
+		if (has_role(['admin', 'superadmin'])) {
 			$mapel = $this->mapel_model->get_all();
 		} else {
 			$guru = $this->guru_model->get_by_uuid($this->session->userdata('uuid'));
@@ -133,7 +133,7 @@ class Proyek extends MY_Controller {
 				show_error('Data proyek tidak ditemukan.', 404);
 			}
 			
-			$user_role = $this->session->userdata('role');
+			$user_role = user_role();
 			$user_uuid = $this->session->userdata('uuid');
 			if ($user_role === 'guru' && $proyek->created_by !== $user_uuid) {
 				show_error('Anda tidak memiliki akses untuk menghapus data ini.', 403);
@@ -157,7 +157,7 @@ class Proyek extends MY_Controller {
 		}
 		
 		// Guru hanya bisa melihat detail proyek miliknya sendiri
-		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
 		$user_uuid = $this->session->userdata('uuid');
 		if ($user_role === 'guru' && $proyek->created_by !== $user_uuid) {
 			show_error('Anda tidak memiliki akses untuk melihat proyek ini.', 403);
@@ -240,7 +240,7 @@ class Proyek extends MY_Controller {
 		}
 		
 		// Guru hanya bisa memilih siswa untuk proyek miliknya sendiri
-		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
 		$user_uuid = $this->session->userdata('uuid');
 		if ($user_role === 'guru' && $proyek->created_by !== $user_uuid) {
 			show_error('Anda tidak memiliki akses untuk mengelola peserta proyek ini.', 403);
@@ -354,7 +354,7 @@ class Proyek extends MY_Controller {
 
 	public function hapus_jawaban_proyek($uuid){
 		{
-			if (user_role() === 'admin') {
+			if (has_role('admin')) {
 				$jawaban = $this->db->get_where('proyek_jawaban', array('uuid' => $uuid))->row();
 				$proyek = $jawaban ? $this->proyek_model->get_by_uuid($jawaban->proyek_uuid) : NULL;
 				if (!$proyek) {
@@ -373,7 +373,7 @@ class Proyek extends MY_Controller {
 
 	public function nilai_jawaban_proyek($jawaban_uuid){
 		{
-			if (user_role() === 'admin') {
+			if (has_role('admin')) {
 				$jawaban = $this->db->get_where('proyek_jawaban', array('uuid' => $jawaban_uuid))->row();
 				$proyek = $jawaban ? $this->proyek_model->get_by_uuid($jawaban->proyek_uuid) : NULL;
 				if (!$proyek) {

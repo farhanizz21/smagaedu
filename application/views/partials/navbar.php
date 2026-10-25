@@ -1,4 +1,18 @@
 <!-- Navbar -->
+<?php
+$CI =& get_instance();
+$CI->load->model('periode_akademik_model');
+$CI->load->model('chat_model');
+$periode_akademik = $CI->periode_akademik_model->get_current();
+$unread_chat_count = $CI->chat_model->get_unread_count($this->session->userdata('uuid'));
+$CI->load->model('pengingat_model');
+$role_reminders = $CI->pengingat_model->get_for_user(
+    user_role(),
+    $this->session->userdata('uuid'),
+    $periode_akademik
+);
+?>
+
 <nav class="w-full sticky top-0 z-50 border-b border-gray-100"
     style="backdrop-filter:blur(16px);background:rgba(255,255,255,0.85)">
     <div class="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
@@ -59,7 +73,7 @@
                             class="block px-4 py-2 text-sm <?= $active_nav == 'kepala_sekolah_admin' ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-600 hover:bg-gray-50' ?>">Data
                             Kepala Sekolah</a>
                         <?php endif; ?>
-                        <?php if(in_array(user_role(), ['superadmin', 'admin'])): ?>
+                        <?php if(has_role(['superadmin', 'admin'])): ?>
                         <div class="border-t border-gray-100 my-1"></div>
                         <a href="<?= base_url('admin/admins') ?>"
                             class="block px-4 py-2 text-sm <?= $active_nav == 'admins' ? 'text-blue-600 font-semibold bg-blue-50' : 'text-gray-600 hover:bg-gray-50' ?>">Data
@@ -90,7 +104,8 @@
                         <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
                     </span>
                     <span class="text-sm font-medium text-gray-700 hidden sm:block">Hai,
-                        <?= $this->session->userdata('nama'); ?> (<?= user_role(); ?>)</span>
+                        <?= $this->session->userdata('nama'); ?>
+                        (<?= html_escape(implode(', ', (array) $this->session->userdata('roles'))); ?>)</span>
                 </span>
                 <div
                     class="nav-dropdown-menu hidden absolute top-full right-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 py-2 min-w-[160px]">
@@ -105,9 +120,8 @@
             <button type="button" id="navbarToggle"
                 class="md:hidden inline-flex items-center justify-center w-11 h-11 -mr-2 rounded-xl text-gray-600 hover:bg-gray-50 active:bg-gray-100"
                 aria-label="Buka menu navigasi" aria-expanded="false" aria-controls="navbarMobileMenu">
-                <svg id="navbarIconOpen" xmlns="http://www.w3.org/2000/svg" width="22" height="22"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round">
+                <svg id="navbarIconOpen" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="4" x2="20" y1="6" y2="6"></line>
                     <line x1="4" x2="20" y1="12" y2="12"></line>
                     <line x1="4" x2="20" y1="18" y2="18"></line>
@@ -171,7 +185,7 @@
                 class="flex items-center min-h-[44px] px-3 rounded-lg <?= ($active_nav ?? '') == 'kepala_sekolah_admin' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Data
                 Kepala Sekolah</a>
             <?php endif; ?>
-            <?php if(in_array(user_role(), ['superadmin', 'admin'])): ?>
+            <?php if(has_role(['superadmin', 'admin'])): ?>
             <a href="<?= base_url('admin/admins') ?>"
                 class="flex items-center min-h-[44px] px-3 rounded-lg <?= ($active_nav ?? '') == 'admins' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Data
                 Admin</a>
@@ -198,8 +212,109 @@
     </div>
 </nav>
 
+<?php $CI->load->view('partials/chat_widget', array('unread_chat_count' => $unread_chat_count)); ?>
+
+<?php if ($periode_akademik): ?>
+<div class="border-b border-red-100 bg-red-50/70">
+    <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-6 py-2">
+        <div class="flex min-w-0 items-center gap-2 text-sm text-red-800">
+            <i data-lucide="calendar-days" class="h-4 w-4 shrink-0 text-red-600"></i>
+            <span class="truncate text-red-600">Periode pembelajaran saat ini</span>
+            <span class="hidden text-red-300 sm:inline">·</span>
+            <span class="shrink-0 font-semibold">Pekan <?= html_escape($periode_akademik->pekan); ?></span>
+            <span class="text-red-300">·</span>
+            <span class="shrink-0 font-semibold">Semester <?= html_escape($periode_akademik->semester); ?></span>
+        </div>
+        <a href="<?= base_url('periode_akademik'); ?>"
+            class="shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100">
+            Lihat
+        </a>
+    </div>
+</div>
+<?php endif; ?>
+
+<?php if (!empty($role_reminders)): ?>
+<section class="border-b-2 border-amber-300 bg-gradient-to-r from-amber-100 via-orange-50 to-amber-100 shadow-sm"
+    aria-label="Pengingat pembelajaran">
+    <div class="mx-auto max-w-7xl px-6 py-3">
+        <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
+                    <i data-lucide="bell-ring" class="h-5 w-5"></i>
+                </span>
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-sm font-extrabold text-amber-950">Pengingat untuk Anda</h2>
+                        <span class="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+                            <?= count($role_reminders) ?> perlu ditindaklanjuti
+                        </span>
+                    </div>
+                    <p class="hidden text-xs text-amber-900/80 sm:block">Jangan lewatkan materi, ujian, atau pembaruan penting.</p>
+                </div>
+            </div>
+            <button type="button" id="reminderToggle"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-bold text-amber-950 shadow-sm transition hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+                aria-expanded="true" aria-controls="reminderContent">
+                <span id="reminderToggleLabel">Sembunyikan</span>
+                <i data-lucide="chevron-up" id="reminderChevronUp" class="h-4 w-4"></i>
+                <i data-lucide="chevron-down" id="reminderChevronDown" class="hidden h-4 w-4"></i>
+            </button>
+        </div>
+        <div id="reminderContent" class="mt-3">
+            <ul class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                <?php foreach ($role_reminders as $reminder): ?>
+                <li class="flex items-start justify-between gap-3 rounded-xl border-l-4 <?= !empty($reminder['urgent']) ? 'border-l-red-500 border-y border-r border-y-amber-200 border-r-amber-200 bg-white' : 'border-l-orange-400 border-y border-r border-y-amber-200 border-r-amber-200 bg-white/90' ?> px-3 py-2.5 shadow-sm">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-gray-900"><?= html_escape($reminder['title']) ?></p>
+                        <p class="mt-0.5 text-xs leading-relaxed text-gray-700"><?= html_escape($reminder['message']) ?></p>
+                    </div>
+                    <a href="<?= html_escape($reminder['url']) ?>"
+                        class="shrink-0 rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2">
+                        <?= html_escape($reminder['label']) ?>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
+
 <script>
 (function() {
+    var reminderToggle = document.getElementById('reminderToggle');
+    var reminderContent = document.getElementById('reminderContent');
+    if (reminderToggle && reminderContent) {
+        var reminderStorageKey = 'smagaedu-reminders-<?= html_escape($this->session->userdata('uuid')) ?>';
+        var reminderLabel = document.getElementById('reminderToggleLabel');
+        var reminderChevronUp = document.getElementById('reminderChevronUp');
+        var reminderChevronDown = document.getElementById('reminderChevronDown');
+        var setReminderExpanded = function(expanded) {
+            reminderToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            reminderContent.classList.toggle('hidden', !expanded);
+            if (reminderLabel) reminderLabel.textContent = expanded ? 'Sembunyikan' : 'Tampilkan';
+            if (reminderChevronUp) reminderChevronUp.classList.toggle('hidden', !expanded);
+            if (reminderChevronDown) reminderChevronDown.classList.toggle('hidden', expanded);
+        };
+        try {
+            if (window.localStorage.getItem(reminderStorageKey) === 'collapsed') {
+                setReminderExpanded(false);
+            }
+        } catch (error) {
+            // Panel tetap dapat digunakan meski penyimpanan browser tidak tersedia.
+        }
+        reminderToggle.addEventListener('click', function() {
+            var expanded = reminderToggle.getAttribute('aria-expanded') !== 'true';
+            setReminderExpanded(expanded);
+            try {
+                window.localStorage.setItem(reminderStorageKey, expanded ? 'expanded' : 'collapsed');
+            } catch (error) {
+                // Perubahan tetap berlaku sampai halaman dimuat ulang.
+            }
+        });
+    }
+
     var navbarToggle = document.getElementById('navbarToggle');
     var navbarMobileMenu = document.getElementById('navbarMobileMenu');
     if (navbarToggle && navbarMobileMenu) {

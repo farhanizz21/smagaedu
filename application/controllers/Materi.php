@@ -11,6 +11,7 @@ class Materi extends MY_Controller {
 		$this->load->model('mapel_model');
 		$this->load->model('guru_model');
 		$this->load->model('bab_model');
+		$this->load->model('periode_akademik_model');
 	}
 
 	private function max_week_for_mapel($mapel_uuid, $semester)
@@ -23,9 +24,22 @@ class Materi extends MY_Controller {
 		return in_array($mapel_uuid, $mapel_kelas_xii, TRUE) ? 10 : 20;
 	}
 
+	private function can_manage_materi($materi)
+	{
+		return admin_can_access_creator($materi->created_by)
+			|| (has_role('guru')
+				&& $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid')));
+	}
+
+	private function is_current_teacher_for_mapel($mapel_uuid)
+	{
+		return has_role('guru')
+			&& $this->guru_model->get_mapel_pengampu($mapel_uuid, $this->session->userdata('uuid'));
+	}
+
 	public function index()
 	{
-		$user_role = $this->session->userdata('role');
+		$user_role = user_role();
 		$user_uuid = $this->session->userdata('uuid');
 		$kelas_per_mapel = [];
 		
@@ -67,7 +81,7 @@ class Materi extends MY_Controller {
 			show_404();
 		}
 
-		if (user_role() === 'admin' && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
+		if (has_role('admin') && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
 			show_404();
 		}
 
@@ -86,11 +100,16 @@ class Materi extends MY_Controller {
 		if (!$mapel) {
 			show_404();
 		}
-		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid, $semester);
-		$guru_uuid = $this->session->userdata('uuid');
-		$pengampu = $this->guru_model->get_mapel_pengampu($mapel_uuid, $guru_uuid);
-		$user_uuid = $this->session->userdata('uuid');
 		$is_student = $this->session->userdata('role') === 'siswa';
+		$periode = $this->periode_akademik_model->get_current();
+		if ($is_student && (!$periode || (int) $semester > (int) $periode->semester)) {
+			show_error('Semester ini belum dapat diakses.', 403);
+		}
+		$is_mapel_pengampu = $this->is_current_teacher_for_mapel($mapel_uuid);
+		$materi = $this->materi_model->get_by_mapel_uuid($mapel_uuid, $semester, !$is_mapel_pengampu);
+		$guru_uuid = $this->session->userdata('uuid');
+		$pengampu = $is_mapel_pengampu;
+		$user_uuid = $this->session->userdata('uuid');
 		$materi_progress = $is_student ? $this->bab_model->get_progress_for_mapel($mapel_uuid, $user_uuid) : [];
 
 		if (!empty($materi)) { // Pastikan ada data dalam materi
@@ -110,6 +129,8 @@ class Materi extends MY_Controller {
 			'pengampu' => $pengampu,
 			'materi_progress' => $materi_progress,
 			'semester' => $semester,
+			'is_student' => $is_student,
+			'periode_akademik' => $periode,
 			'max_week' => $this->max_week_for_mapel($mapel_uuid, $semester),
 			'is_admin' => is_admin_or_superadmin(),
 			'active_nav' => 'materi'
@@ -124,7 +145,7 @@ class Materi extends MY_Controller {
 
 	public function semester($mapel_uuid)
 	{
-		if (user_role() === 'admin' && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
+		if (has_role('admin') && !$this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))) {
 			show_404();
 		}
 
@@ -148,6 +169,8 @@ class Materi extends MY_Controller {
 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
 		$this->load->view('mapel/semester', [
 			'mapel' => $mapel,
+			'is_student' => $this->session->userdata('role') === 'siswa',
+			'periode_akademik' => $this->periode_akademik_model->get_current(),
 			'active_nav' => 'materi',
 			'from_controller' => true
 		]);
@@ -156,7 +179,7 @@ class Materi extends MY_Controller {
 
     public function tambah($mapel_uuid)
 	{
-		$mapel_valid = user_role() === 'admin'
+		$mapel_valid = has_role('admin')
 			? $this->mapel_model->is_related_to_admin($mapel_uuid, $this->session->userdata('uuid'))
 			: (bool) $this->mapel_model->get_by_uuid($mapel_uuid);
 		if (!$mapel_valid) {
@@ -236,14 +259,18 @@ class Materi extends MY_Controller {
 	public function edit($uuid){
 		$materi = $this->materi_model->get_by_uuid($uuid);
 		if (empty($materi)) {
-			show_404();
+			$materi = $this->materi_model->get_by_uuid($uuid, FALSE);
+			if (empty($materi) || !$this->is_current_teacher_for_mapel($materi->mapel_uuid)) {
+				show_404();
+			}
 		}
-		if (!admin_can_access_creator($materi->created_by)) {
+		$is_mapel_pengampu = $this->is_current_teacher_for_mapel($materi->mapel_uuid);
+		if (!$this->can_manage_materi($materi)) {
 			show_error('Anda tidak memiliki akses untuk mengubah materi ini.', 403);
 		}
 		if (empty($materi->pekan_ke)) {
-			$this->materi_model->get_by_mapel_uuid($materi->mapel_uuid, $materi->semester);
-			$materi = $this->materi_model->get_by_uuid($uuid);
+			$this->materi_model->get_by_mapel_uuid($materi->mapel_uuid, $materi->semester, !$is_mapel_pengampu);
+			$materi = $this->materi_model->get_by_uuid($uuid, !$is_mapel_pengampu);
 		}
 		$target_semester = $this->input->post('semester') ?: $materi->semester;
 		$max_week = $this->max_week_for_mapel($materi->mapel_uuid, $target_semester);
@@ -294,7 +321,7 @@ class Materi extends MY_Controller {
 				}
 			}
 
-			$update = $this->materi_model->update($uuid, $thumbnail);
+			$update = $this->materi_model->update($uuid, $thumbnail, !$is_mapel_pengampu);
 			if ($update) {
 				$this->session->set_flashdata('success_msg', 'Pekan berhasil diperbarui');
 			} else {
@@ -319,13 +346,17 @@ class Materi extends MY_Controller {
 	public function hapus($uuid){
 		$materi = $this->materi_model->get_by_uuid($uuid);
 		if (empty($materi)) {
-			show_404();
+			$materi = $this->materi_model->get_by_uuid($uuid, FALSE);
+			if (empty($materi) || !$this->is_current_teacher_for_mapel($materi->mapel_uuid)) {
+				show_404();
+			}
 		}
-		if (!admin_can_access_creator($materi->created_by)) {
+		$is_mapel_pengampu = $this->is_current_teacher_for_mapel($materi->mapel_uuid);
+		if (!$this->can_manage_materi($materi)) {
 			show_error('Anda tidak memiliki akses untuk menghapus materi ini.', 403);
 		}
 
-		$result = $this->materi_model->delete_by_uuid($uuid);
+		$result = $this->materi_model->delete_by_uuid($uuid, !$is_mapel_pengampu);
 		if ($result) {
 			$this->session->set_flashdata('success_msg', 'Data materi berhasil dihapus');
 		} else {

@@ -112,13 +112,21 @@ class mapel_model extends CI_Model {
 		}
 
 		$this->db->select('uuid');
-		$this->db->where('role_id', 3);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
 		$this->db->where('created_by', $admin_uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
 		$teachers = $this->db->get('users')->result();
 		$teacher_uuids = array_map(function ($teacher) {
 			return $teacher->uuid;
 		}, $teachers);
+		$this->db->select('uuid');
+		$this->db->where('uuid', $admin_uuid);
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
+		$self_teacher = $this->db->get('users')->row();
+		if ($self_teacher) {
+			$teacher_uuids[] = $self_teacher->uuid;
+		}
+		$teacher_uuids = array_values(array_unique($teacher_uuids));
 		$creator_uuids = array_merge(array($admin_uuid), $teacher_uuids);
 
 		$this->db->select('uuid');
@@ -132,7 +140,7 @@ class mapel_model extends CI_Model {
 			$this->db->select('user_profiles.mapel_uuid');
 			$this->db->from('user_profiles');
 			$this->db->join('users', 'users.id = user_profiles.user_id', 'inner');
-			$this->db->where('users.role_id', 3);
+			$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
 			$this->db->where_in('users.uuid', $teacher_uuids);
 			$this->db->where('users.deleted_at', NULL, FALSE);
 			foreach ($this->db->get()->result() as $profile) {
@@ -413,7 +421,7 @@ class mapel_model extends CI_Model {
 		$this->db->select('user_profiles.mapel_uuid');
 		$this->db->from('user_profiles');
 		$this->db->join('users', 'users.id = user_profiles.user_id', 'left');
-		$this->db->where('users.role_id', 3); // guru
+		$this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
 		$this->db->where('users.deleted_at', NULL, FALSE);
 		$this->db->where('user_profiles.mapel_uuid IS NOT NULL', NULL, FALSE);
 		$profiles = $this->db->get()->result();

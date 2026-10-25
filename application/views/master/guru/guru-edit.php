@@ -64,6 +64,20 @@
                 </div>
             </div>
 
+            <?php if (is_superadmin()): ?>
+            <div class="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                <label class="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" name="is_admin" value="1"
+                        class="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        <?= !empty($is_admin) ? 'checked' : '' ?>>
+                    <span>
+                        <span class="block text-sm font-semibold text-gray-800">Guru ini juga Admin</span>
+                        <span class="block text-xs text-gray-600 mt-1">Akun dan password tetap sama. Role Guru tetap aktif sehingga data guru tidak hilang dari master.</span>
+                    </span>
+                </label>
+            </div>
+            <?php endif; ?>
+
             <!-- Mata Pelajaran & Kelas -->
             <div class="mt-8">
                 <div class="flex items-center justify-between mb-3">

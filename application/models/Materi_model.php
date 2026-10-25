@@ -72,7 +72,7 @@ class materi_model extends CI_Model {
 		return $this->db->count_all_results('materi') > 0;
 	}
 
-	public function get_by_mapel_uuid($mapel_uuid, $semester = NULL)
+	public function get_by_mapel_uuid($mapel_uuid, $semester = NULL, $admin_scope = TRUE)
 	{
 		$this->db->select('m.*, g.nama, m.uuid AS materi_uuid, m.created_by AS materi_created_by');
 		$this->db->join('guru g', 'm.created_by = g.uuid', 'left');
@@ -81,7 +81,9 @@ class materi_model extends CI_Model {
 			$this->db->where('m.semester', $semester);
 		}
 		$this->db->where('m.deleted_at', NULL, FALSE);
-		apply_admin_creator_scope('m.created_by');
+		if ($admin_scope) {
+			apply_admin_creator_scope('m.created_by');
+		}
 		$this->db->order_by('m.id', 'ASC');
 		$data = $this->db->get('materi m')->result();
 		$used_weeks = array();
@@ -114,17 +116,19 @@ class materi_model extends CI_Model {
 		return $data;
 	} 
 
-	public function get_by_uuid($uuid)
+	public function get_by_uuid($uuid, $admin_scope = TRUE)
 	{
 		$this->db->select('m.*, g.nama, m.uuid AS materi_uuid, m.created_by AS materi_created_by');
 		$this->db->join('guru g', 'm.created_by = g.uuid', 'left');
 		$this->db->where('m.uuid', $uuid);
 		$this->db->where('m.deleted_at', NULL, FALSE);
-		apply_admin_creator_scope('m.created_by');
+		if ($admin_scope) {
+			apply_admin_creator_scope('m.created_by');
+		}
 		return $this->db->get('materi m')->row();
 	}
 
-	public function update($uuid, $thumbnail)
+	public function update($uuid, $thumbnail, $admin_scope = TRUE)
 	{
 		$data = array(
 			'judul'      => $this->input->post('judul'),
@@ -134,18 +138,22 @@ class materi_model extends CI_Model {
 			'modified_at'=> date("Y-m-d H:i:s")
 		);
 		$this->db->where('uuid', $uuid);
-		apply_admin_creator_scope('created_by');
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
 		$this->db->update('materi', $data);
 		return ($this->db->affected_rows() > 0);
 	}
 
-	public function delete_by_uuid($uuid)
+	public function delete_by_uuid($uuid, $admin_scope = TRUE)
 	{
 		$data = array(
 			'deleted_at' => date("Y-m-d H:i:s")
 		);
 		$this->db->where('uuid', $uuid);
-		apply_admin_creator_scope('created_by');
+		if ($admin_scope) {
+			apply_admin_creator_scope('created_by');
+		}
 		$this->db->update('materi', $data);
 		return($this->db->affected_rows() > 0) ? true :false;
 	}
