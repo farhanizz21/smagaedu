@@ -1,7 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class pengingat_model extends CI_Model {
+class Pengingat_model extends CI_Model {
 
 	public function get_for_user($role, $user_uuid, $periode)
 	{
