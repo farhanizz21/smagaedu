@@ -5,6 +5,12 @@ $CI->load->model('periode_akademik_model');
 $CI->load->model('chat_model');
 $periode_akademik = $CI->periode_akademik_model->get_current();
 $unread_chat_count = $CI->chat_model->get_unread_count($this->session->userdata('uuid'));
+$CI->load->model('pengingat_model');
+$role_reminders = $CI->pengingat_model->get_for_user(
+    user_role(),
+    $this->session->userdata('uuid'),
+    $periode_akademik
+);
 ?>
 
 <nav class="w-full sticky top-0 z-50 border-b border-gray-100"
@@ -227,9 +233,88 @@ $unread_chat_count = $CI->chat_model->get_unread_count($this->session->userdata(
 </div>
 <?php endif; ?>
 
+<?php if (!empty($role_reminders)): ?>
+<section class="border-b-2 border-amber-300 bg-gradient-to-r from-amber-100 via-orange-50 to-amber-100 shadow-sm"
+    aria-label="Pengingat pembelajaran">
+    <div class="mx-auto max-w-7xl px-6 py-3">
+        <div class="flex items-center justify-between gap-3">
+            <div class="flex min-w-0 items-center gap-3">
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
+                    <i data-lucide="bell-ring" class="h-5 w-5"></i>
+                </span>
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-sm font-extrabold text-amber-950">Pengingat untuk Anda</h2>
+                        <span class="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
+                            <?= count($role_reminders) ?> perlu ditindaklanjuti
+                        </span>
+                    </div>
+                    <p class="hidden text-xs text-amber-900/80 sm:block">Jangan lewatkan materi, ujian, atau pembaruan penting.</p>
+                </div>
+            </div>
+            <button type="button" id="reminderToggle"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-amber-400 bg-white px-3 py-2 text-xs font-bold text-amber-950 shadow-sm transition hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+                aria-expanded="true" aria-controls="reminderContent">
+                <span id="reminderToggleLabel">Sembunyikan</span>
+                <i data-lucide="chevron-up" id="reminderChevronUp" class="h-4 w-4"></i>
+                <i data-lucide="chevron-down" id="reminderChevronDown" class="hidden h-4 w-4"></i>
+            </button>
+        </div>
+        <div id="reminderContent" class="mt-3">
+            <ul class="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                <?php foreach ($role_reminders as $reminder): ?>
+                <li class="flex items-start justify-between gap-3 rounded-xl border-l-4 <?= !empty($reminder['urgent']) ? 'border-l-red-500 border-y border-r border-y-amber-200 border-r-amber-200 bg-white' : 'border-l-orange-400 border-y border-r border-y-amber-200 border-r-amber-200 bg-white/90' ?> px-3 py-2.5 shadow-sm">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-gray-900"><?= html_escape($reminder['title']) ?></p>
+                        <p class="mt-0.5 text-xs leading-relaxed text-gray-700"><?= html_escape($reminder['message']) ?></p>
+                    </div>
+                    <a href="<?= html_escape($reminder['url']) ?>"
+                        class="shrink-0 rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2">
+                        <?= html_escape($reminder['label']) ?>
+                    </a>
+                </li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
 
 <script>
 (function() {
+    var reminderToggle = document.getElementById('reminderToggle');
+    var reminderContent = document.getElementById('reminderContent');
+    if (reminderToggle && reminderContent) {
+        var reminderStorageKey = 'smagaedu-reminders-<?= html_escape($this->session->userdata('uuid')) ?>';
+        var reminderLabel = document.getElementById('reminderToggleLabel');
+        var reminderChevronUp = document.getElementById('reminderChevronUp');
+        var reminderChevronDown = document.getElementById('reminderChevronDown');
+        var setReminderExpanded = function(expanded) {
+            reminderToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            reminderContent.classList.toggle('hidden', !expanded);
+            if (reminderLabel) reminderLabel.textContent = expanded ? 'Sembunyikan' : 'Tampilkan';
+            if (reminderChevronUp) reminderChevronUp.classList.toggle('hidden', !expanded);
+            if (reminderChevronDown) reminderChevronDown.classList.toggle('hidden', expanded);
+        };
+        try {
+            if (window.localStorage.getItem(reminderStorageKey) === 'collapsed') {
+                setReminderExpanded(false);
+            }
+        } catch (error) {
+            // Panel tetap dapat digunakan meski penyimpanan browser tidak tersedia.
+        }
+        reminderToggle.addEventListener('click', function() {
+            var expanded = reminderToggle.getAttribute('aria-expanded') !== 'true';
+            setReminderExpanded(expanded);
+            try {
+                window.localStorage.setItem(reminderStorageKey, expanded ? 'expanded' : 'collapsed');
+            } catch (error) {
+                // Perubahan tetap berlaku sampai halaman dimuat ulang.
+            }
+        });
+    }
+
     var navbarToggle = document.getElementById('navbarToggle');
     var navbarMobileMenu = document.getElementById('navbarMobileMenu');
     if (navbarToggle && navbarMobileMenu) {
