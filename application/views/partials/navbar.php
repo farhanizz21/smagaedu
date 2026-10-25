@@ -2,7 +2,9 @@
 <?php
 $CI =& get_instance();
 $CI->load->model('periode_akademik_model');
+$CI->load->model('chat_model');
 $periode_akademik = $CI->periode_akademik_model->get_current();
+$unread_chat_count = $CI->chat_model->get_unread_count($this->session->userdata('uuid'));
 ?>
 
 <nav class="w-full sticky top-0 z-50 border-b border-gray-100"
@@ -204,6 +206,7 @@ $periode_akademik = $CI->periode_akademik_model->get_current();
     </div>
 </nav>
 
+<?php $CI->load->view('partials/chat_widget', array('unread_chat_count' => $unread_chat_count)); ?>
 
 <?php if ($periode_akademik): ?>
 <div class="border-b border-red-100 bg-red-50/70">

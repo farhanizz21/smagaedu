@@ -55,6 +55,11 @@ $route['translate_uri_dashes'] = FALSE;
 
 $route['login'] = 'auth/login';
 $route['logout'] = 'auth/logout';
+$route['chat'] = 'chat/index';
+$route['chat/contacts'] = 'chat/contacts';
+$route['chat/send'] = 'chat/send';
+$route['chat/unread_count'] = 'chat/unread_count';
+$route['chat/messages/(:any)'] = 'chat/messages/$1';
 $route['ganti_password'] = 'auth/ganti_password';
 $route['reset_password/(:any)'] = 'auth/reset_password/$1';
 $route['periode_akademik'] = 'periode_akademik/index';
