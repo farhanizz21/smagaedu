@@ -1,6 +1,16 @@
+<?php
+$is_tugas = !empty($is_tugas);
+$parent_url = $is_tugas ? 'tugas' : 'ujian';
+$parent_field = $is_tugas ? 'tugas_uuid' : 'ujian_uuid';
+$parent_title = $is_tugas ? 'Tugas' : 'Ujian';
+$has_student_submissions = !empty($has_student_submissions);
+$can_add_questions = !$is_tugas || !$has_student_submissions;
+$header_gradient = $is_tugas ? 'from-violet-600 to-indigo-700' : 'from-rose-500 to-red-600';
+$header_muted_text = $is_tugas ? 'text-violet-100' : 'text-rose-100';
+?>
 <?php if(!isset($from_controller)): ?>
-<?php $this->load->view('partials/header_tailwind', ['title' => 'Tambah Soal Ujian']); ?>
-<?php $this->load->view('partials/navbar', ['active_nav' => 'ujian']); ?>
+<?php $this->load->view('partials/header_tailwind', ['title' => 'Tambah Soal ' . $parent_title]); ?>
+<?php $this->load->view('partials/navbar', ['active_nav' => $parent_url]); ?>
 <?php endif; ?>
 
 <!-- Quill Editor CSS -->
@@ -9,16 +19,16 @@
 <div class="max-w-5xl mx-auto px-6 py-8">
     <!-- Colorful Header -->
     <div
-        class="relative bg-gradient-to-r from-rose-500 to-red-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
+        class="relative bg-gradient-to-r <?= $header_gradient ?> rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
         <div class="relative z-10">
             <div class="flex items-center gap-3">
-                <a href="<?= base_url('ujian')?>"
+                <a href="<?= base_url($parent_url)?>"
                     class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center hover:bg-white/30 transition-colors">
                     <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                 </a>
                 <div>
-                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Tambah Soal Ujian</h1>
-                    <p class="text-rose-100 text-sm mt-1">Ujian:
+                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Tambah Soal <?= $parent_title ?></h1>
+                    <p class="<?= $header_muted_text ?> text-sm mt-1"><?= $parent_title ?>:
                         <span class="font-semibold"><?= $ujian->nama; ?></span>
                     </p>
                 </div>
@@ -55,10 +65,18 @@
     </div>
     <?php endif; ?>
 
+    <?php if ($is_tugas && $has_student_submissions): ?>
+    <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-start gap-2">
+        <i data-lucide="lock-keyhole" class="w-5 h-5 flex-shrink-0"></i>
+        <span>Penambahan atau impor soal dinonaktifkan karena sudah ada siswa yang mengerjakan tugas ini.</span>
+    </div>
+    <?php endif; ?>
+
     <!-- Form Card -->
+    <?php if ($can_add_questions): ?>
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow mb-8">
-        <form id="tambahSoalForm" method="post" action="<?= base_url('ujian/tambah_soal/' . $ujian->uuid); ?>">
-            <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid ?>">
+        <form id="tambahSoalForm" method="post" action="<?= base_url($parent_url . '/tambah_soal/' . $ujian->uuid); ?>">
+            <input type="hidden" name="<?= $parent_field ?>" value="<?= $ujian->uuid ?>">
             <div class="space-y-6">
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Soal <span
@@ -300,7 +318,7 @@
                         <i data-lucide="save" class="w-4 h-4"></i>
                         Simpan Soal
                     </button>
-                    <a href="<?= base_url('ujian')?>"
+                    <a href="<?= base_url($parent_url)?>"
                         class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-sm">
                         <i data-lucide="x" class="w-4 h-4"></i>
                         Batal
@@ -309,12 +327,14 @@
             </div>
         </form>
     </div>
+    <?php endif; ?>
 
     <!-- Import / Export Excel -->
+    <?php if ($can_add_questions): ?>
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow mb-8">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <div>
-                <h3 class="text-lg font-bold text-gray-900">Import / Export Soal Excel</h3>
+                <h3 class="text-lg font-bold text-gray-900"><?= $is_tugas ? 'Import Soal Excel' : 'Import / Export Soal Excel' ?></h3>
                 <p class="text-sm text-gray-500 mt-1">Tambahkan banyak soal sekaligus menggunakan file Excel</p>
             </div>
             <div class="flex items-center gap-2">
@@ -323,7 +343,7 @@
                     <i data-lucide="download" class="w-4 h-4"></i>
                     Download Format Excel
                 </a>
-                <?php if(!empty($soal)): ?>
+                <?php if(!$is_tugas && !empty($soal)): ?>
                 <a href="<?= base_url('ujian/export_soal/' . $ujian->uuid); ?>"
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-all">
                     <i data-lucide="file-down" class="w-4 h-4"></i>
@@ -333,9 +353,9 @@
             </div>
         </div>
 
-        <form method="post" action="<?= base_url('ujian/import_soal/' . $ujian->uuid); ?>" enctype="multipart/form-data"
+        <form method="post" action="<?= base_url($parent_url . '/import_soal/' . $ujian->uuid); ?>" enctype="multipart/form-data"
             class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid ?>">
+            <input type="hidden" name="<?= $parent_field ?>" value="<?= $ujian->uuid ?>">
             <div class="flex-1 w-full">
                 <label for="file_excel"
                     class="flex items-center justify-center w-full px-4 py-3 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors cursor-pointer bg-gray-50 hover:bg-blue-50/50">
@@ -357,7 +377,7 @@
             </button>
         </form>
     </div>
-
+    <?php endif; ?>
     <!-- Daftar Soal -->
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
@@ -542,7 +562,7 @@
                             title="Edit Soal" onclick="openEditModal('<?= $s->uuid ?>')">
                             <i data-lucide="pencil" class="w-4 h-4"></i>
                         </button>
-                        <a href="<?= base_url('ujian/hapus_soal/'.$s->uuid.'?ujian_uuid='.$ujian->uuid) ?>"
+                        <a href="<?= base_url($parent_url . '/hapus_soal/'.$s->uuid) ?>"
                             class="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                             onclick="return confirm('Apakah Anda yakin ingin menghapus soal ini?')" title="Hapus Soal">
                             <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -671,9 +691,12 @@
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
-        <form id="editSoalForm" method="post" action="<?= base_url('ujian/edit_soal') ?>" class="p-6 space-y-4">
+        <form id="editSoalForm" method="post" action="<?= base_url($parent_url . '/edit_soal') ?>" class="p-6 space-y-4">
             <input type="hidden" name="soal_uuid" id="editSoalUuid">
-            <input type="hidden" name="ujian_uuid" value="<?= $ujian->uuid ?>">
+            <input type="hidden" name="<?= $parent_field ?>" value="<?= $ujian->uuid ?>">
+            <?php if ($is_tugas): ?>
+            <input type="hidden" name="confirm_submitted" id="confirmSubmittedAnswers" value="0">
+            <?php endif; ?>
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Soal <span
                         class="text-red-500">*</span></label>
@@ -1012,6 +1035,22 @@ function siapkanFormSoal(form, quill, inputId) {
     var sedangKirim = false;
 
     form.addEventListener('submit', function(e) {
+        if (form.id === 'editSoalForm' && <?= $has_student_submissions ? 'true' : 'false' ?>) {
+            var confirmation = document.getElementById('confirmSubmittedAnswers');
+            if (confirmation && confirmation.value !== '1') {
+                e.preventDefault();
+                if (!confirm('Tugas ini sudah memiliki jawaban siswa. Perubahan soal dapat memengaruhi jawaban yang sudah dikumpulkan. Tetap simpan perubahan?')) {
+                    return;
+                }
+                confirmation.value = '1';
+                if (typeof form.requestSubmit === 'function') {
+                    form.requestSubmit();
+                } else {
+                    form.submit();
+                }
+                return;
+            }
+        }
         input.value = ambilKontenSoal(quill);
 
         if (sedangKirim || input.value.indexOf('data:image') === -1) {
@@ -1062,7 +1101,7 @@ function openEditModal(uuid) {
     modal.classList.remove('hidden');
     document.getElementById('editSoalUuid').value = uuid;
 
-    fetch('<?= base_url('ujian/get_soal/') ?>' + uuid)
+    fetch('<?= base_url($parent_url . '/get_soal/') ?>' + uuid)
         .then(function(res) {
             return res.json();
         })
@@ -1307,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 var form = document.createElement('form');
                 form.method = 'POST';
-                form.action = '<?= base_url('ujian/bulk_hapus_soal') ?>';
+                form.action = '<?= base_url($parent_url . '/bulk_hapus_soal') ?>';
 
                 var input = document.createElement('input');
                 input.type = 'hidden';
@@ -1317,7 +1356,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 var ujianInput = document.createElement('input');
                 ujianInput.type = 'hidden';
-                ujianInput.name = 'ujian_uuid';
+                ujianInput.name = '<?= $parent_field ?>';
                 ujianInput.value = '<?= $ujian->uuid ?>';
                 form.appendChild(ujianInput);
 

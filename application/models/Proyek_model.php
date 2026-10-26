@@ -35,7 +35,7 @@ class proyek_model extends CI_Model {
         ];
 	}
 
-	public function get_all($created_by = null)
+	public function get_all($created_by = null, $limit = NULL, $offset = 0)
 	{
 		$this->db->select('p.*');
 		$this->db->from('proyek p');
@@ -46,10 +46,25 @@ class proyek_model extends CI_Model {
 			$this->db->where('p.created_by', $this->session->userdata('uuid'));
 		}
 		$this->db->order_by('p.modified_at', 'DESC');
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
 		$data = $this->db->get()->result();
 
 		return $data;
 	} 
+
+	public function count_all($created_by = null)
+	{
+		$this->db->from('proyek p');
+		$this->db->where('p.deleted_at', NULL, FALSE);
+		if ($created_by !== null) {
+			$this->db->where('p.created_by', $created_by);
+		} elseif (has_role('admin')) {
+			$this->db->where('p.created_by', $this->session->userdata('uuid'));
+		}
+		return $this->db->count_all_results();
+	}
 
 	/**
 	 * Get all proyek yang mapel-nya diampu untuk kumpulan mapel UUID tertentu.
@@ -58,18 +73,55 @@ class proyek_model extends CI_Model {
 	 * @param array $mapel_uuids Daftar UUID mapel yang diampu untuk kelas siswa
 	 * @return array Daftar proyek
 	 */
-	public function get_all_by_mapel_uuids($mapel_uuids = [])
+	public function get_all_by_mapel_uuids($mapel_uuids = [], $limit = NULL, $offset = 0, $siswa_uuid = NULL)
 	{
 		if (empty($mapel_uuids)) {
 			return [];
 		}
 
-		$this->db->where('deleted_at', NULL, FALSE);
-		$this->db->where_in('mapel_uuid', $mapel_uuids);
-		$this->db->order_by('modified_at', 'DESC');
-		$data = $this->db->get('proyek')->result();
+		$this->db->from('proyek p');
+		$this->db->where('p.deleted_at', NULL, FALSE);
+		$this->db->where_in('p.mapel_uuid', $mapel_uuids);
+		$this->apply_siswa_project_scope($siswa_uuid);
+		$this->db->order_by('p.modified_at', 'DESC');
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
+		$data = $this->db->get()->result();
 
 		return $data;
+	}
+
+	public function count_by_mapel_uuids($mapel_uuids = [], $siswa_uuid = NULL)
+	{
+		if (empty($mapel_uuids)) {
+			return 0;
+		}
+
+		$this->db->from('proyek p');
+		$this->db->where('p.deleted_at', NULL, FALSE);
+		$this->db->where_in('p.mapel_uuid', $mapel_uuids);
+		$this->apply_siswa_project_scope($siswa_uuid);
+		return $this->db->count_all_results();
+	}
+
+	private function apply_siswa_project_scope($siswa_uuid)
+	{
+		if ($siswa_uuid === NULL) {
+			return;
+		}
+
+		$this->db->where(
+			'EXISTS (
+				SELECT 1 FROM kelompok_siswa ks
+				INNER JOIN kelompok k ON k.uuid = ks.kelompok_uuid
+				WHERE ks.siswa_uuid = ' . $this->db->escape($siswa_uuid) . '
+					AND k.proyek_uuid = p.uuid
+					AND ks.deleted_at IS NULL
+			)',
+			NULL,
+			FALSE
+		);
 	}
 	
 	public function insert($berkas)

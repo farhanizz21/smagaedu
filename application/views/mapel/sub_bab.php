@@ -119,7 +119,7 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                     <div>
                                         <div class="flex items-center gap-3 mb-2">
-                                            <a href="<?= base_url('mata_pelajaran') ?>"
+                                            <a href="<?= base_url(!empty($is_detail_page) ? 'sub_bab/index/' . $materi->uuid : 'mata_pelajaran') ?>"
                                                 class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
                                                 <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                                             </a>
@@ -128,7 +128,7 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                                 <i data-lucide="book-open" class="w-6 h-6 text-white"></i>
                                             </div>
                                             <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                                                Materi Pekan</h1>
+                                                <?= !empty($is_detail_page) ? 'Detail Pertemuan' : 'Materi Pekan' ?></h1>
                                         </div>
                                         <div class="ml-[104px] mt-2 space-y-1">
                                             <p class="text-purple-100 text-sm md:text-base">
@@ -142,20 +142,7 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                             </p>
                                         </div>
                                     </div>
-                                    <div class="flex flex-wrap items-center gap-3">
-                                        <span
-                                            class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white">
-                                            <i data-lucide="calendar-check" class="w-4 h-4"></i>
-                                            <?= $pertemuan_count ?>/3 Pertemuan
-                                        </span>
-                                        <?php if ($can_add_meeting && $pertemuan_count < 3): ?>
-                                        <a href="<?= base_url('sub_bab/tambah/' . $materi->uuid) ?>"
-                                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-purple-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
-                                            <i data-lucide="plus" class="w-4 h-4"></i>
-                                            Tambah Pertemuan
-                                        </a>
-                                        <?php endif; ?>
-                                    </div>
+                                    <?php $this->load->view('partials/menu_guide', ['active_nav' => 'materi', 'button_style' => 'hero']); ?>
                                 </div>
                             </div>
                         </div>
@@ -301,7 +288,7 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
 
                                         <?php if ($deskripsi_ada_isi): ?>
                                         <div class="mt-2 flex items-start gap-3">
-                                            <?php if ($deskripsi_img !== ''): ?>
+                                            <?php if (empty($is_detail_page) && $deskripsi_img !== ''): ?>
                                             <button type="button"
                                                 data-src="<?= htmlspecialchars($deskripsi_img, ENT_QUOTES, 'UTF-8') ?>"
                                                 class="js-preview-image relative w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden border <?= $palette['border'] ?> bg-gray-50 flex-shrink-0 group"
@@ -320,14 +307,18 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                             <?php endif; ?>
 
                                             <div class="flex-1 min-w-0">
-                                                <?php if ($deskripsi_preview !== ''): ?>
+                                                <?php if (!empty($is_detail_page)): ?>
+                                                <div class="deskripsi-html text-sm text-gray-600 leading-relaxed">
+                                                    <?= $deskripsi_isi ?>
+                                                </div>
+                                                <?php elseif ($deskripsi_preview !== ''): ?>
                                                 <p
                                                     class="text-sm text-gray-600 leading-relaxed line-clamp-2 break-words">
                                                     <?= htmlspecialchars($deskripsi_preview, ENT_QUOTES, 'UTF-8') ?>
                                                 </p>
                                                 <?php endif; ?>
 
-                                                <?php if ($deskripsi_is_long): ?>
+                                                <?php if (empty($is_detail_page) && $deskripsi_is_long): ?>
                                                 <button type="button"
                                                     onclick="toggleDeskripsi('<?= $deskripsi_id ?>', this)"
                                                     data-label-collapsed="<?= $deskripsi_label ?>"
@@ -523,6 +514,59 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                         </div>
                                         <?php else: ?>
                                         <p class="text-xs text-gray-400 italic">Belum ada ujian</p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="mt-4 pt-4 border-t border-gray-100">
+                                        <div class="flex items-center justify-between gap-2 mb-3">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="clipboard-check" class="w-4 h-4 text-violet-500"></i>
+                                                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tugas</span>
+                                                <span class="text-xs text-gray-400">(<?= count($tugas_per_bab[$val->uuid] ?? array()) ?>)</span>
+                                            </div>
+                                            <?php if ($can_manage && (is_admin_or_superadmin() || has_permission('manage_ujian'))): ?>
+                                            <a href="<?= base_url('tugas/tambah_pertemuan/' . $val->uuid) ?>"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-100 transition-all">
+                                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                                Buat Tugas
+                                            </a>
+                                            <?php endif; ?>
+                                        </div>
+                                        <?php if (!empty($tugas_per_bab[$val->uuid])): ?>
+                                        <div class="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                                            <?php foreach ($tugas_per_bab[$val->uuid] as $tugas_item): ?>
+                                            <div class="flex items-center justify-between gap-2 bg-violet-50/50 rounded-lg px-3 py-2 border border-violet-100">
+                                                <div class="flex items-center gap-2 min-w-0">
+                                                    <i data-lucide="clipboard-check" class="w-3.5 h-3.5 text-violet-500 flex-shrink-0"></i>
+                                                    <div class="min-w-0">
+                                                        <p class="text-xs font-medium text-gray-700 truncate"><?= html_escape($tugas_item->judul) ?></p>
+                                                        <p class="text-[10px] text-gray-400">Batas <?= html_escape($tugas_item->tgl_selesai_formatted) ?></p>
+                                                    </div>
+                                                </div>
+                                                <?php if ($is_student): ?>
+                                                <a href="<?= base_url('tugas/kerjakan/' . $tugas_item->uuid) ?>"
+                                                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium flex-shrink-0 <?= $tugas_item->sudah_dikerjakan ? 'bg-gray-100 text-gray-600 border border-gray-200' : 'bg-violet-100 text-violet-700 border border-violet-200 hover:bg-violet-200' ?>">
+                                                    <i data-lucide="<?= $tugas_item->sudah_dikerjakan ? 'file-check-2' : 'square-pen' ?>" class="w-3 h-3"></i>
+                                                    <?= $tugas_item->sudah_dikerjakan ? 'Lihat Jawaban' : 'Kerjakan' ?>
+                                                </a>
+                                                <?php elseif ($can_manage): ?>
+                                                <div class="flex items-center gap-1 flex-shrink-0">
+                                                    <a href="<?= base_url('tugas/tambah_soal/' . $tugas_item->uuid) ?>"
+                                                        class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100"
+                                                        title="Kelola soal tugas">
+                                                        <i data-lucide="list-plus" class="w-3 h-3"></i>Soal
+                                                    </a>
+                                                    <a href="<?= base_url('tugas/pengumpulan/' . $tugas_item->uuid) ?>"
+                                                        class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100"
+                                                        title="Lihat pengumpulan">
+                                                        <i data-lucide="users" class="w-3 h-3"></i>
+                                                    </a>
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                        <?php else: ?>
+                                        <p class="text-xs text-gray-400 italic">Belum ada tugas</p>
                                         <?php endif; ?>
                                     </div>
                                 </div>

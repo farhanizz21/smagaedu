@@ -20,15 +20,16 @@
         </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
+        <div class="relative z-10 mt-4 flex flex-wrap items-center gap-2">
         <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
-        <div class="relative z-10 mt-4">
             <a href="<?=base_url('proyek/tambah')?>"
                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-violet-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
                 <i data-lucide="plus" class="w-4 h-4"></i>
                 Tambah Data
             </a>
-        </div>
         <?php } ?>
+            <?php $this->load->view('partials/menu_guide', ['active_nav' => 'proyek', 'button_style' => 'hero']); ?>
+        </div>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>
@@ -44,6 +45,25 @@
         <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
         <?= $this->session->userdata('error_msg'); ?>
         <?php $this->session->unset_userdata('error_msg'); ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($total_rows > 0): ?>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <p class="text-sm text-gray-500">
+            Menampilkan <span class="font-semibold text-gray-700"><?= $start_no ?></span>&ndash;<span
+                class="font-semibold text-gray-700"><?= $end_no ?></span>
+            dari <span class="font-semibold text-gray-700"><?= $total_rows ?></span> proyek
+        </p>
+        <form method="get" action="<?= base_url('proyek') ?>" class="flex items-center gap-2">
+            <label for="proyekPerPage" class="text-sm text-gray-600">Tampilkan</label>
+            <select id="proyekPerPage" name="per_page" onchange="this.form.submit()"
+                class="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white">
+                <?php foreach ($per_page_options as $option): ?>
+                <option value="<?= $option ?>" <?= $per_page === $option ? 'selected' : '' ?>><?= $option ?> / halaman</option>
+                <?php endforeach; ?>
+            </select>
+        </form>
     </div>
     <?php endif; ?>
 
@@ -145,6 +165,10 @@
         </div>
         <p class="text-sm font-medium text-gray-600">Belum ada data proyek</p>
     </div>
+    <?php endif; ?>
+
+    <?php if (!empty($pagination_links)): ?>
+    <div class="mt-6"><?= $pagination_links ?></div>
     <?php endif; ?>
 </div>
 

@@ -20,11 +20,12 @@ class soal_model extends CI_Model {
 		];
 	}
 
-	public function insert()
+	public function insert($tugas_uuid = NULL)
 	{
 		$uuid = Uuid::uuid4()->toString();
 		$soal = $this->input->post('soal');
-		$ujian_uuid = $this->input->post('ujian_uuid');
+		$tugas_uuid = $tugas_uuid ?: $this->input->post('tugas_uuid');
+		$ujian_uuid = $tugas_uuid ?: $this->input->post('ujian_uuid');
 		$user = $this->session->userdata('uuid');
 
 		$jenis_soal = $this->input->post('jenis_soal');
@@ -40,6 +41,7 @@ class soal_model extends CI_Model {
 		$data = [
 			'uuid' => $uuid,
 			'ujian_uuid' => $ujian_uuid,
+			'tugas_uuid' => $tugas_uuid ?: NULL,
 			'soal' => $soal,
 			'jenis_soal' => $jenis_soal,
 			'jenis_jawaban_essay' => $jenis_jawaban_essay,
@@ -110,9 +112,17 @@ class soal_model extends CI_Model {
 		return $data->result();
 	}
 
+	public function get_by_tugas_uuid($tugas_uuid)
+	{
+		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, jenis_jawaban_essay, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
+		$this->db->where('tugas_uuid', $tugas_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		return $this->db->get('ujian_soal')->result();
+	}
+
 	public function get_by_uuid($uuid)
 	{
-		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, jenis_jawaban_essay, ujian_uuid, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
+		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, jenis_jawaban_essay, ujian_uuid, tugas_uuid, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
 		$this->db->where('uuid', $uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
 		$data = $this->db->get('ujian_soal');

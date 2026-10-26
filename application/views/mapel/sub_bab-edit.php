@@ -29,7 +29,7 @@
     <?php endif; ?>
 
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
-        <?= form_open_multipart('sub_bab/edit/' . $bab->uuid); ?>
+        <?= form_open_multipart('sub_bab/edit/' . $bab->uuid, ['id' => 'bab-form']); ?>
         <div class="space-y-6">
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Judul Pertemuan <span
@@ -262,7 +262,7 @@ function unggahGambarBase64() {
     });
 }
 
-var formDeskripsi = document.querySelector('form');
+var formDeskripsi = document.getElementById('bab-form');
 var deskripsiInput = document.getElementById('deskripsi');
 var sedangKirim = false;
 

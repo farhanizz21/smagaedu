@@ -32,10 +32,13 @@
                         <?php endif; ?>
                     </p>
                 </div>
-                <span class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white">
-                    <i data-lucide="calendar-days" class="w-4 h-4"></i>
-                    <?= (int) ($max_week ?? 20) ?> Pekan
-                </span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white">
+                        <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                        <?= (int) ($max_week ?? 20) ?> Pekan
+                    </span>
+                    <?php $this->load->view('partials/menu_guide', ['active_nav' => 'materi', 'button_style' => 'hero']); ?>
+                </div>
             </div>
         </div>
     </div>

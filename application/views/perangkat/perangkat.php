@@ -18,6 +18,9 @@
                 </div>
             </div>
             <p class="text-blue-100 mt-1 text-sm ml-15">Kelola Modul dan ATP (Alur Tujuan Pembelajaran)</p>
+            <div class="relative z-10 mt-4">
+                <?php $this->load->view('partials/menu_guide', ['active_nav' => 'perangkat', 'button_style' => 'hero']); ?>
+            </div>
         </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
@@ -36,6 +39,25 @@
         <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
         <?= $this->session->userdata('error_msg'); ?>
         <?php $this->session->unset_userdata('error_msg'); ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($total_rows > 0): ?>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <p class="text-sm text-gray-500">
+            Menampilkan <span class="font-semibold text-gray-700"><?= $start_no ?></span>&ndash;<span
+                class="font-semibold text-gray-700"><?= $end_no ?></span>
+            dari <span class="font-semibold text-gray-700"><?= $total_rows ?></span> mata pelajaran
+        </p>
+        <form method="get" action="<?= base_url('perangkat') ?>" class="flex items-center gap-2">
+            <label for="perangkatPerPage" class="text-sm text-gray-600">Tampilkan</label>
+            <select id="perangkatPerPage" name="per_page" onchange="this.form.submit()"
+                class="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white">
+                <?php foreach ($per_page_options as $option): ?>
+                <option value="<?= $option ?>" <?= $per_page === $option ? 'selected' : '' ?>><?= $option ?> / halaman</option>
+                <?php endforeach; ?>
+            </select>
+        </form>
     </div>
     <?php endif; ?>
 
@@ -88,6 +110,10 @@
         </div>
         <p class="text-sm font-medium text-gray-600">Tidak ada mata pelajaran yang tersedia</p>
     </div>
+    <?php endif; ?>
+
+    <?php if (!empty($pagination_links)): ?>
+    <div class="mt-6"><?= $pagination_links ?></div>
     <?php endif; ?>
 </div>
 

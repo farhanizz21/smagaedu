@@ -143,7 +143,7 @@
         </div>
 
         <!-- Footer -->
-        <p class="text-center text-sm text-gray-400 mt-8">© <?= date('Y'); ?> V1.6 | SMAGAEDU. All rights reserved.</p>
+        <p class="text-center text-sm text-gray-400 mt-8">© <?= date('Y'); ?> V1.7 | SMAGAEDU. All rights reserved.</p>
 
     </div>
 

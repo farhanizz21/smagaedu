@@ -11,11 +11,16 @@
             <p class="text-gray-500 mt-1 text-sm">Kelola data administrator SMAGAEDU</p>
         </div>
         <?php if(is_superadmin()): ?>
-        <a href="<?= base_url('admin/admins_tambah')?>"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            Tambah Data
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="<?= base_url('admin/admins_tambah')?>"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Tambah Data
+            </a>
+            <?php $this->load->view('partials/menu_guide', ['active_nav' => 'admins']); ?>
+        </div>
+        <?php else: ?>
+        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'admins']); ?>
         <?php endif; ?>
     </div>
 

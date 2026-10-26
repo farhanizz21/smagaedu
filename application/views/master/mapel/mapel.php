@@ -30,6 +30,7 @@
             Tambah Data
         </a>
         <?php endif; ?>
+        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'mapel']); ?>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>

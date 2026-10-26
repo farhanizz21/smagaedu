@@ -10,11 +10,14 @@
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Data Kepala Sekolah</h1>
             <p class="text-gray-500 mt-1 text-sm">Kelola akun Kepala Sekolah SMAGAEDU</p>
         </div>
-        <a href="<?= base_url('admin/kepala_sekolah_tambah')?>"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
-            <i data-lucide="plus" class="w-4 h-4"></i>
-            Tambah Data
-        </a>
+        <div class="flex flex-wrap items-center gap-2">
+            <a href="<?= base_url('admin/kepala_sekolah_tambah')?>"
+                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                Tambah Data
+            </a>
+            <?php $this->load->view('partials/menu_guide', ['active_nav' => 'kepala_sekolah_admin']); ?>
+        </div>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>

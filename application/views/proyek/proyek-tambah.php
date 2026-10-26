@@ -35,7 +35,7 @@
 
     <!-- Form Card -->
     <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8 table-shadow">
-        <form class="user" method="post" enctype="multipart/form-data" action="<?= base_url('proyek/tambah');?>">
+        <form id="proyek-form" class="user" method="post" enctype="multipart/form-data" action="<?= base_url('proyek/tambah');?>">
             <div class="grid md:grid-cols-2 gap-6">
                 <!-- Judul -->
                 <div>
@@ -301,7 +301,7 @@ function unggahGambarBase64() {
     });
 }
 
-var formDeskripsi = document.querySelector('form');
+var formDeskripsi = document.getElementById('proyek-form');
 var deskripsiInput = document.getElementById('deskripsi');
 var sedangKirim = false;
 

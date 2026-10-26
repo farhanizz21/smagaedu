@@ -1,5 +1,8 @@
 <div class="max-w-7xl mx-auto px-6 py-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Kelola Permission</h1>
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-bold text-gray-800">Kelola Permission</h1>
+        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'settings']); ?>
+    </div>
 
     <div class="bg-white rounded-2xl shadow-lg p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Permission per Role</h3>
@@ -39,8 +42,8 @@
             <p class="text-sm text-blue-700 font-medium">Keterangan:</p>
             <ul class="mt-2 text-sm text-blue-600 space-y-1">
                 <li>• superadmin: Memiliki semua permission</li>
-                <li>• admin: manage_users, manage_mapel, manage_materi, manage_ujian, manage_proyek</li>
-                <li>• guru: manage_materi, manage_ujian, manage_proyek</li>
+                <li>• admin: manage_users, manage_mapel, manage_materi, manage_ujian (ujian dan tugas), manage_proyek</li>
+                <li>• guru: manage_materi, manage_ujian (ujian dan tugas), manage_proyek</li>
                 <li>• siswa: view_reports</li>
             </ul>
         </div>

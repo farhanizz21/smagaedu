@@ -20,15 +20,16 @@
         </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
+        <div class="relative z-10 mt-4 flex flex-wrap items-center gap-2">
         <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
-        <div class="relative z-10 mt-4">
             <a href="<?= base_url('panduan/tambah')?>"
                 class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-amber-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
                 <i data-lucide="plus" class="w-4 h-4"></i>
                 Tambah Data
             </a>
-        </div>
         <?php } ?>
+            <?php $this->load->view('partials/menu_guide', ['active_nav' => 'panduan', 'button_style' => 'hero']); ?>
+        </div>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>
