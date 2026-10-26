@@ -21,6 +21,7 @@
                 <i data-lucide="plus" class="w-4 h-4"></i>
                 Tambah Data
             </a>
+            <?php $this->load->view('partials/menu_guide', ['active_nav' => 'siswa']); ?>
         </div>
     </div>
 

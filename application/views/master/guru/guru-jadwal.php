@@ -15,6 +15,7 @@
             <i data-lucide="upload" class="w-4 h-4"></i>
             Upload Jadwal
         </button>
+        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'jadwal']); ?>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>

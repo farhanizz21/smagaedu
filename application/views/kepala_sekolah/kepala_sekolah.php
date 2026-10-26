@@ -11,6 +11,7 @@
             <p class="text-gray-500 mt-1 text-sm">Pantau data guru, jadwal mengajar, dan kelengkapan perangkat
                 pembelajaran</p>
         </div>
+        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'kepala_sekolah']); ?>
     </div>
 
     <?php if(!empty($admin_filter_enabled)): ?>

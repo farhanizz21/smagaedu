@@ -28,6 +28,7 @@
                     Tambah Pertemuan
                 </a>
                 <?php endif; ?>
+                <?php $this->load->view('partials/menu_guide', ['active_nav' => 'materi', 'button_style' => 'hero']); ?>
             </div>
         </div>
     </header>

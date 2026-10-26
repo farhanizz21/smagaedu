@@ -19,6 +19,7 @@
                 <a href="<?= base_url('panduan') ?>"
                     class="px-6 py-3 rounded-2xl font-semibold border-2 border-blue-600 text-blue-600 bg-white hover:bg-gray-50 transition-all">Pelajari
                     Panduan</a>
+                <?php $this->load->view('partials/menu_guide', ['active_nav' => 'home']); ?>
             </div>
             <div class="flex flex-wrap gap-3 pt-4">
                 <span class="px-3 py-1.5 rounded-full text-xs font-medium bg-blue-100 text-blue-600">✓ Project Based

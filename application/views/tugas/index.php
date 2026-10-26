@@ -23,46 +23,12 @@
                     <i data-lucide="plus" class="w-4 h-4"></i> Tambah Tugas
                 </a>
                 <?php endif; ?>
-                <?php if (has_role(['siswa', 'guru', 'admin', 'superadmin'])): ?>
-                <button type="button" id="openTaskGuide" aria-haspopup="dialog" aria-controls="taskGuideModal" class="inline-flex items-center gap-2 px-3 py-2.5 rounded-xl font-semibold text-white bg-white/15 border border-white/30 hover:bg-white/25 transition-all text-sm">
-                    <i data-lucide="circle-help" class="w-4 h-4"></i><span class="hidden sm:inline">Panduan</span>
-                </button>
-                <?php endif; ?>
+                <?php $this->load->view('partials/menu_guide', ['active_nav' => 'tugas', 'button_style' => 'hero']); ?>
             </div>
         </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
     </div>
-
-    <?php if (has_role(['siswa', 'guru', 'admin', 'superadmin'])): ?>
-    <dialog id="taskGuideModal" aria-labelledby="taskGuideTitle" class="w-[min(92vw,40rem)] max-w-none rounded-2xl border-0 p-0 shadow-2xl backdrop:bg-gray-950/50">
-        <div class="overflow-hidden rounded-2xl bg-white">
-            <div class="flex items-start justify-between gap-4 border-b border-gray-100 px-6 py-5">
-                <div>
-                    <h2 id="taskGuideTitle" class="text-lg font-bold text-gray-900"><?= has_role('siswa') ? 'Panduan Siswa' : 'Panduan Guru' ?></h2>
-                    <p class="mt-1 text-sm text-gray-500"><?= has_role('siswa') ? 'Cara melihat, mengerjakan, dan mengumpulkan tugas.' : 'Langkah membuat tugas dan memantau pengumpulan siswa.' ?></p>
-                </div>
-                <button type="button" id="closeTaskGuide" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800" aria-label="Tutup panduan">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <ol class="grid gap-3 p-6 text-sm text-gray-700">
-                <?php if (has_role('siswa')): ?>
-                <li class="rounded-xl border border-green-100 bg-green-50/50 p-4"><span class="font-semibold text-green-800">1. Pilih tugas</span><p class="mt-1 text-xs leading-relaxed text-gray-600">Periksa judul, mata pelajaran, dan batas waktu. Panel Informasi Tugas menyorot tugas baru atau yang belum dikerjakan.</p></li>
-                <li class="rounded-xl border border-green-100 bg-green-50/50 p-4"><span class="font-semibold text-green-800">2. Kerjakan dan simpan</span><p class="mt-1 text-xs leading-relaxed text-gray-600">Pilih Kerjakan Tugas, isi jawaban, lalu simpan. Setelah berhasil, Anda akan kembali ke daftar tugas.</p></li>
-                <li class="rounded-xl border border-green-100 bg-green-50/50 p-4"><span class="font-semibold text-green-800">3. Lihat jawaban</span><p class="mt-1 text-xs leading-relaxed text-gray-600">Tugas yang sudah disimpan dapat dibuka melalui Lihat Jawaban. Jawaban yang sudah dikumpulkan tidak dapat diubah.</p></li>
-                <?php else: ?>
-                <li class="rounded-xl border border-violet-100 bg-violet-50/50 p-4"><span class="font-semibold text-violet-800">1. Buat tugas</span><p class="mt-1 text-xs leading-relaxed text-gray-600">Klik Tambah Tugas, pilih mata pelajaran, isi judul dan periode. Tugas untuk pertemuan juga dapat dibuat dari detail pertemuan.</p></li>
-                <li class="rounded-xl border border-violet-100 bg-violet-50/50 p-4"><span class="font-semibold text-violet-800">2. Tambahkan soal</span><p class="mt-1 text-xs leading-relaxed text-gray-600">Buka Soal untuk menambah soal satu per satu atau mengimpor format Excel sebelum siswa mulai mengerjakan.</p></li>
-                <li class="rounded-xl border border-violet-100 bg-violet-50/50 p-4"><span class="font-semibold text-violet-800">3. Pantau pengumpulan</span><p class="mt-1 text-xs leading-relaxed text-gray-600">Buka Pengumpulan untuk melihat jawaban siswa. Setelah ada jawaban, tugas tidak dapat diedit, dihapus, atau ditambah soal.</p></li>
-                <?php endif; ?>
-            </ol>
-            <div class="flex justify-end border-t border-gray-100 bg-gray-50 px-6 py-4">
-                <button type="button" id="closeTaskGuideFooter" class="rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700">Mengerti</button>
-            </div>
-        </div>
-    </dialog>
-    <?php endif; ?>
 
     <?php foreach (array('success_msg' => 'green', 'error_msg' => 'red') as $message_key => $color): ?>
     <?php if ($this->session->userdata($message_key)): ?>
@@ -197,41 +163,6 @@
         <?php endif; ?>
     </div>
 </div>
-
-<?php if (has_role(['siswa', 'guru', 'admin', 'superadmin'])): ?>
-<script>
-    (function () {
-        var dialog = document.getElementById('taskGuideModal');
-        var openButton = document.getElementById('openTaskGuide');
-        var closeButtons = [
-            document.getElementById('closeTaskGuide'),
-            document.getElementById('closeTaskGuideFooter')
-        ];
-
-        if (!dialog || !openButton) {
-            return;
-        }
-
-        openButton.addEventListener('click', function () {
-            dialog.showModal();
-        });
-
-        closeButtons.forEach(function (button) {
-            if (button) {
-                button.addEventListener('click', function () {
-                    dialog.close();
-                });
-            }
-        });
-
-        dialog.addEventListener('click', function (event) {
-            if (event.target === dialog) {
-                dialog.close();
-            }
-        });
-    })();
-</script>
-<?php endif; ?>
 
 <?php if(!isset($from_controller)): ?>
 <?php $this->load->view('partials/footer_tailwind'); ?>

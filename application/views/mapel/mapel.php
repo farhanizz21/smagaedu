@@ -23,9 +23,12 @@
                     <p class="text-blue-100 text-sm md:text-base ml-[60px]">Pilih mata pelajaran untuk mulai belajar dan
                         mengakses materi pembelajaran</p>
                 </div>
-                <div class="hidden sm:flex items-center gap-2 text-white/80 text-sm">
-                    <i data-lucide="sparkles" class="w-4 h-4 text-yellow-300"></i>
-                    <span><?= count($mapel) ?> Mata Pelajaran Tersedia</span>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="hidden sm:inline-flex items-center gap-2 text-white/80 text-sm">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-yellow-300"></i>
+                        <span><?= count($mapel) ?> Mata Pelajaran Tersedia</span>
+                    </span>
+                    <?php $this->load->view('partials/menu_guide', ['active_nav' => 'materi']); ?>
                 </div>
             </div>
         </div>

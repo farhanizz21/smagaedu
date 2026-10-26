@@ -1,5 +1,8 @@
 <main class="max-w-7xl mx-auto px-6 py-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Pekan &amp; Semester Saat Ini</h1>
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-bold text-gray-800">Pekan &amp; Semester Saat Ini</h1>
+        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'periode_akademik']); ?>
+    </div>
 
     <?php if ($this->session->flashdata('success_msg')): ?>
     <div class="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">

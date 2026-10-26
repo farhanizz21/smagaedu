@@ -1,5 +1,8 @@
 <div class="max-w-7xl mx-auto px-6 py-8">
-    <h1 class="text-2xl font-bold text-gray-800 mb-6">Kelola Role</h1>
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-bold text-gray-800">Kelola Role</h1>
+        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'settings']); ?>
+    </div>
 
     <div class="bg-white rounded-2xl shadow-lg p-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Daftar Role</h3>

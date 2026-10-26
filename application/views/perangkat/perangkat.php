@@ -18,6 +18,9 @@
                 </div>
             </div>
             <p class="text-blue-100 mt-1 text-sm ml-15">Kelola Modul dan ATP (Alur Tujuan Pembelajaran)</p>
+            <div class="relative z-10 mt-4">
+                <?php $this->load->view('partials/menu_guide', ['active_nav' => 'perangkat', 'button_style' => 'hero']); ?>
+            </div>
         </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>

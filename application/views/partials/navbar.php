@@ -1,5 +1,6 @@
 <!-- Navbar -->
 <?php
+$active_nav = $active_nav ?? '';
 $CI =& get_instance();
 $CI->load->model('periode_akademik_model');
 $CI->load->model('chat_model');

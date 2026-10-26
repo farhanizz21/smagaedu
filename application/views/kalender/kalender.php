@@ -10,6 +10,7 @@
             <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Kalender Akademik</h1>
             <p class="text-gray-500 mt-1 text-sm">Jadwal dan kegiatan akademik</p>
         </div>
+        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'kalender']); ?>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>
