@@ -50,6 +50,24 @@
 
     <!-- Table Card -->
     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden table-shadow">
+        <?php if ($total_rows > 0): ?>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b border-gray-200 bg-gray-50/50">
+            <p class="text-sm text-gray-500">
+                Menampilkan <span class="font-semibold text-gray-700"><?= $start_no ?></span>&ndash;<span
+                    class="font-semibold text-gray-700"><?= $end_no ?></span>
+                dari <span class="font-semibold text-gray-700"><?= $total_rows ?></span> ujian
+            </p>
+            <form method="get" action="<?= base_url('ujian') ?>" class="flex items-center gap-2">
+                <label for="ujianPerPage" class="text-sm text-gray-600">Tampilkan</label>
+                <select id="ujianPerPage" name="per_page" onchange="this.form.submit()"
+                    class="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white">
+                    <?php foreach ($per_page_options as $option): ?>
+                    <option value="<?= $option ?>" <?= $per_page === $option ? 'selected' : '' ?>><?= $option ?> / halaman</option>
+                    <?php endforeach; ?>
+                </select>
+            </form>
+        </div>
+        <?php endif; ?>
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead>
@@ -72,7 +90,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     <?php 
-                        $no = 1;
+                        $no = $start_no;
                         foreach($ujian as $val) {
                     ?>
                     <tr class="table-row-hover transition-colors">
@@ -162,6 +180,9 @@
             <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
             <p class="text-sm">Belum ada data ujian</p>
         </div>
+        <?php endif; ?>
+        <?php if (!empty($pagination_links)): ?>
+        <div class="p-4 border-t border-gray-200"><?= $pagination_links ?></div>
         <?php endif; ?>
     </div>
 </div>

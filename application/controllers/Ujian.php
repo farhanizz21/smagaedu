@@ -25,16 +25,34 @@ class Ujian extends MY_Controller {
 	{
 		$user_login = $this->session->userdata('uuid'); 
 		$user_role = user_role();
+		$mapel_uuids = array();
+		$per_page_options = array(10, 25, 50, 100);
+		$per_page = (int) $this->input->get('per_page');
+		if (!in_array($per_page, $per_page_options, TRUE)) {
+			$per_page = 10;
+		}
+		$page = max(1, (int) $this->input->get('page'));
 
 		// Siswa hanya melihat ujian yang sudah didaftarkan sebagai peserta
 		if ($user_role === 'siswa') {
-			$ujian = $this->ujian_model->get_all_by_siswa_uuid($user_login);
+			$total_rows = $this->ujian_model->count_by_siswa_uuid($user_login);
 		} elseif ($user_role === 'guru') {
 			// Guru hanya melihat ujian dari mata pelajaran yang dimiliki/diampu
 			$mapel_uuids = $this->guru_model->get_mapel_uuid_list($user_login);
-			$ujian = $this->ujian_model->get_all_by_mapel_uuids($mapel_uuids);
+			$total_rows = $this->ujian_model->count_by_mapel_uuids($mapel_uuids);
 		} else {
-			$ujian = $this->ujian_model->get_all();
+			$total_rows = $this->ujian_model->count_all();
+		}
+		$total_pages = max(1, (int) ceil($total_rows / $per_page));
+		$page = min($page, $total_pages);
+		$offset = ($page - 1) * $per_page;
+
+		if ($user_role === 'siswa') {
+			$ujian = $this->ujian_model->get_all_by_siswa_uuid($user_login, $per_page, $offset);
+		} elseif ($user_role === 'guru') {
+			$ujian = $this->ujian_model->get_all_by_mapel_uuids($mapel_uuids, $per_page, $offset);
+		} else {
+			$ujian = $this->ujian_model->get_all($per_page, $offset);
 		}
 		
 		$peserta = []; 
@@ -58,13 +76,52 @@ class Ujian extends MY_Controller {
 			$u->pengerjaan = $pengerjaan;
 			$u->attempted = $this->ujian_model->has_attempts($u->uuid);
 		}
-		
+
+		$this->load->library('pagination');
+		$this->pagination->initialize(array(
+			'base_url'             => base_url('ujian'),
+			'total_rows'           => $total_rows,
+			'per_page'             => $per_page,
+			'use_page_numbers'     => TRUE,
+			'page_query_string'    => TRUE,
+			'query_string_segment' => 'page',
+			'reuse_query_string'   => TRUE,
+			'cur_page'             => $page,
+			'num_links'            => 2,
+			'first_link'           => '&laquo;',
+			'prev_link'            => '&lsaquo;',
+			'next_link'            => '&rsaquo;',
+			'last_link'            => '&raquo;',
+			'full_tag_open'        => '<nav aria-label="Navigasi halaman"><ul class="flex flex-wrap items-center justify-center gap-1 list-none p-0 m-0">',
+			'full_tag_close'       => '</ul></nav>',
+			'num_tag_open'         => '<li>',
+			'num_tag_close'        => '</li>',
+			'cur_tag_open'         => '<li><span class="min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold text-white bg-blue-600 border border-blue-600">',
+			'cur_tag_close'        => '</span></li>',
+			'first_tag_open'       => '<li>',
+			'first_tag_close'      => '</li>',
+			'prev_tag_open'        => '<li>',
+			'prev_tag_close'       => '</li>',
+			'next_tag_open'        => '<li>',
+			'next_tag_close'       => '</li>',
+			'last_tag_open'        => '<li>',
+			'last_tag_close'       => '</li>',
+			'attributes'           => array(
+				'class' => 'min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors',
+			),
+		));
 
 		$data = array(
 			'ujian' => $ujian,
 			'user' => $user_login,
 			'peserta' => $peserta,
-			'active_nav' => 'ujian'
+			'active_nav' => 'ujian',
+			'per_page' => $per_page,
+			'per_page_options' => $per_page_options,
+			'total_rows' => $total_rows,
+			'start_no' => $total_rows > 0 ? $offset + 1 : 0,
+			'end_no' => min($offset + $per_page, $total_rows),
+			'pagination_links' => $this->pagination->create_links(),
 		);
 
         $this->load->view('partials/header_tailwind', ['title' => 'Daftar Ujian']);

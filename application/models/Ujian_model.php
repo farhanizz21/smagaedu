@@ -44,7 +44,7 @@ class ujian_model extends CI_Model {
 		return $this->db->get()->result();
 	}
 
-    public function get_all()
+    public function get_all($limit = NULL, $offset = 0)
 	{
 		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
 		$this->db->from('ujian u');
@@ -54,8 +54,19 @@ class ujian_model extends CI_Model {
 		$this->db->where('u.deleted_at', NULL, FALSE);
 		apply_admin_creator_scope('u.created_by');
 		$this->db->order_by('u.modified_at', 'DESC');
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
 		
 		return $this->db->get()->result();
+	}
+
+	public function count_all()
+	{
+		$this->db->from('ujian u');
+		$this->db->where('u.deleted_at', NULL, FALSE);
+		apply_admin_creator_scope('u.created_by');
+		return $this->db->count_all_results();
 	}
 
 	/**
@@ -65,7 +76,7 @@ class ujian_model extends CI_Model {
 	 * @param array $mapel_uuids Daftar UUID mapel yang diampu untuk kelas siswa
 	 * @return array Daftar ujian
 	 */
-	public function get_all_by_mapel_uuids($mapel_uuids = [])
+	public function get_all_by_mapel_uuids($mapel_uuids = [], $limit = NULL, $offset = 0)
 	{
 		if (empty($mapel_uuids)) {
 			return [];
@@ -79,8 +90,23 @@ class ujian_model extends CI_Model {
 		$this->db->where('u.deleted_at', NULL, FALSE);
 		$this->db->where_in('u.mapel_uuid', $mapel_uuids);
 		$this->db->order_by('u.modified_at', 'DESC');
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
 		
 		return $this->db->get()->result();
+	}
+
+	public function count_by_mapel_uuids($mapel_uuids = [])
+	{
+		if (empty($mapel_uuids)) {
+			return 0;
+		}
+
+		$this->db->from('ujian u');
+		$this->db->where('u.deleted_at', NULL, FALSE);
+		$this->db->where_in('u.mapel_uuid', $mapel_uuids);
+		return $this->db->count_all_results();
 	}
 
 	/**
@@ -89,8 +115,9 @@ class ujian_model extends CI_Model {
 	 * @param string $siswa_uuid UUID siswa
 	 * @return array Daftar ujian dengan relasi peserta aktif
 	 */
-	public function get_all_by_siswa_uuid($siswa_uuid)
+	public function get_all_by_siswa_uuid($siswa_uuid, $limit = NULL, $offset = 0)
 	{
+		$this->db->distinct();
 		$this->db->select("u.*, m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
 		$this->db->from('ujian_siswa us');
 		$this->db->join('ujian u', 'u.uuid = us.ujian_uuid', 'inner');
@@ -101,8 +128,23 @@ class ujian_model extends CI_Model {
 		$this->db->where('us.deleted_at', NULL, FALSE);
 		$this->db->where('u.deleted_at', NULL, FALSE);
 		$this->db->order_by('u.modified_at', 'DESC');
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
 
 		return $this->db->get()->result();
+	}
+
+	public function count_by_siswa_uuid($siswa_uuid)
+	{
+		$this->db->select('COUNT(DISTINCT u.uuid) AS total', FALSE);
+		$this->db->from('ujian_siswa us');
+		$this->db->join('ujian u', 'u.uuid = us.ujian_uuid', 'inner');
+		$this->db->where('us.siswa_uuid', $siswa_uuid);
+		$this->db->where('us.deleted_at', NULL, FALSE);
+		$this->db->where('u.deleted_at', NULL, FALSE);
+		$result = $this->db->get()->row();
+		return (int) $result->total;
 	}
 	
     public function insert()

@@ -39,7 +39,7 @@ class Perangkat_model extends CI_Model {
         return $mapel_list;
     }
 
-    public function get_mapel_by_guru($guru_uuid)
+    private function get_mapel_uuids_by_guru($guru_uuid)
     {
         $this->db->select('user_profiles.mapel_uuid');
         $this->db->from('users');
@@ -53,7 +53,12 @@ class Perangkat_model extends CI_Model {
             return [];
         }
         
-        $uuid_array = $this->parse_mapel_uuids($guru->mapel_uuid);
+        return $this->parse_mapel_uuids($guru->mapel_uuid);
+    }
+
+    public function get_mapel_by_guru($guru_uuid, $limit = NULL, $offset = 0)
+    {
+        $uuid_array = $this->get_mapel_uuids_by_guru($guru_uuid);
         if (empty($uuid_array)) {
             return [];
         }
@@ -61,10 +66,25 @@ class Perangkat_model extends CI_Model {
         $this->db->where_in('uuid', $uuid_array);
         $this->db->where('deleted_at', NULL, FALSE);
         $this->db->order_by('nama', 'ASC');
+        if ($limit !== NULL) {
+            $this->db->limit((int) $limit, (int) $offset);
+        }
         return $this->db->get('mapel')->result();
     }
 
-    public function get_all_mapel()
+    public function count_mapel_by_guru($guru_uuid)
+    {
+        $uuid_array = $this->get_mapel_uuids_by_guru($guru_uuid);
+        if (empty($uuid_array)) {
+            return 0;
+        }
+
+        $this->db->where_in('uuid', $uuid_array);
+        $this->db->where('deleted_at', NULL, FALSE);
+        return $this->db->count_all_results('mapel');
+    }
+
+    public function get_all_mapel($limit = NULL, $offset = 0)
     {
         if (has_role('admin')) {
             $mapel_uuids = $this->_get_admin_accessible_mapel_uuids();
@@ -76,7 +96,23 @@ class Perangkat_model extends CI_Model {
         }
         $this->db->where('deleted_at', NULL, FALSE);
         $this->db->order_by('nama', 'ASC');
+        if ($limit !== NULL) {
+            $this->db->limit((int) $limit, (int) $offset);
+        }
         return $this->db->get('mapel')->result();
+    }
+
+    public function count_all_mapel()
+    {
+        if (has_role('admin')) {
+            $mapel_uuids = $this->_get_admin_accessible_mapel_uuids();
+            if (empty($mapel_uuids)) {
+                return 0;
+            }
+            $this->db->where_in('uuid', $mapel_uuids);
+        }
+        $this->db->where('deleted_at', NULL, FALSE);
+        return $this->db->count_all_results('mapel');
     }
 
     private function _get_admin_accessible_mapel_uuids()

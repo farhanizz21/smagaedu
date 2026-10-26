@@ -19,19 +19,37 @@ class Proyek extends MY_Controller {
 	{
 		$user_login = $this->session->userdata('uuid'); 
 		$user_role = user_role();
-		
+		$mapel_uuids = NULL;
+		$siswa_uuid = NULL;
+		$per_page_options = array(10, 25, 50, 100);
+		$per_page = (int) $this->input->get('per_page');
+		if (!in_array($per_page, $per_page_options, TRUE)) {
+			$per_page = 10;
+		}
+		$page = max(1, (int) $this->input->get('page'));
+
 		// Jika guru, hanya tampilkan proyek dari mata pelajaran yang dimiliki/diampu
 		if ($user_role === 'guru') {
 			$mapel_uuids = $this->guru_model->get_mapel_uuid_list($user_login);
-			$proyek = $this->proyek_model->get_all_by_mapel_uuids($mapel_uuids);
+			$total_rows = $this->proyek_model->count_by_mapel_uuids($mapel_uuids);
 		} elseif ($user_role === 'siswa') {
 			// Siswa hanya melihat proyek dari mata pelajaran sesuai kelasnya
 			$siswa = $this->siswa_model->get_by_uuid($user_login);
 			$kelas_uuid = $siswa->kelas_uuid ?? null;
 			$mapel_uuids = $this->mapel_model->get_mapel_uuids_by_kelas($kelas_uuid);
-			$proyek = $this->proyek_model->get_all_by_mapel_uuids($mapel_uuids);
+			$siswa_uuid = $user_login;
+			$total_rows = $this->proyek_model->count_by_mapel_uuids($mapel_uuids, $siswa_uuid);
 		} else {
-			$proyek = $this->proyek_model->get_all();
+			$total_rows = $this->proyek_model->count_all();
+		}
+
+		$total_pages = max(1, (int) ceil($total_rows / $per_page));
+		$page = min($page, $total_pages);
+		$offset = ($page - 1) * $per_page;
+		if ($mapel_uuids !== NULL) {
+			$proyek = $this->proyek_model->get_all_by_mapel_uuids($mapel_uuids, $per_page, $offset, $siswa_uuid);
+		} else {
+			$proyek = $this->proyek_model->get_all(NULL, $per_page, $offset);
 		}
 		foreach ($proyek as $py) {
 			$pengerjaan = 0;
@@ -53,8 +71,48 @@ class Proyek extends MY_Controller {
 		
 		$data = array(
 			'proyek' => $proyek,
-			'active_nav' => 'proyek'
+			'active_nav' => 'proyek',
+			'per_page' => $per_page,
+			'per_page_options' => $per_page_options,
+			'total_rows' => $total_rows,
+			'start_no' => $total_rows > 0 ? $offset + 1 : 0,
+			'end_no' => min($offset + $per_page, $total_rows),
 		);
+
+		$this->load->library('pagination');
+		$this->pagination->initialize(array(
+			'base_url'             => base_url('proyek'),
+			'total_rows'           => $total_rows,
+			'per_page'             => $per_page,
+			'use_page_numbers'     => TRUE,
+			'page_query_string'    => TRUE,
+			'query_string_segment' => 'page',
+			'reuse_query_string'   => TRUE,
+			'cur_page'             => $page,
+			'num_links'            => 2,
+			'first_link'           => '&laquo;',
+			'prev_link'            => '&lsaquo;',
+			'next_link'            => '&rsaquo;',
+			'last_link'            => '&raquo;',
+			'full_tag_open'        => '<nav aria-label="Navigasi halaman"><ul class="flex flex-wrap items-center justify-center gap-1 list-none p-0 m-0">',
+			'full_tag_close'       => '</ul></nav>',
+			'num_tag_open'         => '<li>',
+			'num_tag_close'        => '</li>',
+			'cur_tag_open'         => '<li><span class="min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold text-white bg-blue-600 border border-blue-600">',
+			'cur_tag_close'        => '</span></li>',
+			'first_tag_open'       => '<li>',
+			'first_tag_close'      => '</li>',
+			'prev_tag_open'        => '<li>',
+			'prev_tag_close'       => '</li>',
+			'next_tag_open'        => '<li>',
+			'next_tag_close'       => '</li>',
+			'last_tag_open'        => '<li>',
+			'last_tag_close'       => '</li>',
+			'attributes'           => array(
+				'class' => 'min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors',
+			),
+		));
+		$data['pagination_links'] = $this->pagination->create_links();
 		
         $this->load->view('partials/header_tailwind', ['title' => 'Daftar Proyek']);
 		$this->load->view('partials/navbar', ['active_nav' => 'proyek']);
