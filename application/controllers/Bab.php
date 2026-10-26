@@ -24,67 +24,93 @@ class Bab extends MY_Controller {
  		if (empty($materi)) {
  			show_404();
  		}
-			if (has_role(['siswa']) && !$this->bab_model->is_materi_unlocked_for_student($materi_uuid, $this->session->userdata('uuid'))) {
-				show_error('Pertemuan terkunci. Selesaikan pertemuan sebelumnya terlebih dahulu.', 403);
-			}
+		$this->ensure_materi_unlocked($materi_uuid);
+		$data = $this->build_materi_view_data($materi);
  
+		$this->load->view('partials/header_tailwind', ['title' => 'Materi Pekan']);
+		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
+		$this->load->view('mapel/sub_bab_list', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
+	}
+
+	public function detail($bab_uuid)
+	{
+		$bab = $this->bab_model->get_by_uuid($bab_uuid);
+		if (!$bab) {
+			show_404();
+		}
+
+		$materi = $this->get_accessible_materi($bab->materi_uuid);
+		if (!$materi) {
+			show_404();
+		}
+		$this->ensure_materi_unlocked($materi->uuid);
+
+		$data = $this->build_materi_view_data($materi);
+		if (empty($data['bab_unlocked'][$bab_uuid])) {
+			show_error('Pertemuan terkunci. Selesaikan pertemuan sebelumnya terlebih dahulu.', 403);
+		}
+
+		$data['bab'] = [$bab];
+		$data['is_detail_page'] = true;
+
+		$this->load->view('partials/header_tailwind', ['title' => 'Detail Pertemuan - ' . $bab->judul]);
+		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
+		$this->load->view('mapel/sub_bab', array_merge($data, ['from_controller' => true]));
+		$this->load->view('partials/footer_tailwind');
+	}
+
+	private function ensure_materi_unlocked($materi_uuid)
+	{
+		if (has_role('siswa') && !$this->bab_model->is_materi_unlocked_for_student($materi_uuid, $this->session->userdata('uuid'))) {
+			show_error('Pekan terkunci. Selesaikan pekan sebelumnya terlebih dahulu.', 403);
+		}
+	}
+
+	private function build_materi_view_data($materi)
+	{
 		$mapel = $this->mapel_model->get_by_uuid($materi->mapel_uuid, FALSE);
-		$bab = $this->bab_model->get_by_materi_uuid($materi_uuid);
-		$pertemuan_count = count($bab);
+		$bab = $this->bab_model->get_by_materi_uuid($materi->uuid);
 		$is_mapel_pengampu = has_role('guru')
 			? $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'))
 			: false;
 		$can_manage = admin_can_access_creator($materi->created_by) || $is_mapel_pengampu;
- 
-		// Get comments for each bab
-  		$komentar_data = [];
-  		$sub_materi_per_bab = [];
-  		$ujian_per_sub = [];
-  		$ujian_per_bab = [];
-  		$bab_unlocked = [];
-	$bab_completed = [];
-	$bab_read_completed = [];
-	$bab_activity_count = [];
-	$bab_completed_count = [];
-  		$bab_has_ujian = [];
-
-  		// Untuk siswa: cek apakah ujian sub bab sebelumnya sudah dikerjakan
-		$user_role = user_role();
-  		$user_login = $this->session->userdata('uuid');
+		$komentar_data = [];
+		$sub_materi_per_bab = [];
+		$ujian_per_sub = [];
+		$ujian_per_bab = [];
+		$bab_unlocked = [];
+		$bab_completed = [];
+		$bab_read_completed = [];
+		$bab_activity_count = [];
+		$bab_completed_count = [];
+		$bab_has_ujian = [];
+		$user_login = $this->session->userdata('uuid');
 		$all_unlocked = is_admin_or_superadmin() || $can_manage || $is_mapel_pengampu;
+		$progress = $all_unlocked ? [] : $this->bab_model->get_progress_for_materi($materi->uuid, $user_login);
 
-		// Urutkan bab berdasarkan urutan dibuat (id ASC)
-  		$bab_sorted = $bab;
+		foreach ($bab as $b) {
+			$komentar = $this->komentar_model->get_by_bab_uuid($b->uuid);
+			foreach ($komentar as $kom) {
+				$guru = $this->guru_model->get_by_uuid($kom->created_by);
+				if ($guru) {
+					$kom->pengomen = $guru->nama;
+					$kom->role = 'Guru';
+				} else {
+					$siswa = $this->siswa_model->get_by_uuid($kom->created_by);
+					$kom->pengomen = $siswa ? $siswa->nama : 'Unknown';
+					$kom->role = 'Siswa';
+				}
+			}
+			$komentar_data[$b->uuid] = $komentar;
+			$sub_materi = $this->sub_materi_model->get_by_bab_uuid($b->uuid);
+			$sub_materi_per_bab[$b->uuid] = $sub_materi;
 
-		$progress = $all_unlocked ? [] : $this->bab_model->get_progress_for_materi($materi_uuid, $user_login);
-  		foreach ($bab_sorted as $b) {
-  			$komentar = $this->komentar_model->get_by_bab_uuid($b->uuid);
-  			foreach ($komentar as $kom) {
-  				$guru = $this->guru_model->get_by_uuid($kom->created_by);
-  				if ($guru) {
-  					$kom->pengomen = $guru->nama;
-  					$kom->role = 'Guru';
-  				} else {
-  					$siswa = $this->siswa_model->get_by_uuid($kom->created_by);
-  					$kom->pengomen = $siswa ? $siswa->nama : 'Unknown';
-  					$kom->role = 'Siswa';
-  				}
-  			}
-  			$komentar_data[$b->uuid] = $komentar;
-  
-  			// Load sub materi for each bab
-  			$sub_materi = $this->sub_materi_model->get_by_bab_uuid($b->uuid);
-  			$sub_materi_per_bab[$b->uuid] = $sub_materi;
-  
-  			// Load ujian for each sub materi
-  			foreach ($sub_materi as $sm) {
-  				$ujian_per_sub[$sm->uuid] = $this->ujian_model->get_by_sub_materi($sm->uuid);
-  			}
+			foreach ($sub_materi as $sm) {
+				$ujian_per_sub[$sm->uuid] = $this->ujian_model->get_by_sub_materi($sm->uuid);
+			}
 
-  			// Load ujian yang terhubung langsung dengan bab (dari form Tambah Sub Bab)
-  			$ujian_per_bab[$b->uuid] = $this->ujian_model->get_by_bab($b->uuid);
-
-			// Status akses dihitung terpusat agar tampilan dan endpoint ujian konsisten.
+			$ujian_per_bab[$b->uuid] = $this->ujian_model->get_by_bab($b->uuid);
 			$state = $all_unlocked ? [
 				'unlocked' => true,
 				'completed' => false,
@@ -102,35 +128,30 @@ class Bab extends MY_Controller {
 			$bab_activity_count[$b->uuid] = $state['activity_count'];
 			$bab_completed_count[$b->uuid] = $state['completed_count'];
 			$bab_has_ujian[$b->uuid] = $state['activity_count'] > 0;
-  		}
-  
-  		$data = array(
-  			'materi' => $materi,
-  			'mapel' => $mapel,
-  			'bab' => $bab,
-  			'komentar_data' => $komentar_data,
-  			'sub_materi_per_bab' => $sub_materi_per_bab,
-  			'ujian_per_sub' => $ujian_per_sub,
-  			'ujian_per_bab' => $ujian_per_bab,
-  			'bab_unlocked' => $bab_unlocked,
+		}
+
+		return [
+			'materi' => $materi,
+			'mapel' => $mapel,
+			'bab' => $bab,
+			'komentar_data' => $komentar_data,
+			'sub_materi_per_bab' => $sub_materi_per_bab,
+			'ujian_per_sub' => $ujian_per_sub,
+			'ujian_per_bab' => $ujian_per_bab,
+			'bab_unlocked' => $bab_unlocked,
 			'bab_completed' => $bab_completed,
 			'bab_read_completed' => $bab_read_completed,
 			'bab_activity_count' => $bab_activity_count,
 			'bab_completed_count' => $bab_completed_count,
-  			'bab_has_ujian' => $bab_has_ujian,
-  			'is_admin' => is_admin_or_superadmin(),
+			'bab_has_ujian' => $bab_has_ujian,
+			'is_admin' => is_admin_or_superadmin(),
 			'is_student' => has_role('siswa'),
 			'can_manage' => $can_manage,
-			'pertemuan_count' => $pertemuan_count,
+			'pertemuan_count' => count($bab),
 			'can_add_meeting' => $can_manage || $is_mapel_pengampu,
-  			'active_nav' => 'materi'
-  		);
- 
-		$this->load->view('partials/header_tailwind', ['title' => 'Materi Pekan']);
- 		$this->load->view('partials/navbar', ['active_nav' => 'materi']);
-         $this->load->view('mapel/sub_bab', array_merge($data, ['from_controller' => true]));
- 		$this->load->view('partials/footer_tailwind');
- 	}
+			'active_nav' => 'materi'
+		];
+	}
 
 	public function selesai_baca($bab_uuid)
 	{
@@ -166,7 +187,7 @@ class Bab extends MY_Controller {
 		}
 
 		$this->session->set_flashdata('success_msg', 'Pertemuan ditandai selesai dibaca.');
-		redirect('sub_bab/index/' . $materi->uuid);
+		redirect('sub_bab/detail/' . $bab_uuid);
 	}
 
 	public function tambah($materi_uuid)

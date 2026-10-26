@@ -119,7 +119,7 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                     <div>
                                         <div class="flex items-center gap-3 mb-2">
-                                            <a href="<?= base_url('mata_pelajaran') ?>"
+                                            <a href="<?= base_url(!empty($is_detail_page) ? 'sub_bab/index/' . $materi->uuid : 'mata_pelajaran') ?>"
                                                 class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors">
                                                 <i data-lucide="arrow-left" class="w-5 h-5 text-white"></i>
                                             </a>
@@ -128,7 +128,7 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                                 <i data-lucide="book-open" class="w-6 h-6 text-white"></i>
                                             </div>
                                             <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                                                Materi Pekan</h1>
+                                                <?= !empty($is_detail_page) ? 'Detail Pertemuan' : 'Materi Pekan' ?></h1>
                                         </div>
                                         <div class="ml-[104px] mt-2 space-y-1">
                                             <p class="text-purple-100 text-sm md:text-base">
@@ -141,20 +141,6 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                                 <span class="text-white font-semibold"><?= $materi->judul ?></span>
                                             </p>
                                         </div>
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-3">
-                                        <span
-                                            class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white">
-                                            <i data-lucide="calendar-check" class="w-4 h-4"></i>
-                                            <?= $pertemuan_count ?>/3 Pertemuan
-                                        </span>
-                                        <?php if ($can_add_meeting && $pertemuan_count < 3): ?>
-                                        <a href="<?= base_url('sub_bab/tambah/' . $materi->uuid) ?>"
-                                            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-purple-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
-                                            <i data-lucide="plus" class="w-4 h-4"></i>
-                                            Tambah Pertemuan
-                                        </a>
-                                        <?php endif; ?>
                                     </div>
                                 </div>
                             </div>
@@ -301,7 +287,7 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
 
                                         <?php if ($deskripsi_ada_isi): ?>
                                         <div class="mt-2 flex items-start gap-3">
-                                            <?php if ($deskripsi_img !== ''): ?>
+                                            <?php if (empty($is_detail_page) && $deskripsi_img !== ''): ?>
                                             <button type="button"
                                                 data-src="<?= htmlspecialchars($deskripsi_img, ENT_QUOTES, 'UTF-8') ?>"
                                                 class="js-preview-image relative w-20 h-14 sm:w-24 sm:h-16 rounded-xl overflow-hidden border <?= $palette['border'] ?> bg-gray-50 flex-shrink-0 group"
@@ -320,14 +306,18 @@ $text = preg_replace('/<[^>]+>/', ' ', $text);
                                             <?php endif; ?>
 
                                             <div class="flex-1 min-w-0">
-                                                <?php if ($deskripsi_preview !== ''): ?>
+                                                <?php if (!empty($is_detail_page)): ?>
+                                                <div class="deskripsi-html text-sm text-gray-600 leading-relaxed">
+                                                    <?= $deskripsi_isi ?>
+                                                </div>
+                                                <?php elseif ($deskripsi_preview !== ''): ?>
                                                 <p
                                                     class="text-sm text-gray-600 leading-relaxed line-clamp-2 break-words">
                                                     <?= htmlspecialchars($deskripsi_preview, ENT_QUOTES, 'UTF-8') ?>
                                                 </p>
                                                 <?php endif; ?>
 
-                                                <?php if ($deskripsi_is_long): ?>
+                                                <?php if (empty($is_detail_page) && $deskripsi_is_long): ?>
                                                 <button type="button"
                                                     onclick="toggleDeskripsi('<?= $deskripsi_id ?>', this)"
                                                     data-label-collapsed="<?= $deskripsi_label ?>"

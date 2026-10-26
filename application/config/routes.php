@@ -102,6 +102,7 @@ $route['siswa/bulk_hapus'] = 'siswa/bulk_hapus';
 
 // Bab/Sub Bab routes
 $route['sub_bab/index/(:any)'] = 'bab/index/$1';
+$route['sub_bab/detail/(:any)'] = 'bab/detail/$1';
 $route['sub_bab/tambah/(:any)'] = 'bab/tambah/$1';
 $route['sub_bab/tambah_ujian/(:any)'] = 'bab/tambah_ujian/$1';
 $route['sub_bab/edit/(:any)'] = 'bab/edit/$1';
