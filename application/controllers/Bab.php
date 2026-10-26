@@ -14,6 +14,7 @@ class Bab extends MY_Controller {
  		$this->load->model('siswa_model');
  		$this->load->model('sub_materi_model');
  		$this->load->model('ujian_model');
+		$this->load->model('tugas_model');
  		$this->load->model('mapel_model');
  	}
 
@@ -79,6 +80,7 @@ class Bab extends MY_Controller {
 		$sub_materi_per_bab = [];
 		$ujian_per_sub = [];
 		$ujian_per_bab = [];
+		$tugas_per_bab = [];
 		$bab_unlocked = [];
 		$bab_completed = [];
 		$bab_read_completed = [];
@@ -111,6 +113,12 @@ class Bab extends MY_Controller {
 			}
 
 			$ujian_per_bab[$b->uuid] = $this->ujian_model->get_by_bab($b->uuid);
+			$tugas_per_bab[$b->uuid] = $this->tugas_model->get_by_bab($b->uuid);
+			foreach ($tugas_per_bab[$b->uuid] as $tugas) {
+				$tugas->sudah_dikerjakan = has_role('siswa')
+					? $this->tugas_model->has_submission($tugas->uuid, $user_login)
+					: FALSE;
+			}
 			$state = $all_unlocked ? [
 				'unlocked' => true,
 				'completed' => false,
@@ -138,6 +146,7 @@ class Bab extends MY_Controller {
 			'sub_materi_per_bab' => $sub_materi_per_bab,
 			'ujian_per_sub' => $ujian_per_sub,
 			'ujian_per_bab' => $ujian_per_bab,
+			'tugas_per_bab' => $tugas_per_bab,
 			'bab_unlocked' => $bab_unlocked,
 			'bab_completed' => $bab_completed,
 			'bab_read_completed' => $bab_read_completed,

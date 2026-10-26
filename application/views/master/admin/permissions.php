@@ -39,8 +39,8 @@
             <p class="text-sm text-blue-700 font-medium">Keterangan:</p>
             <ul class="mt-2 text-sm text-blue-600 space-y-1">
                 <li>• superadmin: Memiliki semua permission</li>
-                <li>• admin: manage_users, manage_mapel, manage_materi, manage_ujian, manage_proyek</li>
-                <li>• guru: manage_materi, manage_ujian, manage_proyek</li>
+                <li>• admin: manage_users, manage_mapel, manage_materi, manage_ujian (ujian dan tugas), manage_proyek</li>
+                <li>• guru: manage_materi, manage_ujian (ujian dan tugas), manage_proyek</li>
                 <li>• siswa: view_reports</li>
             </ul>
         </div>

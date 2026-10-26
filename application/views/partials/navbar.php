@@ -37,6 +37,8 @@ $role_reminders = $CI->pengingat_model->get_for_user(
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'proyek' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Proyek</a>
                 <a href="<?= base_url('ujian') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'ujian' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Ujian</a>
+                <a href="<?= base_url('tugas') ?>"
+                    class="px-3 py-2 rounded-lg <?= $active_nav == 'tugas' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Tugas</a>
                 <a href="<?= base_url('kalender') ?>"
                     class="px-3 py-2 rounded-lg <?= $active_nav == 'kalender' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Kalender</a>
                 <?php if(has_role(['guru', 'superadmin'])): ?>
@@ -155,6 +157,8 @@ $role_reminders = $CI->pengingat_model->get_for_user(
                 class="flex items-center min-h-[44px] px-3 rounded-lg <?= ($active_nav ?? '') == 'proyek' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Proyek</a>
             <a href="<?= base_url('ujian') ?>"
                 class="flex items-center min-h-[44px] px-3 rounded-lg <?= ($active_nav ?? '') == 'ujian' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Ujian</a>
+            <a href="<?= base_url('tugas') ?>"
+                class="flex items-center min-h-[44px] px-3 rounded-lg <?= ($active_nav ?? '') == 'tugas' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Tugas</a>
             <a href="<?= base_url('kalender') ?>"
                 class="flex items-center min-h-[44px] px-3 rounded-lg <?= ($active_nav ?? '') == 'kalender' ? 'bg-blue-50 text-blue-600 font-semibold' : 'text-gray-600 hover:bg-gray-50' ?>">Kalender</a>
             <?php if(has_role(['guru', 'superadmin'])): ?>

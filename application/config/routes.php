@@ -84,6 +84,18 @@ $route['ujian/get_soal/(:any)'] = 'ujian/get_soal_by_uuid/$1';
 $route['ujian/bulk_hapus_soal'] = 'ujian/bulk_hapus_soal';
 $route['ujian/upload_editor_file'] = 'ujian/upload_editor_file';
 
+// Assignment routes
+$route['tugas/edit/(:any)'] = 'tugas/edit/$1';
+$route['tugas/tambah_soal/(:any)'] = 'tugas/tambah_soal/$1';
+$route['tugas/import_soal/(:any)'] = 'tugas/import_soal/$1';
+$route['tugas/tambah_pertemuan/(:any)'] = 'tugas/tambah_pertemuan/$1';
+$route['tugas/kerjakan/(:any)'] = 'tugas/kerjakan/$1';
+$route['tugas/pengumpulan/(:any)'] = 'tugas/pengumpulan/$1';
+$route['tugas/hapus_soal/(:any)'] = 'tugas/hapus_soal/$1';
+$route['tugas/get_soal/(:any)'] = 'tugas/get_soal/$1';
+$route['tugas/bulk_hapus_soal'] = 'tugas/bulk_hapus_soal';
+$route['tugas/edit_soal'] = 'tugas/edit_soal';
+
 // Materi routes
 $route['mata_pelajaran'] = 'materi';
 $route['mata_pelajaran/semester/(:any)'] = 'materi/semester/$1';
