@@ -1063,6 +1063,23 @@ class Ujian extends MY_Controller {
 
 	public function tambah_nilai($ujian_uuid, $siswa_uuid)
 	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+
+		$siswa = $this->siswa_model->get_by_uuid($siswa_uuid, FALSE);
+		$siswa_terdaftar = FALSE;
+		foreach ($this->siswa_model->get_by_ujian($ujian_uuid) as $peserta) {
+			if ($peserta->siswa_uuid === $siswa_uuid) {
+				$siswa_terdaftar = TRUE;
+				break;
+			}
+		}
+		if (!$siswa || !$siswa_terdaftar) {
+			show_404();
+		}
+
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
             $insert = $this->jawaban_model->insert_nilai($ujian_uuid, $siswa_uuid);
             if ($insert) {
@@ -1073,11 +1090,7 @@ class Ujian extends MY_Controller {
             redirect('ujian/tambah_kelas/'.$ujian_uuid	);
         }
 		
-		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
-		$guru = $this->guru_model->get_by_uuid($ujian->created_by);
-		$mapel = $this->mapel_model->get_by_uuid($ujian->mapel_uuid);
         $soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
-        $siswa = $this->siswa_model->get_by_uuid($siswa_uuid);
         $pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $siswa_uuid);
         $waktu_pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
         foreach ($soal as $s) {
@@ -1189,9 +1202,9 @@ class Ujian extends MY_Controller {
         }
 		
 		$data = array(
-			'mapel' => $mapel->nama,
+			'mapel' => $ujian->mapel_nama ?? '-',
 			'siswa' => $siswa,
-			'guru' => $guru->nama,
+			'guru' => $ujian->guru_nama ?? '-',
 			'ujian' => $ujian,
 			'pengumpulan' => $waktu_pengumpulan,
 			'terlambat' => $this->ujian_model->is_submission_late($ujian, $waktu_pengumpulan),
