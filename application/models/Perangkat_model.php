@@ -4,10 +4,107 @@ use Ramsey\Uuid\Uuid;
 
 class Perangkat_model extends CI_Model {
 
+    private $jenis_file_options = array(
+        'modul' => 'Modul',
+        'atp' => 'ATP',
+        'rme' => 'RME',
+        'prota' => 'Prota',
+        'promes' => 'Promes',
+        'kktp' => 'KKTP',
+        'tp' => 'TP',
+    );
+
     public function __construct()
     {
         parent::__construct();
         $this->load->model('guru_model');
+    }
+
+    public function get_jenis_file_options()
+    {
+        return $this->jenis_file_options;
+    }
+
+    public function compress_pdf_if_needed($file_path)
+    {
+        $original_size = filesize($file_path);
+        if ($original_size === FALSE) {
+            return array('success' => FALSE);
+        }
+
+        if ($original_size <= 2 * 1024 * 1024) {
+            return array('success' => TRUE, 'compressed' => FALSE);
+        }
+
+        if (!function_exists('proc_open')) {
+            return array('success' => FALSE);
+        }
+
+        $ghostscript = getenv('GHOSTSCRIPT_BINARY');
+        if (empty($ghostscript)) {
+            foreach (array('/usr/local/bin/gs', '/opt/homebrew/bin/gs', '/usr/bin/gs') as $candidate) {
+                if (is_executable($candidate)) {
+                    $ghostscript = $candidate;
+                    break;
+                }
+            }
+        }
+        $ghostscript = $ghostscript ?: 'gs';
+
+        $output_path = tempnam(dirname($file_path), 'perangkat-pdf-');
+        if ($output_path === FALSE) {
+            return array('success' => FALSE);
+        }
+        unlink($output_path);
+
+        $command = array(
+            $ghostscript,
+            '-sDEVICE=pdfwrite',
+            '-dCompatibilityLevel=1.4',
+            '-dPDFSETTINGS=/ebook',
+            '-dSAFER',
+            '-dNOPAUSE',
+            '-dBATCH',
+            '-dQUIET',
+            '-sOutputFile=' . $output_path,
+            $file_path,
+        );
+        $process = proc_open($command, array(
+            0 => array('pipe', 'r'),
+            1 => array('pipe', 'w'),
+            2 => array('pipe', 'w'),
+        ), $pipes);
+
+        if (!is_resource($process)) {
+            return array('success' => FALSE);
+        }
+
+        fclose($pipes[0]);
+        stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        $process_error = stream_get_contents($pipes[2]);
+        fclose($pipes[2]);
+        $exit_code = proc_close($process);
+
+        if ($exit_code !== 0 || !is_file($output_path) || filesize($output_path) === 0) {
+            log_message('error', 'Kompresi PDF perangkat gagal: ' . trim($process_error));
+            if (is_file($output_path)) {
+                unlink($output_path);
+            }
+            return array('success' => FALSE);
+        }
+
+        if (filesize($output_path) >= $original_size) {
+            unlink($output_path);
+            return array('success' => TRUE, 'compressed' => FALSE);
+        }
+
+        if (!rename($output_path, $file_path)) {
+            unlink($output_path);
+            return array('success' => FALSE);
+        }
+
+        return array('success' => TRUE, 'compressed' => TRUE);
     }
 
     private function get_mapel_uuids_by_guru($guru_uuid)

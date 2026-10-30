@@ -42,70 +42,63 @@
     </div>
     <?php endif; ?>
 
+    <?php if ($this->session->userdata('pdf_compress_help')): ?>
+    <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+        <p class="font-semibold">Kompresi di server gagal. Kompres file PDF secara manual, lalu unggah kembali.</p>
+        <a href="https://www.adobe.com/acrobat/online/compress-pdf.html" target="_blank" rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 mt-2 font-semibold text-amber-800 underline hover:text-amber-950">
+            Buka kompresor PDF online Adobe
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+        </a>
+        <p class="mt-2 text-xs">Dokumen akan dikirim ke layanan pihak ketiga. Hindari mengunggah dokumen yang berisi data sensitif.</p>
+        <?php $this->session->unset_userdata('pdf_compress_help'); ?>
+    </div>
+    <?php endif; ?>
+
     <!-- Upload Form (hanya untuk guru pengampu atau admin) -->
     <?php if($pengampu == true || $is_admin): ?>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <!-- Upload Modul -->
+    <div class="grid grid-cols-1 gap-6 mb-8">
         <div
             class="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div class="h-1 bg-gradient-to-r from-blue-400 to-blue-600"></div>
+            <div class="h-1 bg-gradient-to-r from-blue-400 to-indigo-600"></div>
             <div class="p-6">
                 <div class="flex items-center gap-3 mb-4">
                     <div
-                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-md">
-                        <i data-lucide="book" class="w-6 h-6 text-white"></i>
+                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shadow-md">
+                        <i data-lucide="folder-plus" class="w-6 h-6 text-white"></i>
                     </div>
                     <div>
-                        <h3 class="font-bold text-gray-900">Upload Modul</h3>
-                        <p class="text-xs text-gray-500">PDF, DOC, DOCX, ZIP (max 10MB)</p>
+                        <h3 class="font-bold text-gray-900">Tambah Perangkat Pembelajaran</h3>
                     </div>
                 </div>
-                <form action="<?= base_url('perangkat/upload/' . $mapel->uuid . '/modul') ?>" method="POST"
-                    enctype="multipart/form-data" class="space-y-3">
+                <form action="<?= base_url('perangkat/upload/' . $mapel->uuid) ?>" method="POST"
+                    enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <input type="text" name="nama_file" placeholder="Nama Modul" required
+                        <label for="jenisFile" class="block text-sm font-medium text-gray-700 mb-1">Jenis perangkat</label>
+                        <select id="jenisFile" name="jenis_file" required
+                            class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
+                            <option value="">Pilih jenis perangkat</option>
+                            <?php foreach ($jenis_file_options as $jenis_file => $label): ?>
+                            <option value="<?= html_escape($jenis_file) ?>"><?= html_escape($label) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="namaFile" class="block text-sm font-medium text-gray-700 mb-1">Nama perangkat</label>
+                        <input id="namaFile" type="text" name="nama_file" placeholder="Masukkan nama perangkat" required
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
                     </div>
                     <div>
-                        <input type="file" name="file_perangkat" required
-                            class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-                    </div>
-                    <button type="submit"
-                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 shadow-lg shadow-blue-200 hover:shadow-xl transition-all text-sm">
-                        <i data-lucide="upload" class="w-4 h-4"></i> Upload Modul
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Upload ATP -->
-        <div
-            class="group bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
-            <div class="h-1 bg-gradient-to-r from-emerald-400 to-emerald-600"></div>
-            <div class="p-6">
-                <div class="flex items-center gap-3 mb-4">
-                    <div
-                        class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-md">
-                        <i data-lucide="file-text" class="w-6 h-6 text-white"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900">Upload ATP</h3>
-                        <p class="text-xs text-gray-500">PDF, DOC, DOCX, XLS (max 10MB)</p>
-                    </div>
-                </div>
-                <form action="<?= base_url('perangkat/upload/' . $mapel->uuid . '/atp') ?>" method="POST"
-                    enctype="multipart/form-data" class="space-y-3">
-                    <div>
-                        <input type="text" name="nama_file" placeholder="Nama ATP" required
-                            class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition-all">
-                    </div>
-                    <div>
-                        <input type="file" name="file_perangkat" required
+                        <label for="filePerangkat" class="block text-sm font-medium text-gray-700 mb-1">File</label>
+                        <input id="filePerangkat" type="file" name="file_perangkat" accept=".pdf,application/pdf" required
                             class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
                     </div>
+                    <p class="md:col-span-2 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                        Aturan upload: hanya file PDF, maksimal 10 MB. File di atas 2 MB akan dikompres otomatis.
+                    </p>
                     <button type="submit"
-                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-lg shadow-emerald-200 hover:shadow-xl transition-all text-sm">
-                        <i data-lucide="upload" class="w-4 h-4"></i> Upload ATP
+                        class="md:col-span-2 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg shadow-blue-200 hover:shadow-xl transition-all text-sm">
+                        <i data-lucide="upload" class="w-4 h-4"></i> Upload Perangkat
                     </button>
                 </form>
             </div>
@@ -141,11 +134,15 @@
                         <div class="min-w-0">
                             <p
                                 class="text-sm font-bold text-gray-900 truncate group-hover:text-blue-700 transition-colors">
-                                <?= $file->nama_file ?></p>
-                            <p class="text-xs text-gray-500"><?= $file->file ?></p>
+                                <?= html_escape($file->nama_file) ?></p>
+                            <p class="text-xs text-gray-500"><?= html_escape($file->file) ?></p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 ml-4 flex-shrink-0">
+                        <a href="<?= base_url('perangkat/lihat/' . $file->uuid) ?>" target="_blank" rel="noopener"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-all">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Lihat
+                        </a>
                         <a href="<?= base_url('perangkat/download/' . $file->uuid) ?>"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md hover:shadow-lg transition-all">
                             <i data-lucide="download" class="w-3.5 h-3.5"></i> Download
@@ -153,7 +150,7 @@
                         <?php if($is_admin || $file->guru_uuid == $this->session->userdata('uuid')): ?>
                         <a href="<?= base_url('perangkat/hapus/' . $file->uuid) ?>"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all"
-                            onclick="return confirm('Apakah Anda yakin ingin menghapus file <?= $file->nama_file; ?>?')">
+                            onclick="return confirm('Apakah Anda yakin ingin menghapus perangkat ini?')">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
                         </a>
                         <?php endif; ?>
@@ -198,11 +195,15 @@
                         <div class="min-w-0">
                             <p
                                 class="text-sm font-bold text-gray-900 truncate group-hover:text-emerald-700 transition-colors">
-                                <?= $file->nama_file ?></p>
-                            <p class="text-xs text-gray-500"><?= $file->file ?></p>
+                                <?= html_escape($file->nama_file) ?></p>
+                            <p class="text-xs text-gray-500"><?= html_escape($file->file) ?></p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 ml-4 flex-shrink-0">
+                        <a href="<?= base_url('perangkat/lihat/' . $file->uuid) ?>" target="_blank" rel="noopener"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50 transition-all">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Lihat
+                        </a>
                         <a href="<?= base_url('perangkat/download/' . $file->uuid) ?>"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md hover:shadow-lg transition-all">
                             <i data-lucide="download" class="w-3.5 h-3.5"></i> Download
@@ -210,7 +211,7 @@
                         <?php if($is_admin || $file->guru_uuid == $this->session->userdata('uuid')): ?>
                         <a href="<?= base_url('perangkat/hapus/' . $file->uuid) ?>"
                             class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all"
-                            onclick="return confirm('Apakah Anda yakin ingin menghapus file <?= $file->nama_file; ?>?')">
+                            onclick="return confirm('Apakah Anda yakin ingin menghapus perangkat ini?')">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
                         </a>
                         <?php endif; ?>
@@ -228,6 +229,65 @@
             </div>
             <?php endif; ?>
         </div>
+        <?php foreach (array_diff_key($jenis_file_options, array('modul' => TRUE, 'atp' => TRUE)) as $jenis_file => $label): ?>
+        <?php
+            $jenis_files = array_filter($perangkat, function($file) use ($jenis_file) {
+                return $file->jenis_file === $jenis_file;
+            });
+        ?>
+        <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300">
+            <div class="px-6 py-4 bg-gradient-to-r from-indigo-500 to-blue-600 border-b border-indigo-200">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                        <i data-lucide="folder" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <h3 class="font-bold text-white"><?= html_escape($label) ?></h3>
+                </div>
+            </div>
+            <?php if (!empty($jenis_files)): ?>
+            <div class="divide-y divide-gray-100">
+                <?php foreach ($jenis_files as $file): ?>
+                <div class="px-6 py-4 flex items-center justify-between hover:bg-indigo-50/50 transition-colors group">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                            <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-gray-900 truncate group-hover:text-indigo-700 transition-colors">
+                                <?= html_escape($file->nama_file) ?></p>
+                            <p class="text-xs text-gray-500"><?= html_escape($file->file) ?></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 ml-4 flex-shrink-0">
+                        <a href="<?= base_url('perangkat/lihat/' . $file->uuid) ?>" target="_blank" rel="noopener"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 transition-all">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Lihat
+                        </a>
+                        <a href="<?= base_url('perangkat/download/' . $file->uuid) ?>"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md hover:shadow-lg transition-all">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i> Download
+                        </a>
+                        <?php if($is_admin || $file->guru_uuid == $this->session->userdata('uuid')): ?>
+                        <a href="<?= base_url('perangkat/hapus/' . $file->uuid) ?>"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-red-600 border-2 border-red-600 hover:bg-red-600 hover:text-white transition-all"
+                            onclick="return confirm('Apakah Anda yakin ingin menghapus file <?= html_escape($file->nama_file) ?>?')">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Hapus
+                        </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php else: ?>
+            <div class="text-center py-12 text-gray-400">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-blue-200 flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="folder" class="w-8 h-8 text-indigo-600"></i>
+                </div>
+                <p class="text-sm font-semibold text-gray-600">Belum ada <?= html_escape($label) ?></p>
+            </div>
+            <?php endif; ?>
+        </div>
+        <?php endforeach; ?>
     </div>
 </div>
 

@@ -123,7 +123,8 @@ class Perangkat extends MY_Controller {
             'perangkat' => $perangkat,
             'pengampu' => $pengampu,
             'is_admin' => is_admin_or_superadmin(),
-            'active_nav' => 'perangkat'
+            'active_nav' => 'perangkat',
+            'jenis_file_options' => $this->perangkat_model->get_jenis_file_options(),
         );
 
         $this->load->view('partials/header_tailwind', ['title' => 'Perangkat - ' . $mapel->nama]);
@@ -132,10 +133,15 @@ class Perangkat extends MY_Controller {
         $this->load->view('partials/footer_tailwind');
     }
 
-    public function upload($mapel_uuid, $jenis_file)
+    public function upload($mapel_uuid, $jenis_file = NULL)
     {
+        if ($jenis_file === NULL) {
+            $jenis_file = $this->input->post('jenis_file');
+        }
+
         // Validasi jenis file
-        if (!in_array($jenis_file, ['modul', 'atp'])) {
+        $jenis_file_options = $this->perangkat_model->get_jenis_file_options();
+        if (!is_string($jenis_file) || !array_key_exists($jenis_file, $jenis_file_options)) {
             show_404();
         }
 
@@ -153,7 +159,7 @@ class Perangkat extends MY_Controller {
 
         $config = array(
             'upload_path'   => FCPATH . 'uploads/perangkat/',
-            'allowed_types' => "pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar",
+            'allowed_types' => 'pdf',
             'max_size'      => 10240, // 10MB
         );
         $this->upload->initialize($config);
@@ -165,22 +171,56 @@ class Perangkat extends MY_Controller {
         }
 
         if (!empty($_FILES['file_perangkat']['name'])) {
-            // Insert dulu untuk dapat uuid
-            $uuid = $this->perangkat_model->insert($mapel_uuid, $jenis_file);
-            if (!$uuid) {
-                $this->session->set_flashdata('error_msg', 'Gagal menyimpan data');
+            if (!$this->upload->do_upload('file_perangkat')) {
+                $this->session->set_flashdata('error_msg', 'Gagal mengupload file: ' . strip_tags($this->upload->display_errors()));
                 redirect('perangkat/detail/' . $mapel_uuid);
             }
 
-            if ($this->upload->do_upload('file_perangkat')) {
-                $file_name = $this->upload->data('file_name');
-                $this->perangkat_model->update_file($uuid, $file_name);
-                $this->session->set_flashdata('success_msg', 'File ' . ($jenis_file == 'modul' ? 'Modul' : 'ATP') . ' berhasil diupload');
-            } else {
-                // Hapus record jika upload gagal
-                $this->perangkat_model->delete_by_uuid($uuid);
-                $this->session->set_flashdata('error_msg', 'Gagal mengupload file: ' . $this->upload->display_errors());
+            $uploaded_file = $this->upload->data();
+            $file_path = $uploaded_file['full_path'];
+            $mime = function_exists('finfo_open')
+                ? (new finfo(FILEINFO_MIME_TYPE))->file($file_path)
+                : FALSE;
+            $header = file_get_contents($file_path, FALSE, NULL, 0, 1024);
+            $is_pdf = strtolower(pathinfo($uploaded_file['file_name'], PATHINFO_EXTENSION)) === 'pdf'
+                && $mime === 'application/pdf'
+                && is_string($header)
+                && strpos($header, '%PDF-') !== FALSE;
+
+            if (!$is_pdf) {
+                unlink($file_path);
+                $this->session->set_flashdata('error_msg', 'File harus berupa dokumen PDF yang valid.');
+                redirect('perangkat/detail/' . $mapel_uuid);
             }
+
+            $compression = $this->perangkat_model->compress_pdf_if_needed($file_path);
+            if (!$compression['success']) {
+                unlink($file_path);
+                $this->session->set_flashdata('error_msg', 'PDF belum berhasil dikompres. Silakan kompres file secara manual menggunakan tautan di bawah, lalu unggah kembali.');
+                $this->session->set_flashdata('pdf_compress_help', TRUE);
+                redirect('perangkat/detail/' . $mapel_uuid);
+            }
+
+            $uuid = $this->perangkat_model->insert($mapel_uuid, $jenis_file);
+            if (!$uuid) {
+                unlink($file_path);
+                $this->session->set_flashdata('error_msg', 'Gagal menyimpan data perangkat.');
+                redirect('perangkat/detail/' . $mapel_uuid);
+            }
+
+            $file_name = $uploaded_file['file_name'];
+            if (!$this->perangkat_model->update_file($uuid, $file_name)) {
+                unlink($file_path);
+                $this->perangkat_model->delete_by_uuid($uuid);
+                $this->session->set_flashdata('error_msg', 'Gagal menyimpan file perangkat.');
+                redirect('perangkat/detail/' . $mapel_uuid);
+            }
+
+            $success_message = 'File ' . $jenis_file_options[$jenis_file] . ' berhasil diupload.';
+            if ($compression['compressed']) {
+                $success_message .= ' Ukuran PDF berhasil dikompres.';
+            }
+            $this->session->set_flashdata('success_msg', $success_message);
         } else {
             $this->session->set_flashdata('error_msg', 'File harus dipilih');
         }
@@ -234,5 +274,27 @@ class Perangkat extends MY_Controller {
 
         $this->load->helper('download');
         force_download($file_path, NULL);
+    }
+
+    public function lihat($uuid)
+    {
+        $perangkat = $this->perangkat_model->get_by_uuid($uuid);
+        if (empty($perangkat)) {
+            show_404();
+        }
+
+        $file_name = basename($perangkat->file);
+        $file_path = FCPATH . 'uploads/perangkat/' . $file_name;
+        if (strtolower(pathinfo($file_name, PATHINFO_EXTENSION)) !== 'pdf' || !is_file($file_path)) {
+            show_error('File PDF tidak ditemukan.', 404);
+        }
+
+        $safe_file_name = preg_replace('/[^A-Za-z0-9._-]/', '_', $file_name);
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="' . $safe_file_name . '"');
+        header('Content-Length: ' . filesize($file_path));
+        header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: private, no-store, max-age=0');
+        readfile($file_path);
     }
 }
