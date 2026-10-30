@@ -87,6 +87,7 @@
                         <option value="">Semua Status</option>
                         <option value="belum_mengerjakan">Belum Mengerjakan</option>
                         <option value="sudah_mengerjakan">Sudah Mengerjakan</option>
+                        <option value="terlambat">Terlambat</option>
                         <option value="sudah_dinilai">Sudah Dinilai</option>
                     </select>
                 </div>
@@ -116,6 +117,9 @@
                             class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-44">
                             Waktu Pengumpulan</th>
                         <th
+                            class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-32">
+                            Status</th>
+                        <th
                             class="text-center px-6 py-4 font-semibold text-gray-600 text-xs uppercase tracking-wider w-20">
                             Nilai</th>
                         <th
@@ -129,11 +133,13 @@
                         foreach($peserta as $val) {
                             $waktu_pengumpulan = !empty($val->pengumpulan) ? date('d M Y H:i', strtotime($val->pengumpulan)) : '-';
                             $ada_nilai = $val->nilai_ujian !== null && $val->nilai_ujian !== '';
+                            $terlambat = !empty($val->terlambat) || (empty($val->pengumpulan) && !empty($val->jadwal_terlewat));
                             $nilai = $ada_nilai ? $val->nilai_ujian : '-';
                             $kelas_nama = !empty($val->kelas_nama) ? htmlspecialchars($val->kelas_nama) : '-';
                     ?>
                     <tr class="table-row-hover transition-colors" data-kelas="<?= $kelas_nama ?>"
                         data-pengumpulan="<?= !empty($val->pengumpulan) ? 'sudah_mengerjakan' : 'belum_mengerjakan' ?>"
+                        data-terlambat="<?= $terlambat ? '1' : '0' ?>"
                         data-nilai="<?= $ada_nilai ? 'sudah_dinilai' : 'belum_dinilai' ?>">
                         <td class="px-6 py-4 text-gray-500 text-center"><?= $no ; ?></td>
                         <td class="px-6 py-4 font-medium text-gray-900"><?= htmlspecialchars($val->nama); ?></td>
@@ -147,6 +153,19 @@
                             </span>
                             <?php else: ?>
                             <span class="text-gray-400">-</span>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <?php if($terlambat): ?>
+                            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                <i data-lucide="triangle-alert" class="w-3 h-3"></i> Terlambat
+                            </span>
+                            <?php elseif(!empty($val->pengumpulan)): ?>
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                Sudah mengerjakan
+                            </span>
+                            <?php else: ?>
+                            <span class="text-gray-400">Belum mengerjakan</span>
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-center font-semibold">
@@ -209,6 +228,7 @@ function filterTable() {
     rows.forEach(row => {
         const kelas = row.getAttribute('data-kelas');
         const statusPengumpulan = row.getAttribute('data-pengumpulan');
+        const statusTerlambat = row.getAttribute('data-terlambat');
         const statusNilai = row.getAttribute('data-nilai');
 
         let showKelas = true;
@@ -224,6 +244,8 @@ function filterTable() {
             if (filterStatus === 'belum_mengerjakan' && statusPengumpulan !== 'belum_mengerjakan') {
                 showStatus = false;
             } else if (filterStatus === 'sudah_mengerjakan' && statusPengumpulan !== 'sudah_mengerjakan') {
+                showStatus = false;
+            } else if (filterStatus === 'terlambat' && statusTerlambat !== '1') {
                 showStatus = false;
             } else if (filterStatus === 'sudah_dinilai' && statusNilai !== 'sudah_dinilai') {
                 showStatus = false;

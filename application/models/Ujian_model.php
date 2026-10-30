@@ -30,6 +30,25 @@ class ujian_model extends CI_Model {
 		];
 	}
 
+	public function is_exam_started($ujian)
+	{
+		$tgl_mulai = isset($ujian->tgl_mulai) ? strtotime($ujian->tgl_mulai) : false;
+		return $tgl_mulai !== false && $tgl_mulai <= time();
+	}
+
+	public function is_exam_over($ujian)
+	{
+		$tgl_selesai = isset($ujian->tgl_selesai) ? strtotime($ujian->tgl_selesai) : false;
+		return $tgl_selesai !== false && $tgl_selesai < time();
+	}
+
+	public function is_submission_late($ujian, $submitted_at)
+	{
+		$tgl_selesai = isset($ujian->tgl_selesai) ? strtotime($ujian->tgl_selesai) : false;
+		$waktu_pengumpulan = $submitted_at ? strtotime($submitted_at) : false;
+		return $tgl_selesai !== false && $waktu_pengumpulan !== false && $waktu_pengumpulan > $tgl_selesai;
+	}
+
 	public function get_by_sub_materi($sub_materi_uuid)
 	{
 		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%i WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%i WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
@@ -366,15 +385,9 @@ class ujian_model extends CI_Model {
 			$this->db->where('created_by', $siswa_uuid);
 			$this->db->where('deleted_at', NULL, FALSE);
 			$this->db->order_by('id', 'DESC');
-			$this->db->group_by('ujian_uuid');
-			
-			// return $this->db->get()->result();
-			$data = $this->db->get()->row(); 
+			$this->db->limit(1);
+			$data = $this->db->get()->row();
 			return $data;
-			// echo"<pre>";
-			// print_r($data);
-			// echo"</pre>";
-			// exit;
 
 	}
 

@@ -58,7 +58,7 @@ class Ujian extends MY_Controller {
 		$peserta = []; 
 		foreach ($ujian as $u) {
 			$pengerjaan = false;
-			$pengumpulan = false;
+			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($u->uuid, $user_login);
 		
 			$peserta[$u->uuid] = $this->siswa_model->get_by_ujian($u->uuid);
 			
@@ -66,14 +66,16 @@ class Ujian extends MY_Controller {
 				if ($q->ujian_uuid == $u->uuid && $q->siswa_uuid == $user_login) {
 					$pengerjaan = true;
 				}
-		
-				if ($this->ujian_model->get_pengumpulan_siswa($q->ujian_uuid, $user_login) !== NULL) {
-					$pengumpulan = true;
-				}
 			}
 		
-			$u->pengumpulan = $pengumpulan;
+			$u->pengumpulan = $pengumpulan !== NULL;
 			$u->pengerjaan = $pengerjaan;
+			$u->jadwal_dimulai = $this->ujian_model->is_exam_started($u);
+			$u->jadwal_terlewat = $this->ujian_model->is_exam_over($u);
+			$u->terlambat = $this->ujian_model->is_submission_late(
+				$u,
+				$pengumpulan ? $pengumpulan->modified_at : NULL
+			);
 			$u->attempted = $this->ujian_model->has_attempts($u->uuid);
 		}
 
@@ -852,6 +854,8 @@ class Ujian extends MY_Controller {
 		foreach($peserta as $p){
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
+			$p->terlambat = $this->ujian_model->is_submission_late($ujian, $p->pengumpulan);
+			$p->jadwal_terlewat = $this->ujian_model->is_exam_over($ujian);
 			
 			$p->nilai_ujian = $p->ujian_nilai !== null && $p->ujian_nilai !== ''
 				? $p->ujian_nilai
@@ -902,6 +906,7 @@ class Ujian extends MY_Controller {
 		foreach ($peserta as $p) {
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
+			$p->terlambat = $this->ujian_model->is_submission_late($ujian, $p->pengumpulan);
 			$p->nilai_ujian = $p->ujian_nilai !== null && $p->ujian_nilai !== ''
 				? $p->ujian_nilai
 				: $this->jawaban_model->get_auto_nilai($ujian_uuid, $p->siswa_uuid);
@@ -964,7 +969,9 @@ class Ujian extends MY_Controller {
 			$nilai = !empty($p->nilai_ujian) ? $p->nilai_ujian : '-';
 			$kelas = !empty($p->kelas_nama) ? $p->kelas_nama : '-';
 
-			if (!empty($p->nilai_ujian)) {
+			if ($p->terlambat) {
+				$status = 'Terlambat';
+			} elseif (!empty($p->nilai_ujian)) {
 				$status = 'Sudah Dinilai';
 			} elseif (!empty($p->pengumpulan)) {
 				$status = 'Sudah Mengerjakan';
@@ -1057,6 +1064,8 @@ class Ujian extends MY_Controller {
 		$mapel = $this->mapel_model->get_by_uuid($ujian->mapel_uuid);
         $soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
         $siswa = $this->siswa_model->get_by_uuid($siswa_uuid);
+        $pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $siswa_uuid);
+        $waktu_pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
         foreach ($soal as $s) {
             if ($s->jenis_soal === 'menjodohkan') {
                 $s->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($s->uuid);
@@ -1170,6 +1179,8 @@ class Ujian extends MY_Controller {
 			'siswa' => $siswa,
 			'guru' => $guru->nama,
 			'ujian' => $ujian,
+			'pengumpulan' => $waktu_pengumpulan,
+			'terlambat' => $this->ujian_model->is_submission_late($ujian, $waktu_pengumpulan),
 			'soal' => $soal,
 			'nilai' => $nilai_ujian,
 			'jawaban' => $jawaban,
@@ -1187,6 +1198,10 @@ class Ujian extends MY_Controller {
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
 		if (!$ujian) {
 			show_404();
+		}
+
+		if (has_role(['siswa']) && !$this->ujian_model->is_exam_started($ujian)) {
+			show_error('Ujian belum dimulai. Silakan kembali sesuai jadwal ujian.', 403);
 		}
 
 		if (has_role(['siswa']) && !$this->bab_model->is_exam_unlocked_for_student($ujian, $this->session->userdata('uuid'))) {

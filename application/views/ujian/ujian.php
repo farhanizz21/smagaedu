@@ -112,12 +112,29 @@
                             <div class="flex flex-wrap items-center justify-center gap-1.5">
                                 <?php if(!has_role(['guru'])){?>
                                 <?php if($val->pengerjaan == 1 && $val->pengumpulan == 1) { ?>
+                                <?php if (!empty($val->terlambat)): ?>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                    <i data-lucide="triangle-alert" class="w-3 h-3"></i> Terlambat
+                                </span>
+                                <?php else: ?>
                                 <span class="text-xs text-gray-500 text-center">Sudah dikerjakan</span>
+                                <?php endif; ?>
                                 <?php } else if($val->pengerjaan == 1 && $val->pengumpulan == NULL) { ?>
+                                <?php if (empty($val->jadwal_dimulai)): ?>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                    <i data-lucide="clock-3" class="w-3 h-3"></i> Belum dimulai
+                                </span>
+                                <?php else: ?>
+                                <?php if (!empty($val->jadwal_terlewat)): ?>
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                    <i data-lucide="triangle-alert" class="w-3 h-3"></i> Terlambat
+                                </span>
+                                <?php endif; ?>
                                 <a class="btn-pengerjaan inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
                                     data-uuid="<?= html_escape($val->uuid) ?>">
                                     <i data-lucide="play" class="w-3.5 h-3.5"></i> Mulai Ujian
                                 </a>
+                                <?php endif; ?>
                                 <?php } else if($val->pengerjaan == NULL && $val->pengumpulan == NULL ){ ?>
                                 <span class="text-xs text-gray-400 text-center">Bukan peserta</span>
                                 <?php } ?>
