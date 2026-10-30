@@ -45,12 +45,13 @@
     <?php if ($this->session->userdata('pdf_compress_help')): ?>
     <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-sm">
         <p class="font-semibold">Kompresi di server gagal. Kompres file PDF secara manual, lalu unggah kembali.</p>
-        <a href="https://www.adobe.com/acrobat/online/compress-pdf.html" target="_blank" rel="noopener noreferrer"
+        <a href="https://www.ilovepdf.com/compress_pdf" target="_blank" rel="noopener noreferrer"
             class="inline-flex items-center gap-2 mt-2 font-semibold text-amber-800 underline hover:text-amber-950">
-            Buka kompresor PDF online Adobe
+            Buka kompresor Online
             <i data-lucide="external-link" class="w-4 h-4"></i>
         </a>
-        <p class="mt-2 text-xs">Dokumen akan dikirim ke layanan pihak ketiga. Hindari mengunggah dokumen yang berisi data sensitif.</p>
+        <p class="mt-2 text-xs">Dokumen akan dikirim ke layanan pihak ketiga. Hindari mengunggah dokumen yang berisi
+            data sensitif.</p>
         <?php $this->session->unset_userdata('pdf_compress_help'); ?>
     </div>
     <?php endif; ?>
@@ -74,7 +75,8 @@
                 <form action="<?= base_url('perangkat/upload/' . $mapel->uuid) ?>" method="POST"
                     enctype="multipart/form-data" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
-                        <label for="jenisFile" class="block text-sm font-medium text-gray-700 mb-1">Jenis perangkat</label>
+                        <label for="jenisFile" class="block text-sm font-medium text-gray-700 mb-1">Jenis
+                            perangkat</label>
                         <select id="jenisFile" name="jenis_file" required
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
                             <option value="">Pilih jenis perangkat</option>
@@ -84,16 +86,19 @@
                         </select>
                     </div>
                     <div>
-                        <label for="namaFile" class="block text-sm font-medium text-gray-700 mb-1">Nama perangkat</label>
+                        <label for="namaFile" class="block text-sm font-medium text-gray-700 mb-1">Nama
+                            perangkat</label>
                         <input id="namaFile" type="text" name="nama_file" placeholder="Masukkan nama perangkat" required
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all">
                     </div>
                     <div>
                         <label for="filePerangkat" class="block text-sm font-medium text-gray-700 mb-1">File</label>
-                        <input id="filePerangkat" type="file" name="file_perangkat" accept=".pdf,application/pdf" required
+                        <input id="filePerangkat" type="file" name="file_perangkat" accept=".pdf,application/pdf"
+                            required
                             class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
                     </div>
-                    <p class="md:col-span-2 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+                    <p
+                        class="md:col-span-2 text-sm text-gray-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
                         Aturan upload: hanya file PDF, maksimal 10 MB. File di atas 2 MB akan dikompres otomatis.
                     </p>
                     <button type="submit"
@@ -235,7 +240,8 @@
                 return $file->jenis_file === $jenis_file;
             });
         ?>
-        <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300">
+        <div
+            class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300">
             <div class="px-6 py-4 bg-gradient-to-r from-indigo-500 to-blue-600 border-b border-indigo-200">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
@@ -249,11 +255,13 @@
                 <?php foreach ($jenis_files as $file): ?>
                 <div class="px-6 py-4 flex items-center justify-between hover:bg-indigo-50/50 transition-colors group">
                     <div class="flex items-center gap-3 min-w-0 flex-1">
-                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <div
+                            class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-400 to-blue-600 flex items-center justify-center flex-shrink-0 shadow-sm">
                             <i data-lucide="file-text" class="w-5 h-5 text-white"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-sm font-bold text-gray-900 truncate group-hover:text-indigo-700 transition-colors">
+                            <p
+                                class="text-sm font-bold text-gray-900 truncate group-hover:text-indigo-700 transition-colors">
                                 <?= html_escape($file->nama_file) ?></p>
                             <p class="text-xs text-gray-500"><?= html_escape($file->file) ?></p>
                         </div>
@@ -280,7 +288,8 @@
             </div>
             <?php else: ?>
             <div class="text-center py-12 text-gray-400">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-blue-200 flex items-center justify-center mx-auto mb-3">
+                <div
+                    class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-100 to-blue-200 flex items-center justify-center mx-auto mb-3">
                     <i data-lucide="folder" class="w-8 h-8 text-indigo-600"></i>
                 </div>
                 <p class="text-sm font-semibold text-gray-600">Belum ada <?= html_escape($label) ?></p>
