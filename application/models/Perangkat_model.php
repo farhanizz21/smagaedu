@@ -10,50 +10,9 @@ class Perangkat_model extends CI_Model {
         $this->load->model('guru_model');
     }
 
-    /**
-     * Parse mapel_uuid field - handles both old format (simple array) and new format (array of objects with kelas_list)
-     */
-    private function parse_mapel_uuids($mapel_uuid_json)
-    {
-        if (empty($mapel_uuid_json)) {
-            return [];
-        }
-
-        $data = json_decode($mapel_uuid_json, true);
-        if (!is_array($data)) {
-            return [];
-        }
-
-        // Check if old format (simple array of mapel UUIDs)
-        if (isset($data[0]) && is_string($data[0])) {
-            return $data;
-        }
-
-        // New format: [{"mapel_uuid": "uuid1", "kelas_list": [...]}]
-        $mapel_list = [];
-        foreach ($data as $item) {
-            if (isset($item['mapel_uuid'])) {
-                $mapel_list[] = $item['mapel_uuid'];
-            }
-        }
-        return $mapel_list;
-    }
-
     private function get_mapel_uuids_by_guru($guru_uuid)
     {
-        $this->db->select('user_profiles.mapel_uuid');
-        $this->db->from('users');
-        $this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
-        $this->db->where('users.uuid', $guru_uuid);
-        $this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
-        $this->db->where('users.deleted_at', NULL, FALSE);
-        $guru = $this->db->get()->row();
-        
-        if (!$guru || empty($guru->mapel_uuid)) {
-            return [];
-        }
-        
-        return $this->parse_mapel_uuids($guru->mapel_uuid);
+        return $this->guru_model->get_mapel_uuid_list($guru_uuid);
     }
 
     public function get_mapel_by_guru($guru_uuid, $limit = NULL, $offset = 0)
@@ -136,6 +95,12 @@ class Perangkat_model extends CI_Model {
         $this->db->where('deleted_at', NULL, FALSE);
         foreach ($this->db->get('users')->result() as $teacher) {
             foreach ($this->get_mapel_by_guru($teacher->uuid) as $mapel) {
+                $mapel_uuids[] = $mapel->uuid;
+            }
+        }
+
+        if (has_role('guru')) {
+            foreach ($this->get_mapel_by_guru($this->session->userdata('uuid')) as $mapel) {
                 $mapel_uuids[] = $mapel->uuid;
             }
         }
