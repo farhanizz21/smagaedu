@@ -4,7 +4,7 @@ $parent_url = $is_tugas ? 'tugas' : 'ujian';
 $parent_field = $is_tugas ? 'tugas_uuid' : 'ujian_uuid';
 $parent_title = $is_tugas ? 'Tugas' : 'Ujian';
 $has_student_submissions = !empty($has_student_submissions);
-$can_add_questions = !$is_tugas || !$has_student_submissions;
+$can_add_questions = !$has_student_submissions;
 $header_gradient = $is_tugas ? 'from-violet-600 to-indigo-700' : 'from-rose-500 to-red-600';
 $header_muted_text = $is_tugas ? 'text-violet-100' : 'text-rose-100';
 ?>
@@ -65,10 +65,10 @@ $header_muted_text = $is_tugas ? 'text-violet-100' : 'text-rose-100';
     </div>
     <?php endif; ?>
 
-    <?php if ($is_tugas && $has_student_submissions): ?>
+    <?php if ($has_student_submissions): ?>
     <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-start gap-2">
         <i data-lucide="lock-keyhole" class="w-5 h-5 flex-shrink-0"></i>
-        <span>Penambahan atau impor soal dinonaktifkan karena sudah ada siswa yang mengerjakan tugas ini.</span>
+        <span>Penambahan atau impor soal dinonaktifkan karena <?= $is_tugas ? 'sudah ada siswa yang mengerjakan tugas ini' : 'ujian ini sudah dikerjakan siswa' ?>.</span>
     </div>
     <?php endif; ?>
 
@@ -673,7 +673,9 @@ $header_muted_text = $is_tugas ? 'text-violet-100' : 'text-rose-100';
                 <i data-lucide="file-text" class="w-8 h-8 text-gray-300"></i>
             </div>
             <p class="text-sm font-medium text-gray-500">Belum ada soal</p>
-            <p class="text-xs text-gray-400 mt-1">Tambahkan soal pertama menggunakan form di atas</p>
+            <p class="text-xs text-gray-400 mt-1">
+                <?= $can_add_questions ? 'Tambahkan soal pertama menggunakan form di atas' : 'Soal tidak dapat ditambahkan setelah dikerjakan siswa' ?>
+            </p>
         </div>
         <?php endif; ?>
     </div>
@@ -1035,7 +1037,7 @@ function siapkanFormSoal(form, quill, inputId) {
     var sedangKirim = false;
 
     form.addEventListener('submit', function(e) {
-        if (form.id === 'editSoalForm' && <?= $has_student_submissions ? 'true' : 'false' ?>) {
+        if (form.id === 'editSoalForm' && <?= $is_tugas && $has_student_submissions ? 'true' : 'false' ?>) {
             var confirmation = document.getElementById('confirmSubmittedAnswers');
             if (confirmation && confirmation.value !== '1') {
                 e.preventDefault();

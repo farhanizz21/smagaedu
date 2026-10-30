@@ -331,6 +331,13 @@ class Ujian extends MY_Controller {
 		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menambah soal ujian.', 403);
 		}
+
+		$has_student_submissions = $this->ujian_model->has_attempts($ujian_uuid);
+		if ($has_student_submissions && $this->input->method(TRUE) === 'POST') {
+			$this->session->set_flashdata('error_msg', 'Soal tidak dapat ditambahkan karena ujian sudah dikerjakan siswa.');
+			redirect('ujian/tambah_soal/' . $ujian_uuid);
+			return;
+		}
 		
 		$rules = [
 			[
@@ -354,6 +361,7 @@ class Ujian extends MY_Controller {
 		$data = array(
 			'ujian' => $ujian,
 			'soal' => $this->soal_model->get_by_ujian_uuid($ujian_uuid),
+			'has_student_submissions' => $has_student_submissions,
 			'active_nav' => 'ujian'
 		);
 
@@ -603,6 +611,12 @@ class Ujian extends MY_Controller {
 		}
 		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengimport soal ujian.', 403);
+		}
+
+		if ($this->ujian_model->has_attempts($ujian_uuid)) {
+			$this->session->set_flashdata('error_msg', 'Soal tidak dapat diimpor karena ujian sudah dikerjakan siswa.');
+			redirect('ujian/tambah_soal/' . $ujian_uuid);
+			return;
 		}
 
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
