@@ -75,7 +75,7 @@ class Tugas_model extends CI_Model
 		if (empty($mapel_uuids)) {
 			return array();
 		}
-		$this->db->select('t.uuid, t.judul, t.tgl_selesai, t.modified_at, m.nama AS mapel_nama');
+		$this->db->select('t.uuid, t.judul, t.tgl_mulai, t.tgl_selesai, t.modified_at, m.nama AS mapel_nama');
 		$this->db->from('tugas t');
 		$this->db->join('mapel m', 'm.uuid = t.mapel_uuid', 'left');
 		$this->db->where('t.deleted_at', NULL, FALSE);
@@ -207,6 +207,26 @@ class Tugas_model extends CI_Model
 			->where('deleted_at', NULL)
 			->where('jawaban_siswa !=', '')
 			->count_all_results('tugas_jawaban') > 0;
+	}
+
+	public function get_submission_timestamps($tugas_uuids, $siswa_uuid)
+	{
+		if (empty($tugas_uuids)) {
+			return array();
+		}
+
+		$this->db->select('tugas_uuid, MAX(modified_at) AS submitted_at');
+		$this->db->where_in('tugas_uuid', $tugas_uuids);
+		$this->db->where('created_by', $siswa_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->where('jawaban_siswa !=', '');
+		$this->db->group_by('tugas_uuid');
+
+		$timestamps = array();
+		foreach ($this->db->get('tugas_jawaban')->result() as $row) {
+			$timestamps[$row->tugas_uuid] = $row->submitted_at;
+		}
+		return $timestamps;
 	}
 
 	public function save_answers($tugas_uuid, $siswa_uuid, $answers)

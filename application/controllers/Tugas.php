@@ -46,7 +46,15 @@ class Tugas extends MY_Controller
 		$tugas = $mapel_uuids === NULL
 			? $this->tugas_model->get_all($per_page, $offset)
 			: $this->tugas_model->get_by_mapel_uuids($mapel_uuids, $per_page, $offset);
+		$submission_timestamps = $role === 'siswa'
+			? $this->tugas_model->get_submission_timestamps(array_map(function ($item) {
+				return $item->uuid;
+			}, $tugas), $uuid)
+			: array();
 		foreach ($tugas as $item) {
+			$item->submitted_at = $submission_timestamps[$item->uuid] ?? NULL;
+			$item->terlambat = $item->submitted_at
+				&& strtotime($item->submitted_at) > strtotime($item->tgl_selesai);
 			$item->sudah_dikerjakan = $role === 'siswa'
 				? $this->tugas_model->has_submission($item->uuid, $uuid)
 				: FALSE;
@@ -91,7 +99,10 @@ class Tugas extends MY_Controller
 		$end_no = min($offset + $per_page, $total_rows);
 
 		$this->load->view('partials/header_tailwind', array('title' => 'Daftar Tugas'));
-		$this->load->view('partials/navbar', array('active_nav' => 'tugas'));
+		$this->load->view('partials/navbar', array(
+			'active_nav' => 'tugas',
+			'pending_tasks' => $pending_tasks
+		));
 		$this->load->view('tugas/index', array(
 			'tugas' => $tugas,
 			'pending_tasks' => $pending_tasks,
@@ -451,6 +462,10 @@ class Tugas extends MY_Controller
 			}
 			$submissions[$answer->siswa_uuid]['jawaban'][] = $answer;
 		}
+		foreach ($submissions as &$submission) {
+			$submission['terlambat'] = strtotime($submission['terakhir_diubah']) > strtotime($tugas->tgl_selesai);
+		}
+		unset($submission);
 		$this->load->view('partials/header_tailwind', array('title' => 'Pengumpulan Tugas'));
 		$this->load->view('partials/navbar', array('active_nav' => 'tugas'));
 		$this->load->view('tugas/pengumpulan', array(
@@ -479,6 +494,10 @@ class Tugas extends MY_Controller
 		}
 
 		$has_submission = $this->tugas_model->has_submission($tugas_uuid, $siswa_uuid);
+		if (!$has_submission && strtotime($tugas->tgl_mulai) > time()) {
+			$this->session->set_flashdata('error_msg', 'Tugas belum dapat dikerjakan karena jadwalnya belum dimulai.');
+			redirect('tugas');
+		}
 		if ($this->input->method(TRUE) === 'POST') {
 			if ($has_submission) {
 				$this->session->set_flashdata('error_msg', 'Jawaban yang sudah dikumpulkan hanya dapat dilihat dan tidak dapat diubah.');
@@ -648,7 +667,23 @@ class Tugas extends MY_Controller
 	private function available_mapel()
 	{
 		if (has_role(['admin', 'superadmin'])) {
-			return $this->mapel_model->get_all();
+			$mapel = $this->mapel_model->get_all();
+			if (has_role('guru')) {
+				$guru_uuid = $this->session->userdata('uuid');
+				$guru = $this->guru_model->get_by_uuid($guru_uuid);
+				if ($guru) {
+					$mapel = array_merge(
+						$mapel,
+						$this->mapel_model->get_all_by_guru_relation($guru_uuid, $guru->mapel_list ?? array())
+					);
+				}
+			}
+
+			$mapel_by_uuid = array();
+			foreach ($mapel as $subject) {
+				$mapel_by_uuid[$subject->uuid] = $subject;
+			}
+			return array_values($mapel_by_uuid);
 		}
 		$guru = $this->guru_model->get_by_uuid($this->session->userdata('uuid'));
 		return $guru ? $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? array()) : array();

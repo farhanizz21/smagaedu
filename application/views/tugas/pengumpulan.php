@@ -30,10 +30,17 @@
                     <h2 class="font-bold text-gray-900"><?= html_escape($submission['nama'] ?: 'Nama siswa tidak tersedia') ?></h2>
                     <p class="text-xs text-gray-500 mt-1">NIS: <?= html_escape($submission['nis'] ?? '-') ?> · Kelas: <?= html_escape($submission['kelas_nama'] ?? '-') ?></p>
                 </div>
-                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg px-3 py-1.5">
-                    <i data-lucide="clock-3" class="w-3.5 h-3.5"></i>
-                    Terakhir disimpan <?= html_escape(date('d M Y H:i', strtotime($submission['terakhir_diubah']))) ?>
-                </span>
+                <div class="flex flex-wrap items-center gap-1.5">
+                    <?php if (!empty($submission['terlambat'])): ?>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                        <i data-lucide="triangle-alert" class="w-3 h-3"></i> Terlambat
+                    </span>
+                    <?php endif; ?>
+                    <span class="inline-flex items-center gap-1.5 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-lg px-3 py-1.5">
+                        <i data-lucide="clock-3" class="w-3.5 h-3.5"></i>
+                        Terakhir disimpan <?= html_escape(date('d M Y H:i', strtotime($submission['terakhir_diubah']))) ?>
+                    </span>
+                </div>
             </div>
             <div class="divide-y divide-gray-100">
                 <?php foreach ($submission['jawaban'] as $index => $answer): ?>

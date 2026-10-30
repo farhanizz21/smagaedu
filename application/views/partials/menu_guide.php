@@ -133,7 +133,7 @@ $guides = [
         ],
         'role_steps' => [
             'siswa' => [
-                'Periksa judul, mata pelajaran, dan batas waktu. Tugas baru atau yang belum dikerjakan ditandai pada Informasi Tugas.',
+                'Periksa judul, mata pelajaran, dan batas waktu. Pengingat tugas tampil di panel Pengingat di atas halaman; tugas yang belum dimulai belum dapat dikerjakan.',
                 'Pilih Kerjakan Tugas, isi jawaban, lalu simpan.',
                 'Buka Lihat Jawaban untuk memeriksa tugas yang sudah dikumpulkan; jawaban yang terkumpul tidak dapat diubah.',
             ],
