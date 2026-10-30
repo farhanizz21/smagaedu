@@ -32,7 +32,7 @@ class ujian_model extends CI_Model {
 
 	public function get_by_sub_materi($sub_materi_uuid)
 	{
-		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%i WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%i WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
 		$this->db->from('ujian u');
 		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
@@ -46,7 +46,7 @@ class ujian_model extends CI_Model {
 
     public function get_all($limit = NULL, $offset = 0)
 	{
-		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%i WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%i WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
 		$this->db->from('ujian u');
 		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
@@ -82,7 +82,7 @@ class ujian_model extends CI_Model {
 			return [];
 		}
 
-		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%i WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%i WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
 		$this->db->from('ujian u');
 		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
@@ -118,7 +118,7 @@ class ujian_model extends CI_Model {
 	public function get_all_by_siswa_uuid($siswa_uuid, $limit = NULL, $offset = 0)
 	{
 		$this->db->distinct();
-		$this->db->select("u.*, m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
+		$this->db->select("u.*, m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%i WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%i WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama, b.judul AS bab_judul", FALSE);
 		$this->db->from('ujian_siswa us');
 		$this->db->join('ujian u', 'u.uuid = us.ujian_uuid', 'inner');
 		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
@@ -291,7 +291,7 @@ class ujian_model extends CI_Model {
 	 */
 	public function get_by_bab($bab_uuid)
 	{
-		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%i WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%i WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
 		$this->db->from('ujian u');
 		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
@@ -318,7 +318,7 @@ class ujian_model extends CI_Model {
 	{
 		// $data = $this->db->get_where('ujian', array('uuid' => $uuid))->row();
 
-		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
+		$this->db->select("u.*,m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%i WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%i WIB, %d %M %Y') as tgl_selesai_formatted, g.nama AS guru_nama", FALSE);
 		$this->db->from('ujian u');
 		$this->db->join('guru g', 'g.uuid = u.created_by', 'left');
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
