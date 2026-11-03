@@ -472,8 +472,19 @@ class Tugas extends MY_Controller
 			$per_page,
 			$offset
 		);
+		$submission_answers = $this->tugas_model->get_submission_answers($tugas_uuid, $student_uuids);
+		$matching_question_uuids = array();
+		foreach ($submission_answers as $answer) {
+			if ($answer->jenis_soal === 'menjodohkan') {
+				$matching_question_uuids[] = $answer->soal_uuid;
+			}
+		}
+		$pairs_by_question = $this->soal_model->get_jodohkan_pairs_by_soal_uuids(array_unique($matching_question_uuids));
 		$submissions = array();
-		foreach ($this->tugas_model->get_submission_answers($tugas_uuid, $student_uuids) as $answer) {
+		foreach ($submission_answers as $answer) {
+			if ($answer->jenis_soal === 'menjodohkan') {
+				$answer->jodohkan_pairs = $pairs_by_question[$answer->soal_uuid] ?? array();
+			}
 			if (!isset($submissions[$answer->siswa_uuid])) {
 				$submissions[$answer->siswa_uuid] = array(
 					'nama' => $answer->siswa_nama,

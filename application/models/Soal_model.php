@@ -201,6 +201,22 @@ class soal_model extends CI_Model {
 		return $query->result();
 	}
 
+	public function get_jodohkan_pairs_by_soal_uuids($soal_uuids)
+	{
+		if (empty($soal_uuids)) {
+			return array();
+		}
+		$this->db->where_in('soal_uuid', $soal_uuids);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->order_by('soal_uuid', 'ASC');
+		$this->db->order_by('urutan', 'ASC');
+		$pairs_by_soal = array();
+		foreach ($this->db->get('ujian_soal_jodohkan')->result() as $pair) {
+			$pairs_by_soal[$pair->soal_uuid][] = $pair;
+		}
+		return $pairs_by_soal;
+	}
+
 	public function delete_jodohkan_pairs($soal_uuid)
 	{
 		return $this->db->delete('ujian_soal_jodohkan', array('soal_uuid' => $soal_uuid));

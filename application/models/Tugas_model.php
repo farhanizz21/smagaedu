@@ -231,7 +231,7 @@ class Tugas_model extends CI_Model
 		if (is_array($siswa_uuids) && empty($siswa_uuids)) {
 			return array();
 		}
-		$this->db->select('tj.created_by AS siswa_uuid, siswa.nama AS siswa_nama, siswa.nis, kelas.nama AS kelas_nama, tj.modified_at AS jawaban_diubah, tj.jawaban_siswa, soal.uuid AS soal_uuid, soal.soal, soal.jenis_soal, soal.jenis_jawaban_essay');
+		$this->db->select('tj.created_by AS siswa_uuid, siswa.nama AS siswa_nama, siswa.nis, kelas.nama AS kelas_nama, tj.modified_at AS jawaban_diubah, tj.jawaban_siswa, soal.uuid AS soal_uuid, soal.soal, soal.jenis_soal, soal.jenis_jawaban_essay, soal.jawaban_benar, soal.jawaban_a, soal.jawaban_b, soal.jawaban_c, soal.jawaban_d, soal.jawaban_e');
 		$this->db->from('tugas_jawaban tj');
 		$this->db->join('siswa', 'siswa.uuid = tj.created_by', 'left');
 		$this->db->join('kelas', 'kelas.uuid = siswa.kelas_uuid', 'left');
