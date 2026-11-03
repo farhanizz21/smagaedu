@@ -4,7 +4,7 @@ use Ramsey\Uuid\Uuid;
 
 class bab_model extends CI_Model {
 
-    public function insert($materi_uuid, $dokumentasi)
+    public function insert($materi_uuid, $dokumentasi, $jadwal_akses)
     {
         $uuid = Uuid::uuid4()->toString();
         $this->db->trans_begin();
@@ -24,10 +24,16 @@ class bab_model extends CI_Model {
             'deskripsi'   => $this->input->post('deskripsi'),
             'dokumentasi' => $dokumentasi,
             'dokumentasi_link' => $this->input->post('dokumentasi_link'),
+            'jadwal_akses_sama' => $jadwal_akses['sama_untuk_semua'] ? 1 : 0,
+            'tanggal_akses' => $jadwal_akses['tanggal_akses'],
             'created_by'  => $this->session->userdata('uuid')
         );
         $this->db->insert('bab', $data);
-		if ($this->db->trans_status() && $this->db->affected_rows() > 0) {
+        $inserted = $this->db->trans_status() && $this->db->affected_rows() > 0;
+        if ($inserted) {
+            $this->save_class_access_dates($uuid, $jadwal_akses['kelas']);
+        }
+		if ($inserted && $this->db->trans_status()) {
 			$this->db->trans_commit();
             return $uuid;
         }
@@ -141,9 +147,78 @@ class bab_model extends CI_Model {
         if (!$current_bab || !$this->is_materi_unlocked_for_student($current_bab->materi_uuid, $siswa_uuid)) {
             return false;
         }
+        if (!$this->is_bab_accessible_for_student($bab_uuid, $siswa_uuid)) {
+            return false;
+        }
 
         $progress = $this->get_progress_for_materi($current_bab->materi_uuid, $siswa_uuid);
         return !empty($progress[$bab_uuid]['unlocked']);
+    }
+
+    public function get_access_schedule($bab_uuid)
+    {
+        $bab = $this->db
+            ->select('jadwal_akses_sama, tanggal_akses')
+            ->where('uuid', $bab_uuid)
+            ->where('deleted_at', NULL, FALSE)
+            ->get('bab')
+            ->row();
+        if (!$bab) {
+            return NULL;
+        }
+
+        $kelas_dates = array();
+        foreach ($this->db
+            ->where('bab_uuid', $bab_uuid)
+            ->get('bab_jadwal_kelas')
+            ->result() as $row) {
+            $kelas_dates[$row->kelas_uuid] = $row->tanggal_akses;
+        }
+
+        return array(
+            'sama_untuk_semua' => (bool) $bab->jadwal_akses_sama,
+            'tanggal_akses' => $bab->tanggal_akses,
+            'kelas' => $kelas_dates
+        );
+    }
+
+    public function get_access_date_for_class($bab_uuid, $kelas_uuid)
+    {
+        if (!empty($kelas_uuid)) {
+            $override = $this->db
+                ->select('tanggal_akses')
+                ->where('bab_uuid', $bab_uuid)
+                ->where('kelas_uuid', $kelas_uuid)
+                ->get('bab_jadwal_kelas')
+                ->row();
+            if ($override) {
+                return $override->tanggal_akses;
+            }
+        }
+
+        $bab = $this->db
+            ->select('tanggal_akses')
+            ->where('uuid', $bab_uuid)
+            ->where('deleted_at', NULL, FALSE)
+            ->get('bab')
+            ->row();
+        return $bab ? $bab->tanggal_akses : NULL;
+    }
+
+    public function is_bab_accessible_for_student($bab_uuid, $siswa_uuid)
+    {
+        $siswa = $this->db
+            ->select('kelas_uuid')
+            ->where('uuid', $siswa_uuid)
+            ->where('deleted_at', NULL, FALSE)
+            ->get('siswa')
+            ->row();
+        if (!$siswa) {
+            return false;
+        }
+
+        $tanggal_akses = $this->get_access_date_for_class($bab_uuid, $siswa->kelas_uuid);
+        return empty($tanggal_akses) || $tanggal_akses <= date('Y-m-d');
     }
 
     public function get_progress_for_mapel($mapel_uuid, $siswa_uuid)
@@ -283,17 +358,38 @@ class bab_model extends CI_Model {
                 && (int) $materi->pekan_ke <= (int) $periode->pekan);
     }
 
-    public function update($uuid, $dokumentasi)
+    public function update($uuid, $dokumentasi, $jadwal_akses)
     {
         $data = array(
             'judul'       => $this->input->post('judul'),
             'deskripsi'   => $this->input->post('deskripsi'),
             'dokumentasi' => $dokumentasi,
             'dokumentasi_link' => $this->input->post('dokumentasi_link'),
+            'jadwal_akses_sama' => $jadwal_akses['sama_untuk_semua'] ? 1 : 0,
+            'tanggal_akses' => $jadwal_akses['tanggal_akses'],
             'modified_at' => date("Y-m-d H:i:s")
         );
+        $this->db->trans_begin();
         $this->db->update('bab', $data, array('uuid' => $uuid));
-        return ($this->db->affected_rows() > 0);
+        $this->save_class_access_dates($uuid, $jadwal_akses['kelas']);
+        if ($this->db->trans_status()) {
+            $this->db->trans_commit();
+            return true;
+        }
+        $this->db->trans_rollback();
+        return false;
+    }
+
+    private function save_class_access_dates($bab_uuid, $kelas_dates)
+    {
+        $this->db->delete('bab_jadwal_kelas', array('bab_uuid' => $bab_uuid));
+        foreach ($kelas_dates as $kelas_uuid => $tanggal_akses) {
+            $this->db->insert('bab_jadwal_kelas', array(
+                'bab_uuid' => $bab_uuid,
+                'kelas_uuid' => $kelas_uuid,
+                'tanggal_akses' => $tanggal_akses
+            ));
+        }
     }
 
     public function delete_by_uuid($uuid)
