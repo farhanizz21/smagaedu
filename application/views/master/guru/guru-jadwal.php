@@ -4,18 +4,30 @@
 <?php endif; ?>
 
 <div class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Page Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight">Jadwal Mengajar</h1>
-            <p class="text-gray-500 mt-1 text-sm">Upload jadwal mengajar berupa gambar untuk dilihat Kepala Sekolah</p>
+    <div class="relative bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
+        <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                        <i data-lucide="calendar" class="w-7 h-7 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Jadwal Mengajar</h1>
+                    </div>
+                </div>
+                <p class="text-blue-100 mt-1 text-sm ml-15">Upload jadwal mengajar berupa gambar untuk dilihat Kepala Sekolah</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="document.getElementById('uploadModal').classList.remove('hidden')"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-blue-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg transition-all text-sm">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                    Upload Jadwal
+                </button>
+                <?php $this->load->view('partials/menu_guide', ['active_nav' => 'jadwal', 'button_style' => 'hero']); ?>
+            </div>
         </div>
-        <button onclick="document.getElementById('uploadModal').classList.remove('hidden')"
-            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-white bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700 hover:shadow-xl transition-all text-sm">
-            <i data-lucide="upload" class="w-4 h-4"></i>
-            Upload Jadwal
-        </button>
-        <?php $this->load->view('partials/menu_guide', ['active_nav' => 'jadwal']); ?>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+        <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>

@@ -112,11 +112,22 @@ class soal_model extends CI_Model {
 		return $data->result();
 	}
 
-	public function get_by_tugas_uuid($tugas_uuid)
+	public function count_by_tugas_uuid($tugas_uuid)
+	{
+		$this->db->where('tugas_uuid', $tugas_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		return $this->db->count_all_results('ujian_soal');
+	}
+
+	public function get_by_tugas_uuid($tugas_uuid, $limit = NULL, $offset = 0)
 	{
 		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, jenis_jawaban_essay, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
 		$this->db->where('tugas_uuid', $tugas_uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->order_by('id', 'ASC');
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
 		return $this->db->get('ujian_soal')->result();
 	}
 
@@ -199,6 +210,22 @@ class soal_model extends CI_Model {
 		$this->db->order_by('urutan', 'ASC');
 		$query = $this->db->get('ujian_soal_jodohkan');
 		return $query->result();
+	}
+
+	public function get_jodohkan_pairs_by_soal_uuids($soal_uuids)
+	{
+		if (empty($soal_uuids)) {
+			return array();
+		}
+		$this->db->where_in('soal_uuid', $soal_uuids);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->order_by('soal_uuid', 'ASC');
+		$this->db->order_by('urutan', 'ASC');
+		$pairs_by_soal = array();
+		foreach ($this->db->get('ujian_soal_jodohkan')->result() as $pair) {
+			$pairs_by_soal[$pair->soal_uuid][] = $pair;
+		}
+		return $pairs_by_soal;
 	}
 
 	public function delete_jodohkan_pairs($soal_uuid)

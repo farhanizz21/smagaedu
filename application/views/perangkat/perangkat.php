@@ -4,21 +4,22 @@
 <?php endif; ?>
 
 <div class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Colorful Header -->
     <div
         class="relative bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
-        <div class="relative z-10">
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-                    <i data-lucide="monitor-smartphone" class="w-7 h-7 text-white"></i>
+        <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                        <i data-lucide="monitor-smartphone" class="w-7 h-7 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Perangkat Mata Pelajaran
+                        </h1>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Perangkat Mata Pelajaran
-                    </h1>
-                </div>
+                <p class="text-blue-100 mt-1 text-sm ml-15">Kelola Modul dan ATP (Alur Tujuan Pembelajaran)</p>
             </div>
-            <p class="text-blue-100 mt-1 text-sm ml-15">Kelola Modul dan ATP (Alur Tujuan Pembelajaran)</p>
-            <div class="relative z-10 mt-4">
+            <div class="flex flex-wrap items-center gap-2">
                 <?php $this->load->view('partials/menu_guide', ['active_nav' => 'perangkat', 'button_style' => 'hero']); ?>
             </div>
         </div>

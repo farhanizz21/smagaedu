@@ -385,7 +385,7 @@ $header_muted_text = $is_tugas ? 'text-violet-100' : 'text-rose-100';
             <div class="flex items-center gap-2">
                 <?php if(!empty($soal)): ?>
                 <span class="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                    <?= count($soal) ?> soal
+                    <?= $is_tugas ? (int) $total_soal : count($soal) ?> soal
                 </span>
                 <button id="bulkDeleteBtn"
                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors hidden">
@@ -458,7 +458,7 @@ $header_muted_text = $is_tugas ? 'text-violet-100' : 'text-rose-100';
                 return trim($t);
             }
             ?>
-            <?php $no = 1; ?>
+            <?php $no = $is_tugas ? (int) $start_no : 1; ?>
             <?php foreach($soal as $s):
                 $jenis_label = $jenis_labels[$s->jenis_soal] ?? ($s->jenis_soal ?? '-');
                 $type_color = $type_colors[$s->jenis_soal] ?? 'bg-gray-100 text-gray-700 border-gray-200';
@@ -676,6 +676,14 @@ $header_muted_text = $is_tugas ? 'text-violet-100' : 'text-rose-100';
             <p class="text-xs text-gray-400 mt-1">
                 <?= $can_add_questions ? 'Tambahkan soal pertama menggunakan form di atas' : 'Soal tidak dapat ditambahkan setelah dikerjakan siswa' ?>
             </p>
+        </div>
+        <?php endif; ?>
+        <?php if ($is_tugas && !empty($pagination_links)): ?>
+        <div class="mt-6 pt-5 border-t border-gray-100">
+            <p class="text-xs text-gray-500 text-center mb-3">
+                Menampilkan <?= (int) $start_no ?>–<?= (int) $end_no ?> dari <?= (int) $total_soal ?> soal
+            </p>
+            <?= $pagination_links ?>
         </div>
         <?php endif; ?>
     </div>

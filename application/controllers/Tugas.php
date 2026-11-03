@@ -31,6 +31,20 @@ class Tugas extends MY_Controller
 			$mapel_uuids = $this->guru_model->get_mapel_uuid_list($uuid);
 		}
 
+		$mapel = $mapel_uuids === NULL
+			? $this->mapel_model->get_all()
+			: $this->mapel_model->get_many_mapel_by_uuid($mapel_uuids);
+		$mapel_uuid_filter = trim((string) $this->input->get('mapel_uuid', TRUE));
+		$available_mapel_uuids = array_map(function ($subject) {
+			return $subject->uuid;
+		}, $mapel);
+		if (!in_array($mapel_uuid_filter, $available_mapel_uuids, TRUE)) {
+			$mapel_uuid_filter = '';
+		}
+		$filters = array(
+			'q' => trim((string) $this->input->get('q', TRUE)),
+			'mapel_uuid' => $mapel_uuid_filter
+		);
 		$per_page_options = array(10, 25, 50, 100);
 		$per_page = (int) $this->input->get('per_page');
 		if (!in_array($per_page, $per_page_options, TRUE)) {
@@ -38,14 +52,14 @@ class Tugas extends MY_Controller
 		}
 		$page = max(1, (int) $this->input->get('page'));
 		$total_rows = $mapel_uuids === NULL
-			? $this->tugas_model->count_all()
-			: $this->tugas_model->count_by_mapel_uuids($mapel_uuids);
+			? $this->tugas_model->count_all($filters)
+			: $this->tugas_model->count_by_mapel_uuids($mapel_uuids, $filters);
 		$total_pages = max(1, (int) ceil($total_rows / $per_page));
 		$page = min($page, $total_pages);
 		$offset = ($page - 1) * $per_page;
 		$tugas = $mapel_uuids === NULL
-			? $this->tugas_model->get_all($per_page, $offset)
-			: $this->tugas_model->get_by_mapel_uuids($mapel_uuids, $per_page, $offset);
+			? $this->tugas_model->get_all($per_page, $offset, $filters)
+			: $this->tugas_model->get_by_mapel_uuids($mapel_uuids, $per_page, $offset, $filters);
 		$submission_timestamps = $role === 'siswa'
 			? $this->tugas_model->get_submission_timestamps(array_map(function ($item) {
 				return $item->uuid;
@@ -110,6 +124,8 @@ class Tugas extends MY_Controller
 			'from_controller' => TRUE,
 			'per_page' => $per_page,
 			'per_page_options' => $per_page_options,
+			'mapel' => $mapel,
+			'filters' => $filters,
 			'total_rows' => $total_rows,
 			'start_no' => $start_no,
 			'end_no' => $end_no,
@@ -252,17 +268,63 @@ class Tugas extends MY_Controller
 			$this->session->set_flashdata($inserted ? 'success_msg' : 'error_msg', $inserted ? 'Soal tugas berhasil disimpan.' : 'Soal tugas gagal disimpan.');
 			redirect('tugas/tambah_soal/' . $tugas_uuid);
 		}
-		$soal = $this->soal_model->get_by_tugas_uuid($tugas_uuid);
+		$per_page = (int) $this->input->get('per_page');
+		$per_page_options = array(10, 25, 50, 100);
+		if (!in_array($per_page, $per_page_options, TRUE)) {
+			$per_page = 10;
+		}
+		$total_rows = $this->soal_model->count_by_tugas_uuid($tugas_uuid);
+		$total_pages = max(1, (int) ceil($total_rows / $per_page));
+		$page = min(max(1, (int) $this->input->get('page')), $total_pages);
+		$offset = ($page - 1) * $per_page;
+		$soal = $this->soal_model->get_by_tugas_uuid($tugas_uuid, $per_page, $offset);
 		foreach ($soal as $item) {
 			if ($item->jenis_soal === 'menjodohkan') {
 				$item->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($item->uuid);
 			}
 		}
+		$this->load->library('pagination');
+		$this->pagination->initialize(array(
+			'base_url' => base_url('tugas/tambah_soal/' . $tugas_uuid),
+			'total_rows' => $total_rows,
+			'per_page' => $per_page,
+			'use_page_numbers' => TRUE,
+			'page_query_string' => TRUE,
+			'query_string_segment' => 'page',
+			'reuse_query_string' => TRUE,
+			'cur_page' => $page,
+			'num_links' => 2,
+			'first_link' => '&laquo;',
+			'prev_link' => '&lsaquo;',
+			'next_link' => '&rsaquo;',
+			'last_link' => '&raquo;',
+			'full_tag_open' => '<nav aria-label="Navigasi halaman"><ul class="flex flex-wrap items-center justify-center gap-1 list-none p-0 m-0">',
+			'full_tag_close' => '</ul></nav>',
+			'num_tag_open' => '<li>',
+			'num_tag_close' => '</li>',
+			'cur_tag_open' => '<li><span class="min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold text-white bg-violet-600 border border-violet-600">',
+			'cur_tag_close' => '</span></li>',
+			'first_tag_open' => '<li>',
+			'first_tag_close' => '</li>',
+			'prev_tag_open' => '<li>',
+			'prev_tag_close' => '</li>',
+			'next_tag_open' => '<li>',
+			'next_tag_close' => '</li>',
+			'last_tag_open' => '<li>',
+			'last_tag_close' => '</li>',
+			'attributes' => array(
+				'class' => 'min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors'
+			)
+		));
 		$this->load->view('partials/header_tailwind', array('title' => 'Tambah Soal Tugas'));
 		$this->load->view('partials/navbar', array('active_nav' => 'tugas'));
 		$this->load->view('ujian/ujian-soal', array(
 			'ujian' => (object) array('uuid' => $tugas->uuid, 'nama' => $tugas->judul),
 			'soal' => $soal,
+			'total_soal' => $total_rows,
+			'start_no' => $total_rows > 0 ? $offset + 1 : 0,
+			'end_no' => min($offset + $per_page, $total_rows),
+			'pagination_links' => $this->pagination->create_links(),
 			'is_tugas' => TRUE,
 			'has_student_submissions' => $has_student_submissions,
 			'active_nav' => 'tugas',
@@ -472,8 +534,19 @@ class Tugas extends MY_Controller
 			$per_page,
 			$offset
 		);
+		$submission_answers = $this->tugas_model->get_submission_answers($tugas_uuid, $student_uuids);
+		$matching_question_uuids = array();
+		foreach ($submission_answers as $answer) {
+			if ($answer->jenis_soal === 'menjodohkan') {
+				$matching_question_uuids[] = $answer->soal_uuid;
+			}
+		}
+		$pairs_by_question = $this->soal_model->get_jodohkan_pairs_by_soal_uuids(array_unique($matching_question_uuids));
 		$submissions = array();
-		foreach ($this->tugas_model->get_submission_answers($tugas_uuid, $student_uuids) as $answer) {
+		foreach ($submission_answers as $answer) {
+			if ($answer->jenis_soal === 'menjodohkan') {
+				$answer->jodohkan_pairs = $pairs_by_question[$answer->soal_uuid] ?? array();
+			}
 			if (!isset($submissions[$answer->siswa_uuid])) {
 				$submissions[$answer->siswa_uuid] = array(
 					'nama' => $answer->siswa_nama,

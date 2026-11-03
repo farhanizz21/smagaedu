@@ -4,32 +4,33 @@
 <?php endif; ?>
 
 <div class="max-w-7xl mx-auto px-6 py-8">
-    <!-- Colorful Header -->
     <div
         class="relative bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl p-6 md:p-8 mb-8 text-white overflow-hidden">
-        <div class="relative z-10">
-            <div class="flex items-center gap-3 mb-2">
-                <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
-                    <i data-lucide="folder-kanban" class="w-7 h-7 text-white"></i>
+        <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center">
+                        <i data-lucide="folder-kanban" class="w-7 h-7 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Daftar Proyek</h1>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Daftar Proyek</h1>
-                </div>
+                <p class="text-violet-100 mt-1 text-sm ml-15">Kelola proyek pembelajaran di SMAGAEDU</p>
             </div>
-            <p class="text-violet-100 mt-1 text-sm ml-15">Kelola proyek pembelajaran di SMAGAEDU</p>
+            <div class="flex flex-wrap items-center gap-2">
+                <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
+                <a href="<?=base_url('proyek/tambah')?>"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-violet-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg transition-all text-sm">
+                    <i data-lucide="plus" class="w-4 h-4"></i>
+                    Tambah Data
+                </a>
+                <?php } ?>
+                <?php $this->load->view('partials/menu_guide', ['active_nav' => 'proyek', 'button_style' => 'hero']); ?>
+            </div>
         </div>
         <div class="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-16 -mt-16"></div>
         <div class="absolute bottom-0 right-20 w-32 h-32 bg-white/5 rounded-full -mb-10"></div>
-        <div class="relative z-10 mt-4 flex flex-wrap items-center gap-2">
-        <?php if(has_role(['superadmin', 'admin', 'guru'])){?>
-            <a href="<?=base_url('proyek/tambah')?>"
-                class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-violet-900 bg-white/90 backdrop-blur-sm hover:bg-white shadow-lg hover:shadow-xl transition-all text-sm">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                Tambah Data
-            </a>
-        <?php } ?>
-            <?php $this->load->view('partials/menu_guide', ['active_nav' => 'proyek', 'button_style' => 'hero']); ?>
-        </div>
     </div>
 
     <?php if ($this->session->userdata('success_msg')): ?>

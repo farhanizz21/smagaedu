@@ -91,6 +91,18 @@
                         <option value="sudah_dinilai">Sudah Dinilai</option>
                     </select>
                 </div>
+                <form method="get" action="<?= base_url('ujian/tambah_kelas/'.$ujian->uuid) ?>"
+                    class="flex items-center gap-2">
+                    <label for="pesertaPerPage" class="text-sm font-medium text-gray-600">Tampilkan:</label>
+                    <select id="pesertaPerPage" name="per_page" onchange="this.form.submit()"
+                        class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm bg-white">
+                        <?php foreach ($per_page_options as $option): ?>
+                        <option value="<?= $option ?>" <?= $per_page === $option ? 'selected' : '' ?>>
+                            <?= $option ?> / halaman
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
                 <div class="ml-auto">
                     <button type="button" onclick="exportNilai()"
                         class="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 shadow-lg shadow-green-200 transition-all text-sm">
@@ -129,7 +141,7 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                     <?php 
-                        $no = 1;
+                        $no = $start_no;
                         foreach($peserta as $val) {
                             $waktu_pengumpulan = !empty($val->pengumpulan) ? date('d M Y H:i', strtotime($val->pengumpulan)) : '-';
                             $ada_nilai = $val->nilai_ujian !== null && $val->nilai_ujian !== '';
@@ -204,6 +216,18 @@
         <div class="text-center py-12 text-gray-400">
             <i data-lucide="users" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
             <p class="text-sm">Belum ada peserta ujian</p>
+        </div>
+        <?php endif; ?>
+        <?php if ($total_rows > 0): ?>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-t border-gray-200">
+            <p class="text-sm text-gray-500">
+                Menampilkan <span class="font-semibold text-gray-700"><?= $start_no ?></span>&ndash;<span
+                    class="font-semibold text-gray-700"><?= $end_no ?></span>
+                dari <span class="font-semibold text-gray-700"><?= $total_rows ?></span> peserta
+            </p>
+            <?php if (!empty($pagination_links)): ?>
+            <?= $pagination_links ?>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
     </div>

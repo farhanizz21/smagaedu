@@ -864,7 +864,17 @@ class Ujian extends MY_Controller {
 		}
 
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
-		$peserta = $this->siswa_model->get_by_ujian($ujian_uuid);
+		$per_page_options = array(10, 25, 50, 100);
+		$per_page = (int) $this->input->get('per_page');
+		if (!in_array($per_page, $per_page_options, TRUE)) {
+			$per_page = 10;
+		}
+		$page = max(1, (int) $this->input->get('page'));
+		$total_rows = $this->siswa_model->count_by_ujian($ujian_uuid);
+		$total_pages = max(1, (int) ceil($total_rows / $per_page));
+		$page = min($page, $total_pages);
+		$offset = ($page - 1) * $per_page;
+		$peserta = $this->siswa_model->get_by_ujian($ujian_uuid, $per_page, $offset);
 		foreach($peserta as $p){
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
@@ -875,22 +885,53 @@ class Ujian extends MY_Controller {
 				? $p->ujian_nilai
 				: $this->jawaban_model->get_auto_nilai($ujian_uuid, $p->siswa_uuid);
 		}
-		
-		// Ambil daftar kelas yang terdaftar sebagai peserta untuk filter
-		$kelas_filter = [];
-		foreach($peserta as $p){
-			if(!empty($p->kelas_nama) && !in_array($p->kelas_nama, $kelas_filter)){
-				$kelas_filter[] = $p->kelas_nama;
-			}
-		}
-		sort($kelas_filter);
+
+		$this->load->library('pagination');
+		$this->pagination->initialize(array(
+			'base_url'             => base_url('ujian/tambah_kelas/' . $ujian_uuid),
+			'total_rows'           => $total_rows,
+			'per_page'             => $per_page,
+			'use_page_numbers'     => TRUE,
+			'page_query_string'    => TRUE,
+			'query_string_segment' => 'page',
+			'reuse_query_string'   => TRUE,
+			'cur_page'             => $page,
+			'num_links'            => 2,
+			'first_link'           => '&laquo;',
+			'prev_link'            => '&lsaquo;',
+			'next_link'            => '&rsaquo;',
+			'last_link'            => '&raquo;',
+			'full_tag_open'        => '<nav aria-label="Navigasi halaman"><ul class="flex flex-wrap items-center justify-center gap-1 list-none p-0 m-0">',
+			'full_tag_close'       => '</ul></nav>',
+			'num_tag_open'         => '<li>',
+			'num_tag_close'        => '</li>',
+			'cur_tag_open'         => '<li><span class="min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold text-white bg-blue-600 border border-blue-600">',
+			'cur_tag_close'        => '</span></li>',
+			'first_tag_open'       => '<li>',
+			'first_tag_close'      => '</li>',
+			'prev_tag_open'        => '<li>',
+			'prev_tag_close'       => '</li>',
+			'next_tag_open'        => '<li>',
+			'next_tag_close'       => '</li>',
+			'last_tag_open'        => '<li>',
+			'last_tag_close'       => '</li>',
+			'attributes'           => array(
+				'class' => 'min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors',
+			),
+		));
 
 		$data = array(
 			'ujian' => $ujian,
 			'peserta' => $peserta,
 			'kelas' => $kelas_list,
-			'kelas_filter' => $kelas_filter,
-			'active_nav' => 'ujian'
+			'kelas_filter' => $this->siswa_model->get_kelas_by_ujian($ujian_uuid),
+			'active_nav' => 'ujian',
+			'per_page' => $per_page,
+			'per_page_options' => $per_page_options,
+			'total_rows' => $total_rows,
+			'start_no' => $total_rows > 0 ? $offset + 1 : 0,
+			'end_no' => min($offset + $per_page, $total_rows),
+			'pagination_links' => $this->pagination->create_links()
 		);
 
         $this->load->view('partials/header_tailwind', ['title' => 'Peserta Ujian']);
