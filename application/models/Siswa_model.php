@@ -463,16 +463,44 @@ class siswa_model extends CI_Model {
         return $count > 0;
     }
 
-    public function get_by_ujian($ujian_uuid)
+    public function get_by_ujian($ujian_uuid, $limit = NULL, $offset = 0)
 	{
 		$this->db->select("s.nama, s.username, s.uuid AS siswa_uuid, u.uuid, u.ujian_uuid, u.siswa_uuid, u.ujian_nilai, u.modified_at, k.nama as kelas_nama");
 		$this->db->join('siswa s', 's.uuid = u.siswa_uuid','left');
 		$this->db->join('kelas k', 's.kelas_uuid = k.uuid','left');
 		$this->db->where('u.deleted_at', NULL, FALSE);
 		$this->db->where('u.ujian_uuid', $ujian_uuid);
+		$this->db->order_by('s.nama', 'ASC');
+		$this->db->order_by('u.uuid', 'ASC');
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
 		$data = $this->db->get('ujian_siswa u');
 
 		return $data->result();
+	}
+
+	public function count_by_ujian($ujian_uuid)
+	{
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->where('ujian_uuid', $ujian_uuid);
+
+		return $this->db->count_all_results('ujian_siswa');
+	}
+
+	public function get_kelas_by_ujian($ujian_uuid)
+	{
+		$this->db->distinct();
+		$this->db->select('k.nama');
+		$this->db->from('ujian_siswa u');
+		$this->db->join('siswa s', 's.uuid = u.siswa_uuid', 'left');
+		$this->db->join('kelas k', 's.kelas_uuid = k.uuid', 'left');
+		$this->db->where('u.deleted_at', NULL, FALSE);
+		$this->db->where('u.ujian_uuid', $ujian_uuid);
+		$this->db->where('k.nama IS NOT NULL', NULL, FALSE);
+		$this->db->order_by('k.nama', 'ASC');
+
+		return array_column($this->db->get()->result_array(), 'nama');
 	}
 
     public function get_by_proyek($proyek_uuid)
