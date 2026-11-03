@@ -97,26 +97,101 @@
     <?php
             $first_submission = reset($submissions);
             $question_number = 0;
+            $is_answer_correct = function ($answer) {
+                if (in_array($answer->jenis_soal, array('pilihan_ganda', 'pilihan_ganda_kompleks'), TRUE)
+                    && $answer->jawaban_benar !== NULL && $answer->jawaban_benar !== '') {
+                    if ($answer->jenis_soal === 'pilihan_ganda_kompleks') {
+                        $selected = json_decode($answer->jawaban_siswa, TRUE);
+                        $correct = json_decode($answer->jawaban_benar, TRUE);
+                        if (is_array($selected) && is_array($correct)) {
+                            sort($selected);
+                            sort($correct);
+                            return $selected === $correct;
+                        }
+                    } else {
+                        return strtolower(trim($answer->jawaban_siswa))
+                            === strtolower(trim($answer->jawaban_benar));
+                    }
+                } elseif ($answer->jenis_soal === 'benar_salah'
+                    && $answer->jawaban_benar !== NULL && $answer->jawaban_benar !== '') {
+                    return strtolower(trim($answer->jawaban_siswa))
+                        === strtolower(trim($answer->jawaban_benar));
+                } elseif ($answer->jenis_soal === 'menjodohkan') {
+                    $matching = json_decode($answer->jawaban_siswa, TRUE);
+                    $pairs = $answer->jodohkan_pairs ?? array();
+                    if (is_array($matching) && !empty($pairs) && count($matching) === count($pairs)) {
+                        foreach ($pairs as $pair_index => $pair) {
+                            $expected_letter = chr(ord('A') + $pair_index);
+                            if (strtoupper((string) ($matching[$pair_index + 1] ?? '')) !== $expected_letter) {
+                                return FALSE;
+                            }
+                        }
+                        return TRUE;
+                    }
+                }
+                return NULL;
+            };
         ?>
     <?php foreach ($first_submission['jawaban'] as $question_uuid => $question): ?>
-    <?php $question_number++; ?>
+    <?php
+            $question_number++;
+            $answered_count = 0;
+            $correct_count = 0;
+            $wrong_count = 0;
+            foreach ($submissions as $submission) {
+                $submitted_answer = $submission['jawaban'][$question_uuid] ?? NULL;
+                if ($submitted_answer && trim((string) $submitted_answer->jawaban_siswa) !== '') {
+                    $answered_count++;
+                    $is_correct = $is_answer_correct($submitted_answer);
+                    if ($is_correct === TRUE) {
+                        $correct_count++;
+                    } elseif ($is_correct === FALSE) {
+                        $wrong_count++;
+                    }
+                }
+            }
+            $question_summary = html_entity_decode(
+                strip_tags(preg_replace('/<br\s*\/?>|<\/(p|div|li|h[1-6])>/i', ' ', $question->soal)),
+                ENT_QUOTES | ENT_HTML5,
+                'UTF-8'
+            );
+            $question_summary = trim(preg_replace('/\s+/', ' ', $question_summary));
+            if (function_exists('mb_strlen') && mb_strlen($question_summary, 'UTF-8') > 110) {
+                $question_summary = mb_substr($question_summary, 0, 110, 'UTF-8') . '…';
+            } elseif (strlen($question_summary) > 110) {
+                $question_summary = substr($question_summary, 0, 107) . '...';
+            }
+        ?>
     <section class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-5">
         <details class="group">
             <summary
-                class="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 bg-violet-50 border-b border-violet-100 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                <span class="min-w-0">
-                    <span class="block text-xs font-bold uppercase tracking-wide text-violet-700">
-                        Soal <?= $question_number ?> <span class="text-violet-500 font-medium normal-case">·
-                            <?= html_escape(str_replace('_', ' ', $question->jenis_soal)) ?></span>
+                class="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 bg-violet-50 cursor-pointer list-none [&::-webkit-details-marker]:hidden hover:bg-violet-100/70 transition-colors">
+                <span class="min-w-0 flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                    <span class="text-sm font-bold text-violet-800">
+                        Soal <?= $question_number ?>
+                        <span class="text-violet-600 font-medium">· <?= html_escape(str_replace('_', ' ', $question->jenis_soal)) ?></span>
                     </span>
-                    <span class="block text-xs text-violet-600 mt-1 group-open:hidden">Tampilkan teks soal</span>
-                    <span class="hidden text-xs text-violet-600 mt-1 group-open:block">Sembunyikan teks soal</span>
+                    <span class="text-xs text-gray-600 mt-1 sm:mt-0">
+                        <?= $answered_count ?> dari <?= count($submissions) ?> siswa menjawab
+                    </span>
+                    <span class="block min-w-0 max-w-full text-xs text-gray-600 mt-1 sm:mt-0 truncate">
+                        <?= html_escape($question_summary) ?>
+                    </span>
+                    <?php if ($question->jenis_soal === 'essay'): ?>
+                    <span class="text-xs font-medium text-amber-700 mt-1 sm:mt-0">Penilaian manual</span>
+                    <?php else: ?>
+                    <span class="flex items-center gap-2 mt-1 sm:mt-0">
+                        <span class="text-xs font-medium text-emerald-700">Benar <?= $correct_count ?></span>
+                        <span class="text-xs font-medium text-red-700">Salah <?= $wrong_count ?></span>
+                    </span>
+                    <?php endif; ?>
                 </span>
                 <i data-lucide="chevron-down"
                     class="w-5 h-5 text-violet-600 flex-shrink-0 transition-transform group-open:rotate-180"></i>
             </summary>
-            <div class="px-4 sm:px-5 py-4 border-b border-violet-100">
-                <div class="prose prose-sm max-w-none text-gray-800">Soal : <?= $question->soal ?></div>
+            <div class="px-4 sm:px-5 py-4 border-t border-violet-100">
+                <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Teks soal</h3>
+                <div class="prose prose-sm max-w-none text-gray-800"><?= $question->soal ?></div>
                 <?php if (in_array($question->jenis_soal, array('pilihan_ganda', 'pilihan_ganda_kompleks'), TRUE)): ?>
                 <?php
                     $correct_options = json_decode((string) $question->jawaban_benar, TRUE);
@@ -174,8 +249,10 @@
                 </p>
                 <?php endif; ?>
             </div>
-        </details>
-        <div class="divide-y divide-gray-100">
+            <div class="border-t border-gray-200 bg-gray-50/50 px-4 sm:px-5 py-2">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Jawaban siswa</p>
+            </div>
+            <div class="divide-y divide-gray-100">
             <?php foreach ($submissions as $submission): ?>
             <?php $answer = $submission['jawaban'][$question_uuid] ?? NULL; ?>
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 px-4 sm:px-5 py-4">
@@ -214,40 +291,7 @@
                     <div
                         class="flex items-start justify-between gap-3 rounded-lg bg-gray-50 border border-gray-200 px-3.5 py-3 text-sm text-gray-800 break-words min-h-12">
                         <?php
-                        $answer_correct = NULL;
-                        if ($answer && in_array($answer->jenis_soal, array('pilihan_ganda', 'pilihan_ganda_kompleks'), TRUE)
-                            && $answer->jawaban_benar !== NULL && $answer->jawaban_benar !== '') {
-                            if ($answer->jenis_soal === 'pilihan_ganda_kompleks') {
-                                $selected_for_check = json_decode($answer->jawaban_siswa, TRUE);
-                                $correct_for_check = json_decode($answer->jawaban_benar, TRUE);
-                                if (is_array($selected_for_check) && is_array($correct_for_check)) {
-                                    sort($selected_for_check);
-                                    sort($correct_for_check);
-                                    $answer_correct = $selected_for_check === $correct_for_check;
-                                }
-                            } else {
-                                $answer_correct = strtolower(trim($answer->jawaban_siswa))
-                                    === strtolower(trim($answer->jawaban_benar));
-                            }
-                        } elseif ($answer && $answer->jenis_soal === 'benar_salah'
-                            && $answer->jawaban_benar !== NULL && $answer->jawaban_benar !== '') {
-                            $answer_correct = strtolower(trim($answer->jawaban_siswa))
-                                === strtolower(trim($answer->jawaban_benar));
-                        } elseif ($answer && $answer->jenis_soal === 'menjodohkan') {
-                            $matching_for_check = json_decode($answer->jawaban_siswa, TRUE);
-                            $pairs_for_check = $answer->jodohkan_pairs ?? array();
-                            if (is_array($matching_for_check) && !empty($pairs_for_check)
-                                && count($matching_for_check) === count($pairs_for_check)) {
-                                $answer_correct = TRUE;
-                                foreach ($pairs_for_check as $pair_index => $pair_for_check) {
-                                    $expected_letter = chr(ord('A') + $pair_index);
-                                    if (strtoupper((string) ($matching_for_check[$pair_index + 1] ?? '')) !== $expected_letter) {
-                                        $answer_correct = FALSE;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
+                        $answer_correct = $answer ? $is_answer_correct($answer) : NULL;
                         ?>
                         <div class="min-w-0 flex-1">
                         <?php if (!$answer): ?>
@@ -326,7 +370,8 @@
                 </div>
             </div>
             <?php endforeach; ?>
-        </div>
+            </div>
+        </details>
     </section>
     <?php endforeach; ?>
     <?php endif; ?>
