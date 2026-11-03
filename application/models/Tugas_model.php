@@ -14,7 +14,7 @@ class Tugas_model extends CI_Model
 		);
 	}
 
-	public function get_all($limit = NULL, $offset = 0)
+	public function get_all($limit = NULL, $offset = 0, $filters = array())
 	{
 		$this->db->select("t.*, m.nama AS mapel_nama, g.nama AS guru_nama, b.judul AS pertemuan_judul, DATE_FORMAT(t.tgl_mulai, '%d %M %Y %H:%i') AS tgl_mulai_formatted, DATE_FORMAT(t.tgl_selesai, '%d %M %Y %H:%i') AS tgl_selesai_formatted", FALSE);
 		$this->db->from('tugas t');
@@ -23,6 +23,7 @@ class Tugas_model extends CI_Model
 		$this->db->join('bab b', 'b.uuid = t.bab_uuid', 'left');
 		$this->db->where('t.deleted_at', NULL, FALSE);
 		apply_admin_creator_scope('t.created_by');
+		$this->apply_index_filters($filters);
 		$this->db->order_by('t.tgl_mulai', 'DESC');
 		if ($limit !== NULL) {
 			$this->db->limit((int) $limit, (int) $offset);
@@ -30,15 +31,17 @@ class Tugas_model extends CI_Model
 		return $this->db->get()->result();
 	}
 
-	public function count_all()
+	public function count_all($filters = array())
 	{
 		$this->db->from('tugas t');
+		$this->db->join('mapel m', 'm.uuid = t.mapel_uuid', 'left');
 		$this->db->where('t.deleted_at', NULL, FALSE);
 		apply_admin_creator_scope('t.created_by');
+		$this->apply_index_filters($filters);
 		return $this->db->count_all_results();
 	}
 
-	public function get_by_mapel_uuids($mapel_uuids, $limit = NULL, $offset = 0)
+	public function get_by_mapel_uuids($mapel_uuids, $limit = NULL, $offset = 0, $filters = array())
 	{
 		if (empty($mapel_uuids)) {
 			return array();
@@ -50,6 +53,7 @@ class Tugas_model extends CI_Model
 		$this->db->join('bab b', 'b.uuid = t.bab_uuid', 'left');
 		$this->db->where('t.deleted_at', NULL, FALSE);
 		$this->db->where_in('t.mapel_uuid', $mapel_uuids);
+		$this->apply_index_filters($filters);
 		$this->db->order_by('t.tgl_mulai', 'DESC');
 		if ($limit !== NULL) {
 			$this->db->limit((int) $limit, (int) $offset);
@@ -96,15 +100,30 @@ class Tugas_model extends CI_Model
 		return $this->db->get()->result();
 	}
 
-	public function count_by_mapel_uuids($mapel_uuids)
+	public function count_by_mapel_uuids($mapel_uuids, $filters = array())
 	{
 		if (empty($mapel_uuids)) {
 			return 0;
 		}
 		$this->db->from('tugas t');
+		$this->db->join('mapel m', 'm.uuid = t.mapel_uuid', 'left');
 		$this->db->where('t.deleted_at', NULL, FALSE);
 		$this->db->where_in('t.mapel_uuid', $mapel_uuids);
+		$this->apply_index_filters($filters);
 		return $this->db->count_all_results();
+	}
+
+	private function apply_index_filters($filters)
+	{
+		if (!empty($filters['mapel_uuid'])) {
+			$this->db->where('t.mapel_uuid', $filters['mapel_uuid']);
+		}
+		if (!empty($filters['q'])) {
+			$this->db->group_start();
+			$this->db->like('t.judul', $filters['q']);
+			$this->db->or_like('m.nama', $filters['q']);
+			$this->db->group_end();
+		}
 	}
 
 	public function get_by_uuid($uuid)

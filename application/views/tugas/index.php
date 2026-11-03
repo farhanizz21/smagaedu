@@ -44,6 +44,53 @@
     <?php endforeach; ?>
 
     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <form method="get" action="<?= base_url('tugas') ?>"
+            class="flex flex-col lg:flex-row lg:items-end gap-3 p-4 border-b border-gray-200 bg-gray-50/50">
+            <div class="flex-1">
+                <label for="tugasSearch" class="block text-xs font-semibold text-gray-600 mb-1.5">Cari tugas</label>
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input id="tugasSearch" type="search" name="q" value="<?= html_escape($filters['q']) ?>"
+                        placeholder="Cari judul tugas atau mata pelajaran..."
+                        class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 text-sm bg-white">
+                </div>
+            </div>
+            <div class="w-full lg:w-64">
+                <label for="tugasMapel" class="block text-xs font-semibold text-gray-600 mb-1.5">Mata Pelajaran</label>
+                <select id="tugasMapel" name="mapel_uuid"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm bg-white">
+                    <option value="">Semua mata pelajaran</option>
+                    <?php foreach ($mapel as $subject): ?>
+                    <option value="<?= html_escape($subject->uuid) ?>"
+                        <?= $filters['mapel_uuid'] === $subject->uuid ? 'selected' : '' ?>>
+                        <?= html_escape($subject->nama) ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="w-full lg:w-auto">
+                <label for="tugasPerPage" class="block text-xs font-semibold text-gray-600 mb-1.5">Tampilkan</label>
+                <select id="tugasPerPage" name="per_page"
+                    class="w-full px-3 py-2.5 rounded-lg border border-gray-300 text-sm bg-white">
+                    <?php foreach ($per_page_options as $option): ?>
+                    <option value="<?= $option ?>" <?= $per_page === $option ? 'selected' : '' ?>><?= $option ?> /
+                        halaman</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <button type="submit"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold text-white bg-violet-600 hover:bg-violet-700">
+                    <i data-lucide="search" class="w-4 h-4"></i> Terapkan
+                </button>
+                <?php if ($filters['q'] !== '' || $filters['mapel_uuid'] !== ''): ?>
+                <a href="<?= base_url('tugas') ?>"
+                    class="inline-flex items-center px-4 py-2.5 rounded-lg text-sm font-semibold text-gray-600 bg-white border border-gray-300 hover:bg-gray-50">
+                    Reset
+                </a>
+                <?php endif; ?>
+            </div>
+        </form>
         <?php if ($total_rows > 0): ?>
         <div
             class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border-b border-gray-200 bg-gray-50/50">
@@ -52,16 +99,6 @@
                     class="font-semibold text-gray-700"><?= $end_no ?></span>
                 dari <span class="font-semibold text-gray-700"><?= $total_rows ?></span> tugas
             </p>
-            <form method="get" action="<?= base_url('tugas') ?>" class="flex items-center gap-2">
-                <label for="tugasPerPage" class="text-sm text-gray-600">Tampilkan</label>
-                <select id="tugasPerPage" name="per_page" onchange="this.form.submit()"
-                    class="px-3 py-2 rounded-lg border border-gray-300 text-sm bg-white">
-                    <?php foreach ($per_page_options as $option): ?>
-                    <option value="<?= $option ?>" <?= $per_page === $option ? 'selected' : '' ?>><?= $option ?> /
-                        halaman</option>
-                    <?php endforeach; ?>
-                </select>
-            </form>
         </div>
         <?php endif; ?>
         <div class="overflow-x-auto">
@@ -193,7 +230,11 @@
                 </tbody>
             </table>
         </div>
-        <?php if (empty($tugas)): ?><div class="text-center py-12 text-gray-400">Belum ada tugas.</div><?php endif; ?>
+        <?php if (empty($tugas)): ?>
+        <div class="text-center py-12 text-gray-400">
+            <?= $filters['q'] !== '' || $filters['mapel_uuid'] !== '' ? 'Tidak ada tugas yang sesuai dengan filter.' : 'Belum ada tugas.' ?>
+        </div>
+        <?php endif; ?>
         <?php if (!empty($pagination_links)): ?>
         <div class="p-4 border-t border-gray-200"><?= $pagination_links ?></div>
         <?php endif; ?>

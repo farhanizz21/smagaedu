@@ -112,11 +112,22 @@ class soal_model extends CI_Model {
 		return $data->result();
 	}
 
-	public function get_by_tugas_uuid($tugas_uuid)
+	public function count_by_tugas_uuid($tugas_uuid)
+	{
+		$this->db->where('tugas_uuid', $tugas_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		return $this->db->count_all_results('ujian_soal');
+	}
+
+	public function get_by_tugas_uuid($tugas_uuid, $limit = NULL, $offset = 0)
 	{
 		$this->db->select("soal, uuid, jawaban_benar, jenis_soal, jenis_jawaban_essay, jawaban_a, jawaban_b, jawaban_c, jawaban_d, jawaban_e");
 		$this->db->where('tugas_uuid', $tugas_uuid);
 		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->order_by('id', 'ASC');
+		if ($limit !== NULL) {
+			$this->db->limit((int) $limit, (int) $offset);
+		}
 		return $this->db->get('ujian_soal')->result();
 	}
 
