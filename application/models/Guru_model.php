@@ -641,6 +641,39 @@ class guru_model extends CI_Model {
 		return $result;
 	}
 
+	public function get_kelas_for_mapel($mapel_uuid)
+	{
+		$this->db->select('user_profiles.mapel_uuid');
+		$this->db->from('user_profiles');
+		$this->db->join('users', 'users.id = user_profiles.user_id', 'inner');
+		$this->db->where('users.deleted_at', NULL, FALSE);
+		$this->db->where(
+			'EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)',
+			NULL,
+			FALSE
+		);
+
+		$kelas_uuids = array();
+		foreach ($this->db->get()->result() as $profile) {
+			$parsed = $this->parse_mapel_data($profile->mapel_uuid);
+			if (in_array($mapel_uuid, $parsed['mapel_list'], TRUE)
+				&& isset($parsed['kelas_map'][$mapel_uuid])
+				&& is_array($parsed['kelas_map'][$mapel_uuid])) {
+				$kelas_uuids = array_merge($kelas_uuids, $parsed['kelas_map'][$mapel_uuid]);
+			}
+		}
+
+		$kelas_uuids = array_values(array_unique($kelas_uuids));
+		if (empty($kelas_uuids)) {
+			return array();
+		}
+
+		$this->db->where_in('uuid', $kelas_uuids);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->order_by('nama', 'ASC');
+		return $this->db->get('kelas')->result();
+	}
+
 	/**
 	 * Get mapel objects by array of UUIDs
 	 */

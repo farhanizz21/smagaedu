@@ -106,7 +106,7 @@
                     </div>
                 </div>
 
-                                <!-- Tanggal Selesai -->
+                <!-- Tanggal Selesai -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tanggal Selesai <span
                             class="text-red-500">*</span></label>

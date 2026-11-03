@@ -75,7 +75,7 @@ class Tugas_model extends CI_Model
 		if (empty($mapel_uuids)) {
 			return array();
 		}
-		$this->db->select('t.uuid, t.judul, t.tgl_selesai, t.modified_at, m.nama AS mapel_nama');
+		$this->db->select('t.uuid, t.judul, t.tgl_mulai, t.tgl_selesai, t.modified_at, m.nama AS mapel_nama');
 		$this->db->from('tugas t');
 		$this->db->join('mapel m', 'm.uuid = t.mapel_uuid', 'left');
 		$this->db->where('t.deleted_at', NULL, FALSE);
@@ -165,9 +165,73 @@ class Tugas_model extends CI_Model
 			->count_all_results('tugas_jawaban') > 0;
 	}
 
-	public function get_submission_answers($tugas_uuid)
+	public function get_submission_classes($tugas_uuid)
 	{
-		$this->db->select('tj.created_by AS siswa_uuid, siswa.nama AS siswa_nama, siswa.nis, kelas.nama AS kelas_nama, tj.modified_at AS jawaban_diubah, tj.jawaban_siswa, soal.soal, soal.jenis_soal, soal.jenis_jawaban_essay');
+		$this->db->distinct();
+		$this->db->select('kelas.uuid, kelas.nama');
+		$this->db->from('tugas_jawaban tj');
+		$this->db->join('siswa', 'siswa.uuid = tj.created_by', 'left');
+		$this->db->join('kelas', 'kelas.uuid = siswa.kelas_uuid', 'left');
+		$this->db->where('tj.tugas_uuid', $tugas_uuid);
+		$this->db->where('tj.deleted_at', NULL, FALSE);
+		$this->db->where('tj.jawaban_siswa !=', '');
+		$this->db->where('kelas.uuid IS NOT NULL', NULL, FALSE);
+		$this->db->order_by('kelas.nama', 'ASC');
+		return $this->db->get()->result();
+	}
+
+	private function build_submission_students_query($tugas_uuid, $filters, $deadline)
+	{
+		$this->db->select('tj.created_by AS siswa_uuid, siswa.nama AS siswa_nama, kelas.nama AS kelas_nama, MAX(tj.modified_at) AS terakhir_diubah', FALSE);
+		$this->db->from('tugas_jawaban tj');
+		$this->db->join('siswa', 'siswa.uuid = tj.created_by', 'left');
+		$this->db->join('kelas', 'kelas.uuid = siswa.kelas_uuid', 'left');
+		$this->db->where('tj.tugas_uuid', $tugas_uuid);
+		$this->db->where('tj.deleted_at', NULL, FALSE);
+		$this->db->where('tj.jawaban_siswa !=', '');
+		if ($filters['q'] !== '') {
+			$this->db->group_start();
+			$this->db->like('siswa.nama', $filters['q']);
+			$this->db->or_like('siswa.nis', $filters['q']);
+			$this->db->group_end();
+		}
+		if ($filters['kelas'] !== '') {
+			$this->db->where('kelas.uuid', $filters['kelas']);
+		}
+		$this->db->group_by(array('tj.created_by', 'siswa.nama', 'kelas.nama'));
+		if ($filters['status'] === 'terlambat') {
+			$this->db->having('terakhir_diubah >', $deadline);
+		} elseif ($filters['status'] === 'tepat_waktu') {
+			$this->db->having('terakhir_diubah <=', $deadline);
+		}
+	}
+
+	public function count_submission_students($tugas_uuid, $filters, $deadline)
+	{
+		$this->build_submission_students_query($tugas_uuid, $filters, $deadline);
+		$students_query = $this->db->get_compiled_select();
+		$result = $this->db->query('SELECT COUNT(*) AS total FROM (' . $students_query . ') submission_students')->row();
+		return (int) $result->total;
+	}
+
+	public function get_submission_student_uuids($tugas_uuid, $filters, $deadline, $limit, $offset)
+	{
+		$this->build_submission_students_query($tugas_uuid, $filters, $deadline);
+		$this->db->order_by('kelas.nama', 'ASC');
+		$this->db->order_by('siswa.nama', 'ASC');
+		$this->db->order_by('tj.created_by', 'ASC');
+		$this->db->limit((int) $limit, (int) $offset);
+		return array_map(function ($row) {
+			return $row->siswa_uuid;
+		}, $this->db->get()->result());
+	}
+
+	public function get_submission_answers($tugas_uuid, $siswa_uuids = NULL)
+	{
+		if (is_array($siswa_uuids) && empty($siswa_uuids)) {
+			return array();
+		}
+		$this->db->select('tj.created_by AS siswa_uuid, siswa.nama AS siswa_nama, siswa.nis, kelas.nama AS kelas_nama, tj.modified_at AS jawaban_diubah, tj.jawaban_siswa, soal.uuid AS soal_uuid, soal.soal, soal.jenis_soal, soal.jenis_jawaban_essay');
 		$this->db->from('tugas_jawaban tj');
 		$this->db->join('siswa', 'siswa.uuid = tj.created_by', 'left');
 		$this->db->join('kelas', 'kelas.uuid = siswa.kelas_uuid', 'left');
@@ -175,6 +239,10 @@ class Tugas_model extends CI_Model
 		$this->db->where('tj.tugas_uuid', $tugas_uuid);
 		$this->db->where('tj.deleted_at', NULL, FALSE);
 		$this->db->where('tj.jawaban_siswa !=', '');
+		if (is_array($siswa_uuids)) {
+			$this->db->where_in('tj.created_by', $siswa_uuids);
+		}
+		$this->db->order_by('kelas.nama', 'ASC');
 		$this->db->order_by('siswa.nama', 'ASC');
 		$this->db->order_by('soal.id', 'ASC');
 		return $this->db->get()->result();
@@ -207,6 +275,26 @@ class Tugas_model extends CI_Model
 			->where('deleted_at', NULL)
 			->where('jawaban_siswa !=', '')
 			->count_all_results('tugas_jawaban') > 0;
+	}
+
+	public function get_submission_timestamps($tugas_uuids, $siswa_uuid)
+	{
+		if (empty($tugas_uuids)) {
+			return array();
+		}
+
+		$this->db->select('tugas_uuid, MAX(modified_at) AS submitted_at');
+		$this->db->where_in('tugas_uuid', $tugas_uuids);
+		$this->db->where('created_by', $siswa_uuid);
+		$this->db->where('deleted_at', NULL, FALSE);
+		$this->db->where('jawaban_siswa !=', '');
+		$this->db->group_by('tugas_uuid');
+
+		$timestamps = array();
+		foreach ($this->db->get('tugas_jawaban')->result() as $row) {
+			$timestamps[$row->tugas_uuid] = $row->submitted_at;
+		}
+		return $timestamps;
 	}
 
 	public function save_answers($tugas_uuid, $siswa_uuid, $answers)

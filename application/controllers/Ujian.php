@@ -58,7 +58,7 @@ class Ujian extends MY_Controller {
 		$peserta = []; 
 		foreach ($ujian as $u) {
 			$pengerjaan = false;
-			$pengumpulan = false;
+			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($u->uuid, $user_login);
 		
 			$peserta[$u->uuid] = $this->siswa_model->get_by_ujian($u->uuid);
 			
@@ -66,14 +66,16 @@ class Ujian extends MY_Controller {
 				if ($q->ujian_uuid == $u->uuid && $q->siswa_uuid == $user_login) {
 					$pengerjaan = true;
 				}
-		
-				if ($this->ujian_model->get_pengumpulan_siswa($q->ujian_uuid, $user_login) !== NULL) {
-					$pengumpulan = true;
-				}
 			}
 		
-			$u->pengumpulan = $pengumpulan;
+			$u->pengumpulan = $pengumpulan !== NULL;
 			$u->pengerjaan = $pengerjaan;
+			$u->jadwal_dimulai = $this->ujian_model->is_exam_started($u);
+			$u->jadwal_terlewat = $this->ujian_model->is_exam_over($u);
+			$u->terlambat = $this->ujian_model->is_submission_late(
+				$u,
+				$pengumpulan ? $pengumpulan->modified_at : NULL
+			);
 			$u->attempted = $this->ujian_model->has_attempts($u->uuid);
 		}
 
@@ -136,13 +138,22 @@ class Ujian extends MY_Controller {
 		if (!is_admin_or_superadmin() && !has_permission('manage_ujian')) {
 			show_error('Anda tidak memiliki akses untuk menambah ujian.', 403);
 		}
+
+		$assigned_mapel_uuids = has_role('guru')
+			? $this->guru_model->get_mapel_uuid_list($this->session->userdata('uuid'))
+			: array();
 		
 		$rules_ujian = $this->ujian_model->rules();
 		$rules_mapel = $this->mapel_model->rules();
 		$rules = array_merge($rules_ujian, $rules_mapel);
 		$this->form_validation->set_rules($rules);
 		if ($this->form_validation->run() == TRUE) {
-			if (!$this->mapel_model->get_by_uuid($this->input->post('namaMapel'))) {
+			$mapel_uuid = $this->input->post('namaMapel');
+			$mapel = $this->mapel_model->get_by_uuid($mapel_uuid);
+			if (!$mapel && in_array($mapel_uuid, $assigned_mapel_uuids, TRUE)) {
+				$mapel = $this->mapel_model->get_by_uuid($mapel_uuid, FALSE);
+			}
+			if (!$mapel) {
 				show_error('Anda tidak memiliki akses ke mata pelajaran ini.', 403);
 			}
 			$insert = $this->ujian_model->insert();
@@ -165,8 +176,18 @@ class Ujian extends MY_Controller {
 		if (has_role(['admin', 'superadmin'])) {
 			$mapel = $this->mapel_model->get_all();
 		} else {
-			$guru = $this->guru_model->get_by_uuid($this->session->userdata('uuid'));
-			$mapel = $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? []);
+			$mapel = array();
+		}
+
+		if (!empty($assigned_mapel_uuids)) {
+			$mapel_by_uuid = array();
+			foreach (array_merge(
+				$mapel,
+				$this->mapel_model->get_many_mapel_by_uuid($assigned_mapel_uuids)
+			) as $subject) {
+				$mapel_by_uuid[$subject->uuid] = $subject;
+			}
+			$mapel = array_values($mapel_by_uuid);
 		}
 
 		$data = array(
@@ -310,6 +331,13 @@ class Ujian extends MY_Controller {
 		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk menambah soal ujian.', 403);
 		}
+
+		$has_student_submissions = $this->ujian_model->has_attempts($ujian_uuid);
+		if ($has_student_submissions && $this->input->method(TRUE) === 'POST') {
+			$this->session->set_flashdata('error_msg', 'Soal tidak dapat ditambahkan karena ujian sudah dikerjakan siswa.');
+			redirect('ujian/tambah_soal/' . $ujian_uuid);
+			return;
+		}
 		
 		$rules = [
 			[
@@ -333,6 +361,7 @@ class Ujian extends MY_Controller {
 		$data = array(
 			'ujian' => $ujian,
 			'soal' => $this->soal_model->get_by_ujian_uuid($ujian_uuid),
+			'has_student_submissions' => $has_student_submissions,
 			'active_nav' => 'ujian'
 		);
 
@@ -584,6 +613,12 @@ class Ujian extends MY_Controller {
 			show_error('Anda tidak memiliki akses untuk mengimport soal ujian.', 403);
 		}
 
+		if ($this->ujian_model->has_attempts($ujian_uuid)) {
+			$this->session->set_flashdata('error_msg', 'Soal tidak dapat diimpor karena ujian sudah dikerjakan siswa.');
+			redirect('ujian/tambah_soal/' . $ujian_uuid);
+			return;
+		}
+
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
 			if (empty($_FILES['file_excel']['name'])) {
 				$this->session->set_flashdata('error_msg', 'Pilih file Excel terlebih dahulu');
@@ -793,6 +828,17 @@ class Ujian extends MY_Controller {
 		if (!admin_can_access_creator($ujian->created_by)) {
 			show_error('Anda tidak memiliki akses untuk mengelola peserta ujian.', 403);
 		}
+
+		$guru = $this->guru_model->get_by_uuid($this->session->userdata('uuid'));
+		if ($guru && !empty($guru->kelas_map) && isset($guru->kelas_map[$ujian->mapel_uuid])) {
+			$kelas_uuids = $guru->kelas_map[$ujian->mapel_uuid];
+			$kelas_list = $this->kelas_model->get_by_uuids($kelas_uuids, FALSE);
+		} else {
+			$kelas_list = $this->kelas_model->get_all();
+		}
+		$allowed_kelas_uuids = array_map(function ($kelas) {
+			return $kelas->uuid;
+		}, $kelas_list);
 		
 		$rules = [
 			[
@@ -805,6 +851,9 @@ class Ujian extends MY_Controller {
 
 		if ($this->form_validation->run() == TRUE) {
 			$kelas_uuid = $this->input->post('kelas');
+			if (!in_array($kelas_uuid, $allowed_kelas_uuids, TRUE)) {
+				show_error('Anda tidak memiliki akses ke kelas ini.', 403);
+			}
 			$insert = $this->siswa_model->insert_by_kelas($ujian_uuid, $kelas_uuid);
 			if ($insert) {
 				$this->session->set_flashdata('success_msg', 'Data peserta berhasil di simpan');
@@ -819,6 +868,8 @@ class Ujian extends MY_Controller {
 		foreach($peserta as $p){
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
+			$p->terlambat = $this->ujian_model->is_submission_late($ujian, $p->pengumpulan);
+			$p->jadwal_terlewat = $this->ujian_model->is_exam_over($ujian);
 			
 			$p->nilai_ujian = $p->ujian_nilai !== null && $p->ujian_nilai !== ''
 				? $p->ujian_nilai
@@ -833,18 +884,6 @@ class Ujian extends MY_Controller {
 			}
 		}
 		sort($kelas_filter);
-
-		// Ambil daftar kelas sesuai mapel guru untuk dropdown
-		// Jika guru, filter kelas berdasarkan kelas_map pada mapel ujian
-		// Jika admin/superadmin, tampilkan semua kelas
-		$guru_uuid = $this->session->userdata('uuid');
-		$guru = $this->guru_model->get_by_uuid($guru_uuid);
-		if ($guru && !empty($guru->kelas_map) && isset($guru->kelas_map[$ujian->mapel_uuid])) {
-			$kelas_uuids = $guru->kelas_map[$ujian->mapel_uuid];
-			$kelas_list = $this->kelas_model->get_by_uuids($kelas_uuids);
-		} else {
-			$kelas_list = $this->kelas_model->get_all();
-		}
 
 		$data = array(
 			'ujian' => $ujian,
@@ -881,6 +920,7 @@ class Ujian extends MY_Controller {
 		foreach ($peserta as $p) {
 			$pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $p->siswa_uuid);
 			$p->pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
+			$p->terlambat = $this->ujian_model->is_submission_late($ujian, $p->pengumpulan);
 			$p->nilai_ujian = $p->ujian_nilai !== null && $p->ujian_nilai !== ''
 				? $p->ujian_nilai
 				: $this->jawaban_model->get_auto_nilai($ujian_uuid, $p->siswa_uuid);
@@ -943,7 +983,9 @@ class Ujian extends MY_Controller {
 			$nilai = !empty($p->nilai_ujian) ? $p->nilai_ujian : '-';
 			$kelas = !empty($p->kelas_nama) ? $p->kelas_nama : '-';
 
-			if (!empty($p->nilai_ujian)) {
+			if ($p->terlambat) {
+				$status = 'Terlambat';
+			} elseif (!empty($p->nilai_ujian)) {
 				$status = 'Sudah Dinilai';
 			} elseif (!empty($p->pengumpulan)) {
 				$status = 'Sudah Mengerjakan';
@@ -1021,6 +1063,23 @@ class Ujian extends MY_Controller {
 
 	public function tambah_nilai($ujian_uuid, $siswa_uuid)
 	{
+		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
+		if (!$ujian) {
+			show_404();
+		}
+
+		$siswa = $this->siswa_model->get_by_uuid($siswa_uuid, FALSE);
+		$siswa_terdaftar = FALSE;
+		foreach ($this->siswa_model->get_by_ujian($ujian_uuid) as $peserta) {
+			if ($peserta->siswa_uuid === $siswa_uuid) {
+				$siswa_terdaftar = TRUE;
+				break;
+			}
+		}
+		if (!$siswa || !$siswa_terdaftar) {
+			show_404();
+		}
+
 		if ($this->input->server('REQUEST_METHOD') === 'POST') {
             $insert = $this->jawaban_model->insert_nilai($ujian_uuid, $siswa_uuid);
             if ($insert) {
@@ -1031,11 +1090,9 @@ class Ujian extends MY_Controller {
             redirect('ujian/tambah_kelas/'.$ujian_uuid	);
         }
 		
-		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
-		$guru = $this->guru_model->get_by_uuid($ujian->created_by);
-		$mapel = $this->mapel_model->get_by_uuid($ujian->mapel_uuid);
         $soal = $this->soal_model->get_by_ujian_uuid($ujian_uuid);
-        $siswa = $this->siswa_model->get_by_uuid($siswa_uuid);
+        $pengumpulan = $this->ujian_model->get_pengumpulan_siswa($ujian_uuid, $siswa_uuid);
+        $waktu_pengumpulan = $pengumpulan ? $pengumpulan->modified_at : null;
         foreach ($soal as $s) {
             if ($s->jenis_soal === 'menjodohkan') {
                 $s->jodohkan_pairs = $this->soal_model->get_jodohkan_pairs($s->uuid);
@@ -1145,10 +1202,12 @@ class Ujian extends MY_Controller {
         }
 		
 		$data = array(
-			'mapel' => $mapel->nama,
+			'mapel' => $ujian->mapel_nama ?? '-',
 			'siswa' => $siswa,
-			'guru' => $guru->nama,
+			'guru' => $ujian->guru_nama ?? '-',
 			'ujian' => $ujian,
+			'pengumpulan' => $waktu_pengumpulan,
+			'terlambat' => $this->ujian_model->is_submission_late($ujian, $waktu_pengumpulan),
 			'soal' => $soal,
 			'nilai' => $nilai_ujian,
 			'jawaban' => $jawaban,
@@ -1166,6 +1225,10 @@ class Ujian extends MY_Controller {
 		$ujian = $this->ujian_model->get_by_uuid($ujian_uuid);
 		if (!$ujian) {
 			show_404();
+		}
+
+		if (has_role(['siswa']) && !$this->ujian_model->is_exam_started($ujian)) {
+			show_error('Ujian belum dimulai. Silakan kembali sesuai jadwal ujian.', 403);
 		}
 
 		if (has_role(['siswa']) && !$this->bab_model->is_exam_unlocked_for_student($ujian, $this->session->userdata('uuid'))) {

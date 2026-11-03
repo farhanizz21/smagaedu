@@ -81,9 +81,23 @@
                     <h2 class="text-lg font-bold leading-snug text-gray-900">
                         <?= html_escape($pertemuan->judul) ?>
                     </h2>
+                    <?php if (empty($pertemuan->akses_dijadwalkan_terkunci)): ?>
                     <p class="mt-2 text-sm leading-relaxed text-gray-600">
                         <?= html_escape($description) ?>
                     </p>
+                    <?php else: ?>
+                    <p class="mt-2 text-sm leading-relaxed text-gray-500">Materi belum tersedia sesuai jadwal kelas.</p>
+                    <?php endif; ?>
+                    <?php if (!empty($pertemuan->tanggal_akses)): ?>
+                    <?php $tanggal_akses = strtotime($pertemuan->tanggal_akses); ?>
+                    <?php if ($tanggal_akses): ?>
+                    <?php $nama_hari = array(1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'); ?>
+                    <p class="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-violet-700">
+                        <i data-lucide="calendar-days" class="h-4 w-4"></i>
+                        Tersedia <?= $nama_hari[(int) date('N', $tanggal_akses)] ?>, <?= date('d-m-Y', $tanggal_akses) ?>
+                    </p>
+                    <?php endif; ?>
+                    <?php endif; ?>
                 </div>
                 <?php if ($is_unlocked): ?>
                 <a href="<?= base_url('sub_bab/detail/' . rawurlencode($pertemuan->uuid)) ?>"

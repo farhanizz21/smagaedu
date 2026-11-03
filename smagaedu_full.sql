@@ -80,6 +80,7 @@ DROP TABLE IF EXISTS `kelas`;
 DROP TABLE IF EXISTS `mapel`;
 DROP TABLE IF EXISTS `materi`;
 DROP TABLE IF EXISTS `bab`;
+DROP TABLE IF EXISTS `bab_jadwal_kelas`;
 DROP TABLE IF EXISTS `sub_materi`;
 DROP TABLE IF EXISTS `bab_komentar`;
 DROP TABLE IF EXISTS `panduan`;
@@ -311,10 +312,24 @@ CREATE TABLE `bab` (
   `deskripsi` text DEFAULT NULL,
   `dokumentasi` varchar(200) DEFAULT NULL,
   `dokumentasi_link` varchar(500) DEFAULT NULL,
+  `jadwal_akses_sama` tinyint(1) NOT NULL DEFAULT 1,
+  `tanggal_akses` date DEFAULT NULL,
   `created_by` varchar(100) DEFAULT NULL,
   `modified_at` datetime NOT NULL DEFAULT current_timestamp(),
   `deleted_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+-- Jadwal akses materi per kelas (opsional, mengesampingkan tanggal bersama)
+-- --------------------------------------------------------
+
+CREATE TABLE `bab_jadwal_kelas` (
+  `bab_uuid` varchar(100) NOT NULL,
+  `kelas_uuid` varchar(100) NOT NULL,
+  `tanggal_akses` date NOT NULL,
+  PRIMARY KEY (`bab_uuid`, `kelas_uuid`),
+  KEY `idx_bab_jadwal_kelas_kelas` (`kelas_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -385,7 +400,7 @@ CREATE TABLE `perangkat` (
   `uuid` varchar(100) NOT NULL,
   `mapel_uuid` varchar(100) NOT NULL,
   `guru_uuid` varchar(100) DEFAULT NULL,
-  `jenis_file` enum('modul','atp') NOT NULL,
+  `jenis_file` enum('modul','atp','rme','prota','promes','kktp','tp') NOT NULL,
   `nama_file` varchar(255) NOT NULL,
   `file` varchar(255) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),

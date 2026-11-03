@@ -46,7 +46,15 @@ class Tugas extends MY_Controller
 		$tugas = $mapel_uuids === NULL
 			? $this->tugas_model->get_all($per_page, $offset)
 			: $this->tugas_model->get_by_mapel_uuids($mapel_uuids, $per_page, $offset);
+		$submission_timestamps = $role === 'siswa'
+			? $this->tugas_model->get_submission_timestamps(array_map(function ($item) {
+				return $item->uuid;
+			}, $tugas), $uuid)
+			: array();
 		foreach ($tugas as $item) {
+			$item->submitted_at = $submission_timestamps[$item->uuid] ?? NULL;
+			$item->terlambat = $item->submitted_at
+				&& strtotime($item->submitted_at) > strtotime($item->tgl_selesai);
 			$item->sudah_dikerjakan = $role === 'siswa'
 				? $this->tugas_model->has_submission($item->uuid, $uuid)
 				: FALSE;
@@ -91,7 +99,10 @@ class Tugas extends MY_Controller
 		$end_no = min($offset + $per_page, $total_rows);
 
 		$this->load->view('partials/header_tailwind', array('title' => 'Daftar Tugas'));
-		$this->load->view('partials/navbar', array('active_nav' => 'tugas'));
+		$this->load->view('partials/navbar', array(
+			'active_nav' => 'tugas',
+			'pending_tasks' => $pending_tasks
+		));
 		$this->load->view('tugas/index', array(
 			'tugas' => $tugas,
 			'pending_tasks' => $pending_tasks,
@@ -436,8 +447,33 @@ class Tugas extends MY_Controller
 			show_404();
 		}
 		$this->require_tugas_owner($tugas);
+		$filters = array(
+			'q' => trim((string) $this->input->get('q', TRUE)),
+			'kelas' => trim((string) $this->input->get('kelas', TRUE)),
+			'status' => (string) $this->input->get('status', TRUE)
+		);
+		if (!in_array($filters['status'], array('terlambat', 'tepat_waktu'), TRUE)) {
+			$filters['status'] = '';
+		}
+		$daftar_kelas = $this->tugas_model->get_submission_classes($tugas_uuid);
+		$per_page_options = array(10, 25, 50, 100);
+		$per_page = (int) $this->input->get('per_page');
+		if (!in_array($per_page, $per_page_options, TRUE)) {
+			$per_page = 10;
+		}
+		$total_rows = $this->tugas_model->count_submission_students($tugas_uuid, $filters, $tugas->tgl_selesai);
+		$total_pages = max(1, (int) ceil($total_rows / $per_page));
+		$page = min(max(1, (int) $this->input->get('page')), $total_pages);
+		$offset = ($page - 1) * $per_page;
+		$student_uuids = $this->tugas_model->get_submission_student_uuids(
+			$tugas_uuid,
+			$filters,
+			$tugas->tgl_selesai,
+			$per_page,
+			$offset
+		);
 		$submissions = array();
-		foreach ($this->tugas_model->get_submission_answers($tugas_uuid) as $answer) {
+		foreach ($this->tugas_model->get_submission_answers($tugas_uuid, $student_uuids) as $answer) {
 			if (!isset($submissions[$answer->siswa_uuid])) {
 				$submissions[$answer->siswa_uuid] = array(
 					'nama' => $answer->siswa_nama,
@@ -449,13 +485,58 @@ class Tugas extends MY_Controller
 			} elseif ($answer->jawaban_diubah > $submissions[$answer->siswa_uuid]['terakhir_diubah']) {
 				$submissions[$answer->siswa_uuid]['terakhir_diubah'] = $answer->jawaban_diubah;
 			}
-			$submissions[$answer->siswa_uuid]['jawaban'][] = $answer;
+			$submissions[$answer->siswa_uuid]['jawaban'][$answer->soal_uuid] = $answer;
 		}
+		foreach ($submissions as &$submission) {
+			$submission['terlambat'] = strtotime($submission['terakhir_diubah']) > strtotime($tugas->tgl_selesai);
+		}
+		unset($submission);
+		$this->load->library('pagination');
+		$this->pagination->initialize(array(
+			'base_url' => base_url('tugas/pengumpulan/' . $tugas_uuid),
+			'total_rows' => $total_rows,
+			'per_page' => $per_page,
+			'use_page_numbers' => TRUE,
+			'page_query_string' => TRUE,
+			'query_string_segment' => 'page',
+			'reuse_query_string' => TRUE,
+			'cur_page' => $page,
+			'num_links' => 2,
+			'first_link' => '&laquo;',
+			'prev_link' => '&lsaquo;',
+			'next_link' => '&rsaquo;',
+			'last_link' => '&raquo;',
+			'full_tag_open' => '<nav aria-label="Navigasi halaman"><ul class="flex flex-wrap items-center justify-center gap-1 list-none p-0 m-0">',
+			'full_tag_close' => '</ul></nav>',
+			'num_tag_open' => '<li>',
+			'num_tag_close' => '</li>',
+			'cur_tag_open' => '<li><span class="min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold text-white bg-violet-600 border border-violet-600">',
+			'cur_tag_close' => '</span></li>',
+			'first_tag_open' => '<li>',
+			'first_tag_close' => '</li>',
+			'prev_tag_open' => '<li>',
+			'prev_tag_close' => '</li>',
+			'next_tag_open' => '<li>',
+			'next_tag_close' => '</li>',
+			'last_tag_open' => '<li>',
+			'last_tag_close' => '</li>',
+			'attributes' => array(
+				'class' => 'min-w-[38px] h-9 px-3 inline-flex items-center justify-center rounded-lg text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 transition-colors'
+			)
+		));
 		$this->load->view('partials/header_tailwind', array('title' => 'Pengumpulan Tugas'));
 		$this->load->view('partials/navbar', array('active_nav' => 'tugas'));
 		$this->load->view('tugas/pengumpulan', array(
 			'tugas' => $tugas,
 			'submissions' => $submissions,
+			'filters' => $filters,
+			'daftar_kelas' => $daftar_kelas,
+			'per_page' => $per_page,
+			'per_page_options' => $per_page_options,
+			'total_rows' => $total_rows,
+			'start_no' => $total_rows > 0 ? $offset + 1 : 0,
+			'end_no' => min($offset + $per_page, $total_rows),
+			'pagination_links' => $this->pagination->create_links(),
 			'active_nav' => 'tugas',
 			'from_controller' => TRUE
 		));
@@ -479,6 +560,10 @@ class Tugas extends MY_Controller
 		}
 
 		$has_submission = $this->tugas_model->has_submission($tugas_uuid, $siswa_uuid);
+		if (!$has_submission && strtotime($tugas->tgl_mulai) > time()) {
+			$this->session->set_flashdata('error_msg', 'Tugas belum dapat dikerjakan karena jadwalnya belum dimulai.');
+			redirect('tugas');
+		}
 		if ($this->input->method(TRUE) === 'POST') {
 			if ($has_submission) {
 				$this->session->set_flashdata('error_msg', 'Jawaban yang sudah dikumpulkan hanya dapat dilihat dan tidak dapat diubah.');
@@ -648,7 +733,23 @@ class Tugas extends MY_Controller
 	private function available_mapel()
 	{
 		if (has_role(['admin', 'superadmin'])) {
-			return $this->mapel_model->get_all();
+			$mapel = $this->mapel_model->get_all();
+			if (has_role('guru')) {
+				$guru_uuid = $this->session->userdata('uuid');
+				$guru = $this->guru_model->get_by_uuid($guru_uuid);
+				if ($guru) {
+					$mapel = array_merge(
+						$mapel,
+						$this->mapel_model->get_all_by_guru_relation($guru_uuid, $guru->mapel_list ?? array())
+					);
+				}
+			}
+
+			$mapel_by_uuid = array();
+			foreach ($mapel as $subject) {
+				$mapel_by_uuid[$subject->uuid] = $subject;
+			}
+			return array_values($mapel_by_uuid);
 		}
 		$guru = $this->guru_model->get_by_uuid($this->session->userdata('uuid'));
 		return $guru ? $this->mapel_model->get_many_mapel_by_uuid($guru->mapel_list ?? array()) : array();

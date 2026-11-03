@@ -49,7 +49,7 @@ class Bab extends MY_Controller {
 
 		$data = $this->build_materi_view_data($materi);
 		if (empty($data['bab_unlocked'][$bab_uuid])) {
-			show_error('Pertemuan terkunci. Selesaikan pertemuan sebelumnya terlebih dahulu.', 403);
+			show_error('Pertemuan belum dapat diakses. Periksa jadwal kelas dan selesaikan pertemuan sebelumnya.', 403);
 		}
 
 		$data['bab'] = [$bab];
@@ -90,8 +90,15 @@ class Bab extends MY_Controller {
 		$user_login = $this->session->userdata('uuid');
 		$all_unlocked = is_admin_or_superadmin() || $can_manage || $is_mapel_pengampu;
 		$progress = $all_unlocked ? [] : $this->bab_model->get_progress_for_materi($materi->uuid, $user_login);
+		$current_siswa = has_role('siswa') ? $this->siswa_model->get_by_uuid($user_login) : NULL;
 
 		foreach ($bab as $b) {
+			$b->tanggal_akses = $current_siswa
+				? $this->bab_model->get_access_date_for_class($b->uuid, $current_siswa->kelas_uuid)
+				: NULL;
+			$b->akses_dijadwalkan_terkunci = $current_siswa
+				? !$this->bab_model->is_bab_accessible_for_student($b->uuid, $user_login)
+				: FALSE;
 			$komentar = $this->komentar_model->get_by_bab_uuid($b->uuid);
 			foreach ($komentar as $kom) {
 				$guru = $this->guru_model->get_by_uuid($kom->created_by);
@@ -130,7 +137,7 @@ class Bab extends MY_Controller {
 				'activity_count' => 0,
 				'completed_count' => 0
 			]);
-			$bab_unlocked[$b->uuid] = $state['unlocked'];
+			$bab_unlocked[$b->uuid] = $state['unlocked'] && !$b->akses_dijadwalkan_terkunci;
 			$bab_completed[$b->uuid] = $state['completed'];
 			$bab_read_completed[$b->uuid] = !empty($state['read_completed']);
 			$bab_activity_count[$b->uuid] = $state['activity_count'];
@@ -191,6 +198,9 @@ class Bab extends MY_Controller {
 		if (!$this->bab_model->is_materi_unlocked_for_student($materi->uuid, $siswa_uuid)) {
 			show_error('Pekan terkunci. Selesaikan pekan sebelumnya terlebih dahulu.', 403);
 		}
+		if (!$this->bab_model->is_bab_accessible_for_student($bab_uuid, $siswa_uuid)) {
+			show_error('Pertemuan belum tersedia untuk kelas Anda.', 403);
+		}
 		if (!$this->bab_model->mark_bab_as_read($bab_uuid, $siswa_uuid)) {
 			show_error('Status selesai baca gagal disimpan.', 500);
 		}
@@ -234,6 +244,12 @@ class Bab extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			$jadwal_akses = $this->validate_jadwal_akses($materi->mapel_uuid);
+			if ($jadwal_akses === FALSE) {
+				$this->session->set_flashdata('error_msg', 'Jadwal akses tidak valid. Periksa kembali tanggal dan kelas yang dipilih.');
+				redirect('sub_bab/tambah/' . $materi_uuid);
+				return;
+			}
 			if ($this->bab_model->count_by_materi_uuid($materi_uuid) >= 3) {
 				$this->session->set_flashdata('error_msg', 'Satu pekan maksimal memiliki 3 pertemuan.');
 				redirect('sub_bab/index/' . $materi_uuid);
@@ -259,7 +275,7 @@ class Bab extends MY_Controller {
 				}
 			}
 
-			$bab_uuid = $this->bab_model->insert($materi_uuid, $dokumentasi);
+			$bab_uuid = $this->bab_model->insert($materi_uuid, $dokumentasi, $jadwal_akses);
 			if ($bab_uuid) {
 				$ujian_uuid = false;
 				// Buat ujian jika guru memilih untuk membuat ujian sekaligus
@@ -293,6 +309,7 @@ class Bab extends MY_Controller {
 		$data = array(
 			'materi' => $materi,
 			'mapel_uuid' => $materi->mapel_uuid,
+			'kelas_mapel' => $this->guru_model->get_kelas_for_mapel($materi->mapel_uuid),
 			'active_nav' => 'materi'
 		);
 
@@ -379,6 +396,12 @@ class Bab extends MY_Controller {
 		$this->form_validation->set_rules($rules);
 
 		if ($this->form_validation->run() == TRUE) {
+			$jadwal_akses = $this->validate_jadwal_akses($materi->mapel_uuid);
+			if ($jadwal_akses === FALSE) {
+				$this->session->set_flashdata('error_msg', 'Jadwal akses tidak valid. Periksa kembali tanggal dan kelas yang dipilih.');
+				redirect('sub_bab/edit/' . $uuid);
+				return;
+			}
 			$this->load->library('upload');
 
 			$dokumentasi = $bab->dokumentasi;
@@ -400,7 +423,7 @@ class Bab extends MY_Controller {
 				}
 			}
 
-			if ($this->bab_model->update($uuid, $dokumentasi)) {
+			if ($this->bab_model->update($uuid, $dokumentasi, $jadwal_akses)) {
 				$this->session->set_flashdata('success_msg', 'Pertemuan berhasil diperbarui');
 			} else {
 				$this->session->set_flashdata('error_msg', 'Pertemuan gagal diperbarui');
@@ -411,6 +434,8 @@ class Bab extends MY_Controller {
 		$data = array(
 			'bab' => $bab,
 			'materi' => $materi,
+			'jadwal_akses' => $this->bab_model->get_access_schedule($uuid),
+			'kelas_mapel' => $this->guru_model->get_kelas_for_mapel($materi->mapel_uuid),
 			'active_nav' => 'materi'
 		);
 
@@ -491,6 +516,60 @@ class Bab extends MY_Controller {
 	{
 		return has_role('guru')
 			&& $this->guru_model->get_mapel_pengampu($materi->mapel_uuid, $this->session->userdata('uuid'));
+	}
+
+	private function validate_jadwal_akses($mapel_uuid)
+	{
+		$tanggal_akses = trim((string) $this->input->post('tanggal_akses'));
+		if ($tanggal_akses !== '' && !$this->is_valid_access_date($tanggal_akses)) {
+			return FALSE;
+		}
+
+		$sama_untuk_semua = $this->input->post('samakan_jadwal') === '1';
+		$kelas_dates = array();
+		if (!$sama_untuk_semua) {
+			$kelas_tersedia = $this->guru_model->get_kelas_for_mapel($mapel_uuid);
+			$kelas_uuids = array_map(function ($kelas) {
+				return $kelas->uuid;
+			}, $kelas_tersedia);
+			$kelas_terpilih = $this->input->post('jadwal_kelas');
+			$tanggal_per_kelas = $this->input->post('tanggal_akses_kelas');
+
+			if ($kelas_terpilih !== NULL && !is_array($kelas_terpilih)) {
+				return FALSE;
+			}
+			if ($tanggal_per_kelas !== NULL && !is_array($tanggal_per_kelas)) {
+				return FALSE;
+			}
+
+			foreach ((array) $kelas_terpilih as $kelas_uuid => $enabled) {
+				if ($enabled !== '1' || !in_array($kelas_uuid, $kelas_uuids, TRUE)) {
+					return FALSE;
+				}
+				$date = isset($tanggal_per_kelas[$kelas_uuid])
+					? trim((string) $tanggal_per_kelas[$kelas_uuid])
+					: '';
+				if (!$this->is_valid_access_date($date)) {
+					return FALSE;
+				}
+				$kelas_dates[$kelas_uuid] = $date;
+			}
+		}
+
+		return array(
+			'sama_untuk_semua' => $sama_untuk_semua,
+			'tanggal_akses' => $tanggal_akses === '' ? NULL : $tanggal_akses,
+			'kelas' => $kelas_dates
+		);
+	}
+
+	private function is_valid_access_date($date)
+	{
+		if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+			return FALSE;
+		}
+		$parts = explode('-', $date);
+		return checkdate((int) $parts[1], (int) $parts[2], (int) $parts[0]);
 	}
 
 	private function get_accessible_materi($materi_uuid)

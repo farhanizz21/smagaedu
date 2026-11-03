@@ -314,7 +314,7 @@ class Kepala_sekolah extends MY_Controller {
 		}
 
 		// Get ujian created by this guru
-		$this->db->select("u.*, m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%m WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%m WIB, %d %M %Y') as tgl_selesai_formatted", FALSE);
+		$this->db->select("u.*, m.nama AS mapel_nama, DATE_FORMAT(u.tgl_mulai, '%H.%i WIB, %d %M %Y') as tgl_mulai_formatted, DATE_FORMAT(u.tgl_selesai, '%H.%i WIB, %d %M %Y') as tgl_selesai_formatted", FALSE);
 		$this->db->from('ujian u');
 		$this->db->join('mapel m', 'm.uuid = u.mapel_uuid', 'left');
 		$this->db->where('u.created_by', $guru_uuid);

@@ -50,6 +50,8 @@
                 <small class="text-gray-400 text-xs mt-1 block">Gunakan toolbar di atas untuk formatting teks</small>
             </div>
 
+            <?php $this->load->view('mapel/_jadwal_akses', ['jadwal_akses' => ['sama_untuk_semua' => TRUE, 'tanggal_akses' => NULL, 'kelas' => []]]); ?>
+
             <!-- Dokumentasi -->
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-1.5">Dokumentasi</label>

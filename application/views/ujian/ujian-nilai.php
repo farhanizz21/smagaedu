@@ -59,6 +59,18 @@
                         <span class="text-sm text-gray-600">Nama Siswa</span>
                         <span class="text-sm font-semibold text-gray-900"><?= $siswa->nama; ?></span>
                     </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-sm text-gray-600">Status Pengumpulan</span>
+                        <?php if (!empty($terlambat)): ?>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                            <i data-lucide="triangle-alert" class="w-3 h-3"></i> Terlambat
+                        </span>
+                        <?php else: ?>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                            <?= !empty($pengumpulan) ? 'Tepat waktu' : 'Belum mengerjakan'; ?>
+                        </span>
+                        <?php endif; ?>
+                    </div>
                     <div class="flex justify-between py-2">
                         <span class="text-sm text-gray-600">Guru Pengajar</span>
                         <span class="text-sm font-semibold text-gray-900"><?= $guru; ?></span>

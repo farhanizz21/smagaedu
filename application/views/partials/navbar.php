@@ -12,6 +12,51 @@ $role_reminders = $CI->pengingat_model->get_for_user(
     $this->session->userdata('uuid'),
     $periode_akademik
 );
+if (($active_nav ?? '') === 'tugas' && has_role('siswa')) {
+    foreach ((array) ($pending_tasks ?? array()) as $pending_task) {
+        $now = time();
+        $start = strtotime($pending_task->tgl_mulai);
+        $end = strtotime($pending_task->tgl_selesai);
+        $not_started = $start && $now < $start;
+        $late = $end && $now > $end;
+        $deadline = $end ? date('d M Y H:i', $end) : '';
+        $start_time = $start ? date('d M Y H:i', $start) : '';
+
+        if ($not_started) {
+            $role_reminders[] = array(
+                'title' => 'Tugas belum dimulai',
+                'message' => $pending_task->judul . ' · ' . ($pending_task->mapel_nama ?? '-') .
+                    ($start_time ? ' · Mulai ' . $start_time : ''),
+                'url' => '',
+                'label' => 'Belum bisa dikerjakan',
+                'urgent' => FALSE
+            );
+        } else {
+            $role_reminders[] = array(
+                'title' => $late ? 'Tugas terlambat' : 'Tugas belum dikerjakan',
+                'message' => $pending_task->judul . ' · ' . ($pending_task->mapel_nama ?? '-') .
+                    ($deadline ? ' · Batas ' . $deadline : ''),
+                'url' => base_url('tugas/kerjakan/' . rawurlencode($pending_task->uuid)),
+                'label' => $late ? 'Kerjakan terlambat' : 'Kerjakan tugas',
+                'urgent' => $late
+            );
+        }
+    }
+
+    foreach (array('success_msg' => 'Berhasil', 'error_msg' => 'Perlu perhatian') as $message_key => $title) {
+        $message = $this->session->userdata($message_key);
+        if ($message) {
+            $role_reminders[] = array(
+                'title' => $title,
+                'message' => $message,
+                'url' => '',
+                'label' => '',
+                'urgent' => $message_key === 'error_msg'
+            );
+            $this->session->unset_userdata($message_key);
+        }
+    }
+}
 ?>
 
 <nav class="w-full sticky top-0 z-50 border-b border-gray-100"
@@ -273,10 +318,16 @@ $role_reminders = $CI->pengingat_model->get_for_user(
                         <p class="text-sm font-bold text-gray-900"><?= html_escape($reminder['title']) ?></p>
                         <p class="mt-0.5 text-xs leading-relaxed text-gray-700"><?= html_escape($reminder['message']) ?></p>
                     </div>
+                    <?php if (!empty($reminder['url']) && !empty($reminder['label'])): ?>
                     <a href="<?= html_escape($reminder['url']) ?>"
                         class="shrink-0 rounded-lg bg-amber-500 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2">
                         <?= html_escape($reminder['label']) ?>
                     </a>
+                    <?php elseif (!empty($reminder['label'])): ?>
+                    <span class="shrink-0 rounded-lg bg-gray-100 px-3 py-2 text-xs font-bold text-gray-600">
+                        <?= html_escape($reminder['label']) ?>
+                    </span>
+                    <?php endif; ?>
                 </li>
                 <?php endforeach; ?>
             </ul>

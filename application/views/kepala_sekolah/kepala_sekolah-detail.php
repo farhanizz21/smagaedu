@@ -335,7 +335,7 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-gray-900">Perangkat Pembelajaran</h3>
-                            <p class="text-xs text-gray-500">Modul dan ATP yang telah dibuat</p>
+                            <p class="text-xs text-gray-500">Perangkat pembelajaran yang telah diunggah</p>
                         </div>
                     </div>
                 </div>

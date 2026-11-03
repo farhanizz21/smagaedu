@@ -4,56 +4,157 @@ use Ramsey\Uuid\Uuid;
 
 class Perangkat_model extends CI_Model {
 
+    private $jenis_file_options = array(
+        'modul' => 'Modul',
+        'atp' => 'ATP',
+        'rme' => 'RME',
+        'prota' => 'Prota',
+        'promes' => 'Promes',
+        'kktp' => 'KKTP',
+        'tp' => 'TP',
+    );
+
     public function __construct()
     {
         parent::__construct();
         $this->load->model('guru_model');
     }
 
-    /**
-     * Parse mapel_uuid field - handles both old format (simple array) and new format (array of objects with kelas_list)
-     */
-    private function parse_mapel_uuids($mapel_uuid_json)
+    public function get_jenis_file_options()
     {
-        if (empty($mapel_uuid_json)) {
-            return [];
+        return $this->jenis_file_options;
+    }
+
+    public function compress_pdf_if_needed($file_path)
+    {
+        $original_size = filesize($file_path);
+        if ($original_size === FALSE) {
+            return array('success' => FALSE);
         }
 
-        $data = json_decode($mapel_uuid_json, true);
-        if (!is_array($data)) {
-            return [];
+        if ($original_size <= 2 * 1024 * 1024) {
+            return array('success' => TRUE, 'compressed' => FALSE);
         }
 
-        // Check if old format (simple array of mapel UUIDs)
-        if (isset($data[0]) && is_string($data[0])) {
-            return $data;
+        if (!function_exists('proc_open')) {
+            return array('success' => FALSE);
         }
 
-        // New format: [{"mapel_uuid": "uuid1", "kelas_list": [...]}]
-        $mapel_list = [];
-        foreach ($data as $item) {
-            if (isset($item['mapel_uuid'])) {
-                $mapel_list[] = $item['mapel_uuid'];
+        $output_path = tempnam(dirname($file_path), 'perangkat-pdf-');
+        if ($output_path === FALSE) {
+            return array('success' => FALSE);
+        }
+        unlink($output_path);
+
+        $ghostscript = $this->_find_pdf_tool(
+            'GHOSTSCRIPT_BINARY',
+            array('/usr/local/bin/gs', '/opt/homebrew/bin/gs', '/usr/bin/gs'),
+            'gs'
+        );
+        $mutool = $this->_find_pdf_tool(
+            'MUTOOL_BINARY',
+            array('/usr/local/bin/mutool', '/opt/homebrew/bin/mutool', '/usr/bin/mutool'),
+            'mutool'
+        );
+        $commands = array(
+            array(
+                'name' => 'Ghostscript',
+                'command' => array(
+                    $ghostscript,
+                    '-sDEVICE=pdfwrite',
+                    '-dCompatibilityLevel=1.4',
+                    '-dPDFSETTINGS=/ebook',
+                    '-dSAFER',
+                    '-dNOPAUSE',
+                    '-dBATCH',
+                    '-dQUIET',
+                    '-sOutputFile=' . $output_path,
+                    $file_path,
+                ),
+            ),
+            array(
+                'name' => 'MuPDF',
+                'command' => array(
+                    $mutool,
+                    'clean',
+                    '-gggg',
+                    '-z',
+                    '-f',
+                    '-i',
+                    '-Z',
+                    '-e',
+                    '100',
+                    $file_path,
+                    $output_path,
+                ),
+            ),
+        );
+
+        foreach ($commands as $compression_tool) {
+            if (is_file($output_path)) {
+                unlink($output_path);
+            }
+
+            $process = proc_open($compression_tool['command'], array(
+                0 => array('pipe', 'r'),
+                1 => array('pipe', 'w'),
+                2 => array('pipe', 'w'),
+            ), $pipes);
+
+            if (!is_resource($process)) {
+                log_message('error', $compression_tool['name'] . ' could not be started for perangkat PDF compression.');
+                continue;
+            }
+
+            fclose($pipes[0]);
+            stream_get_contents($pipes[1]);
+            fclose($pipes[1]);
+            $process_error = stream_get_contents($pipes[2]);
+            fclose($pipes[2]);
+            $exit_code = proc_close($process);
+
+            if ($exit_code !== 0 || !is_file($output_path) || filesize($output_path) === 0) {
+                log_message('error', $compression_tool['name'] . ' perangkat PDF compression failed: ' . trim($process_error));
+                continue;
+            }
+
+            if (filesize($output_path) >= $original_size) {
+                log_message('error', $compression_tool['name'] . ' did not reduce the perangkat PDF file size.');
+                continue;
+            }
+
+            if (rename($output_path, $file_path)) {
+                return array('success' => TRUE, 'compressed' => TRUE);
+            }
+
+            log_message('error', $compression_tool['name'] . ' compressed PDF could not be saved.');
+        }
+
+        if (is_file($output_path)) {
+            unlink($output_path);
+        }
+        return array('success' => FALSE);
+    }
+
+    private function _find_pdf_tool($environment_variable, $known_paths, $default_command)
+    {
+        $configured_tool = getenv($environment_variable);
+        if (!empty($configured_tool)) {
+            return $configured_tool;
+        }
+
+        foreach ($known_paths as $path) {
+            if (is_executable($path)) {
+                return $path;
             }
         }
-        return $mapel_list;
+
+        return $default_command;
     }
 
     private function get_mapel_uuids_by_guru($guru_uuid)
     {
-        $this->db->select('user_profiles.mapel_uuid');
-        $this->db->from('users');
-        $this->db->join('user_profiles', 'users.id = user_profiles.user_id', 'left');
-        $this->db->where('users.uuid', $guru_uuid);
-        $this->db->where('EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = users.id AND user_roles.role_id = 3)', NULL, FALSE);
-        $this->db->where('users.deleted_at', NULL, FALSE);
-        $guru = $this->db->get()->row();
-        
-        if (!$guru || empty($guru->mapel_uuid)) {
-            return [];
-        }
-        
-        return $this->parse_mapel_uuids($guru->mapel_uuid);
+        return $this->guru_model->get_mapel_uuid_list($guru_uuid);
     }
 
     public function get_mapel_by_guru($guru_uuid, $limit = NULL, $offset = 0)
@@ -136,6 +237,12 @@ class Perangkat_model extends CI_Model {
         $this->db->where('deleted_at', NULL, FALSE);
         foreach ($this->db->get('users')->result() as $teacher) {
             foreach ($this->get_mapel_by_guru($teacher->uuid) as $mapel) {
+                $mapel_uuids[] = $mapel->uuid;
+            }
+        }
+
+        if (has_role('guru')) {
+            foreach ($this->get_mapel_by_guru($this->session->userdata('uuid')) as $mapel) {
                 $mapel_uuids[] = $mapel->uuid;
             }
         }
